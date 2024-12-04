@@ -75,7 +75,7 @@ void setup() {
     while (1) {
       // Rapid blink to indicate error
       digitalWrite(LED_BUILTIN, LOW);  
-      delay(100);                   
+      delay(200);                   
       digitalWrite(LED_BUILTIN, HIGH);
     }
   }

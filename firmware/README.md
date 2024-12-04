@@ -1,4 +1,5 @@
 # Getting Started with the Sensor
+**-> The "offline" versions send the audio files via Serial, and not via WiFi**
 
 1. We used the Arduino IDE to upload Code to Coco (the ESP32 Sensor). Please have a look at the 'Software Preparation' Section on [this page](https://wiki.seeedstudio.com/xiao_esp32s3_getting_started/#software-preparation) from SeeedStudio. Once you completed steps 1 through 4. Please return here.
 
