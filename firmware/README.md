@@ -18,3 +18,10 @@
     - Morse blinking to indicate Mic Setup Error.
 - "Fizzy" Blinking indicates that the device is transferring.
 - During recording, the LED will be solid on. 
+
+- Once turned on, coco will blink shortly, after that the led will be off. once it goes back on, the recording starts.
+
+# ToDo
+- [ ] Move offline version and old versions to archive
+- [ ] Check whether the CPU Clock has a notable effect on wifi transfer speed.
+- [ ] 
