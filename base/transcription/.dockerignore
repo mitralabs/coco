@@ -5,6 +5,5 @@ __pycache__
 .Python
 env/
 venv/
-.env
 *.log
 node_modules/
