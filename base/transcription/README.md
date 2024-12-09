@@ -9,7 +9,7 @@ This is a FastAPI-based container for transcribing audio files using OpenAI's Wh
 
 2. **Run the Docker container:**
    ```bash
-   docker run -p 8000:8000 whisper-api
+    docker run -p 8000:8000 -v ${HOME}/.whisper-cache:/root/.cache/whisper whisper-api
     ```
 
 ## Usage
