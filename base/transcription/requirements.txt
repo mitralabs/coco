@@ -4,3 +4,4 @@ numpy==1.24.3
 python-multipart==0.0.6
 openai-whisper==20231117
 torch==2.1.1
+python-dotenv
