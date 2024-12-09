@@ -19,10 +19,10 @@ Once the service is running, you can transcribe audio files by sending a POST re
 ### Example using `curl`:
 
 ```bash
-curl -X POST -F "audio_file=@filepath_to_audio_file.wav" http://localhost:8000/transcribe/
+curl -X POST -H "X-API-Key: your_api_key_here" -F "audio_file=@filepath_to_audio_file.wav" http://localhost:8000/transcribe/
 ```
 
-Replace `filepath_to_audio_file.wav` with the path to your audio file.
+Replace `X-API-Key: your_api_key_here` with your API key and `filepath_to_audio_file.wav` with the path to your audio file.
 
 ## Endpoints
 
