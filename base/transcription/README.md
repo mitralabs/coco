@@ -9,7 +9,7 @@ This is a FastAPI-based container for transcribing audio files using OpenAI's Wh
 
 2. **Run the Docker container:**
    ```bash
-   docker run -p 8000:8000 whisper-api .
+   docker run -p 8000:8000 whisper-api
     ```
 
 ## Usage
@@ -36,7 +36,7 @@ Replace `filepath_to_audio_file.wav` with the path to your audio file.
 
 - Ensure that the audio file is in a format supported by Whisper (e.g., WAV).
 
-# ToDo
+## ToDo
 - [ ] Deploy and run other models like whisper-large-v3, whisper.cpp to compare the results
 - [ ] Implement a routing system that chooses the best model based on the audio file size, quality, language, etc.
 
