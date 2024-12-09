@@ -4,18 +4,22 @@ This is a FastAPI-based service for transcribing audio files using OpenAI's Whis
 
 1. **Build the Docker image:**
    ```bash
-   docker build -t whisper-api .   ```
+   docker build -t whisper-api .    
+   ```
 
 2. **Run the Docker container:**
    ```bash
-   docker run -p 8000:8000 whisper-api   ```
+   docker run -p 8000:8000 whisper-api .
+```
 
 ## Usage
 
 Once the service is running, you can transcribe audio files by sending a POST request to the `/transcribe/` endpoint.
 
 ### Example using `curl`:
+```bash
 curl -X POST -F "audio_file=@filepath_to_audio_file.wav" http://localhost:8000/transcribe/
+```
 
 Replace `filepath_to_audio_file.wav` with the path to your audio file.
 
@@ -32,5 +36,6 @@ Replace `filepath_to_audio_file.wav` with the path to your audio file.
 - Ensure that the audio file is in a format supported by Whisper (e.g., WAV).
 
 # ToDo
-- [ ] run other models like whisper-large-v3, whisper.cpp and compare the results
+- [ ] Deploy and run other models like whisper-large-v3, whisper.cpp to compare the results
+- [ ] Implement a routing system that chooses the best model based on the audio file size, quality, language, etc.
 
