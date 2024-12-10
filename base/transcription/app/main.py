@@ -10,7 +10,7 @@ load_dotenv()  # Load environment variables from .env file
 
 app = FastAPI()
 
-# Load the Whisper model (you can change "base" to other model sizes like "small", "medium", "large")
+# Load the Whisper model
 model = whisper.load_model("tiny", download_root="/data/models")
 
 # API Key Authentication
@@ -31,7 +31,6 @@ async def transcribe_audio(audio_file: UploadFile = File(...), api_key: str = De
     try:
         # Create a temporary file to store the uploaded audio
         with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_audio:
-            # Write the uploaded file content to temporary file
             content = await audio_file.read()
             temp_audio.write(content)
             temp_audio.flush()
@@ -42,18 +41,28 @@ async def transcribe_audio(audio_file: UploadFile = File(...), api_key: str = De
             # Clean up the temporary file
             os.unlink(temp_audio.name)
             
+            # Format the response as a JSON document that can be directly used by the chunking service
             return JSONResponse(content={
-                "text": result["text"],
-                "language": result["language"]
+                "status": "success",
+                "document": {
+                    "text": result["text"],
+                    "metadata": {
+                        "language": result["language"],
+                        "filename": audio_file.filename
+                    }
+                }
             })
             
     except Exception as e:
         return JSONResponse(
             status_code=500,
-            content={"error": str(e)}
+            content={
+                "status": "error",
+                "error": str(e)
+            }
         )
 
 # Keep the root endpoint for health checks
 @app.get("/")
 async def read_root():
-    return "Whisper Transcription Service."
+    return {"status": "success", "message": "Whisper Transcription Service"}
