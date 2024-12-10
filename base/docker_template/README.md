@@ -8,8 +8,15 @@ This is a FastAPI-based boilerplate container for creating new services. The ser
    ```
 
 2. **Run the Docker container:**
+   
+   For Unix/Linux/MacOS:
    ```bash
    docker run -d -p 8000:8000 -v $(pwd)/app:/app -v $(pwd)/../_data:/data docker-template
+   ```
+
+   For Windows (PowerShell):
+   ```powershell
+   docker run -d -p 8000:8000 -v ${PWD}/app:/app -v ${PWD}/../_data:/data docker-template
    ```
 
 ## Usage
