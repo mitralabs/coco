@@ -11,12 +11,12 @@ This is a FastAPI-based container for transcribing audio files using OpenAI's Wh
    
    For Unix/Linux/MacOS:
    ```bash
-   docker run -d -p 8000:8000 -v $(pwd)/app:/app -v $(pwd)/../_data:/data-transcription
+   docker run -d -p 8000:8000 -v $(pwd)/app:/app -v $(pwd)/../_data:/data-transcription data-transcription
    ```
 
    For Windows (PowerShell):
    ```powershell
-   docker run -d -p 8000:8000 -v ${PWD}/app:/app -v ${PWD}/../_data:/data-transcription
+   docker run -d -p 8000:8000 -v ${PWD}/app:/app -v ${PWD}/../_data:/data-transcription data-transcription
    ```
 
 ## Usage
@@ -34,6 +34,28 @@ Replace `X-API-Key: your_api_key_here` with your API key and `filepath_to_audio_
 ## Endpoints
 
 - **POST /transcribe/**: Transcribe an audio file. Accepts a file upload with the key `audio_file`.
+  
+  **Response Format:**
+  ```json
+  {
+    "status": "success",
+    "document": {
+      "text": "The transcribed text content",
+      "metadata": {
+        "language": "detected language code",
+        "filename": "original audio filename"
+      }
+    }
+  }
+  ```
+
+  In case of an error:
+  ```json
+  {
+    "status": "error",
+    "error": "Error message description"
+  }
+  ```
 
 - **GET /**: Health check endpoint. Returns a simple message indicating the service is running.
 
