@@ -1,6 +1,11 @@
 
 # Starting fresh
 
+## ToDo
+- [ ] Generate a password (e.g. on [PW Generate](https://randompasswordgenerator.com/)) 30 characters should be sufficient.
+- [ ] Don't Forget. If more people use Coco, the Coco_Connect SSID should be different -> Increasing Integers at the end.
+
+
 ## Start in the Raspberry Pi Imager on your machine
 (If you don't have it yet, you can download it [here](https://www.raspberrypi.com/software/))
 1. Choose your Raspberry Pi Model. We work with the "Raspberry Pi 5"

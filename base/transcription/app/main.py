@@ -11,7 +11,7 @@ load_dotenv()  # Load environment variables from .env file
 app = FastAPI()
 
 # Load the Whisper model (you can change "base" to other model sizes like "small", "medium", "large")
-model = whisper.load_model("tiny")
+model = whisper.load_model("tiny", download_root="/data/models")
 
 # API Key Authentication
 API_KEY = os.getenv("API_KEY")
@@ -56,4 +56,4 @@ async def transcribe_audio(audio_file: UploadFile = File(...), api_key: str = De
 # Keep the root endpoint for health checks
 @app.get("/")
 async def read_root():
-    return "Whisper Transcription Service"
+    return "Whisper Transcription Service."

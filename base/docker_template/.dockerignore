@@ -3,8 +3,5 @@ __pycache__
 *.pyo
 *.pyd
 .Python
-env/
 venv/
-.env
 *.log
-node_modules/

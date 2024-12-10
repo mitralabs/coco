@@ -9,7 +9,7 @@ This is a FastAPI-based boilerplate container for creating new services. The ser
 
 2. **Run the Docker container:**
    ```bash
-   docker run -p 8000:8000 docker-template
+   docker run -d -p 8000:8000 -v $(pwd)/app:/app -v $(pwd)/../_data:/data docker-template
    ```
 
 ## Usage
