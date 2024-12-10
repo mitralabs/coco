@@ -11,12 +11,12 @@ This is a FastAPI-based service that provides text chunking functionality using 
    
    For Unix/Linux/MacOS:
    ```bash
-   docker run -d -p 8000:8000 -v $(pwd)/data:/text-chunking -v $(pwd)/../_data:/data text-chunking
+   docker run -d -p 8000:8000 -v $(pwd)/app:/app -v $(pwd)/../_data:/data text-chunking
    ```
 
    For Windows (PowerShell):
    ```powershell
-   docker run -d -p 8000:8000 -v ${PWD}/data:/text-chunking -v ${PWD}/../_data:/data text-chunking
+   docker run -d -p 8000:8000 -v ${PWD}/app:/app -v ${PWD}/../_data:/data text-chunking
    ```
 
 ## Usage
