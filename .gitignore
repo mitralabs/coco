@@ -169,3 +169,6 @@ base/_data/*
 
 # Ignore .DS_Store files
 .DS_Store
+
+# Ignore all folders that start with "venv"
+venv*/

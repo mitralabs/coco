@@ -22,6 +22,6 @@
 - Once turned on, coco will blink shortly, after that the led will be off. once it goes back on, the recording starts.
 
 # ToDo
+- [ ] Check why the device starts to record again after file transfer is complete and the device goes into sleep state...
 - [ ] Move offline version and old versions to archive
 - [ ] Check whether the CPU Clock has a notable effect on wifi transfer speed.
-- [ ] 

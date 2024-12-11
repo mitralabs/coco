@@ -3,6 +3,8 @@ This container contains a FastAPI App which has an Endpoint to receive .wav file
 
 # ToDo
 - [ ] Write instructions for the .env file and include a .env.template
+- [ ] Include a "all files transmitted" message that coco sends to base.
+
 
 
 ## Step by Step instructions:
@@ -15,7 +17,7 @@ docker build -t coco_to_base .
 
 4. Run the docker container
 ```
-docker run -d -p 3030:8000 -v $(pwd)/app:/app -v $(pwd)/../_data:/data --name coco_to_base coco_to_base
+docker run -d -p 3030:8000 -v $(PWD)/app:/app -v $(PWD)/../_data:/data --name coco_to_base coco_to_base
 ```
 Note: We are currently in dev mode. Once we reach a stable phase the images will have tags.
 
