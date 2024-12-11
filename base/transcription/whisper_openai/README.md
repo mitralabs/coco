@@ -4,19 +4,19 @@ This is a FastAPI-based container for transcribing audio files using OpenAI's Wh
 
 1. **Build the Docker image:**
    ```bash
-   docker build -t data-transcription .    
+   docker build -t data-transcription-openai .    
    ```
 
 2. **Run the Docker container:**
    
    For Unix/Linux/MacOS:
    ```bash
-   docker run -d -p 8000:8000 -v $(pwd)/app:/app -v $(pwd)/../_data:/data-transcription data-transcription
+   docker run -d -p 8000:8000 -v $(pwd)/app:/app -v $(pwd)/../_data:/data-transcription-openai data-transcription-openai
    ```
 
    For Windows (PowerShell):
    ```powershell
-   docker run -d -p 8000:8000 -v ${PWD}/app:/app -v ${PWD}/../_data:/data-transcription data-transcription
+   docker run -d -p 8000:8000 -v ${PWD}/app:/app -v ${PWD}/../_data:/data-transcription-openai data-transcription-openai
    ```
 
 ## Usage

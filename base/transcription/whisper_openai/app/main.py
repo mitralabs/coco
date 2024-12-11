@@ -6,7 +6,8 @@ import tempfile
 import os
 from dotenv import load_dotenv
 
-load_dotenv()  # Load environment variables from .env file
+dotenv_path = os.path.join(os.getcwd(), ".env")
+load_dotenv(dotenv_path=dotenv_path)
 
 app = FastAPI()
 
