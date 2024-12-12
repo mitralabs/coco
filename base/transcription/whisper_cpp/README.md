@@ -1,22 +1,33 @@
-# Transcription Container
+# Transcription Container (Whisper.cpp) !! Currently not working !!
 
-This is a FastAPI-based container for transcribing audio files using OpenAI's Whisper model. The service is containerized with Docker for easy deployment and the first step of the pipeline.
+[ ] Dockerfile builds and runs the container but throws an error when trying to transcribe an audio file.
+[ ] The error is related to a missing model file.
+
+This is a FastAPI-based container for transcribing audio files using Whisper.cpp, a high-performance C++ port of OpenAI's Whisper model. The service is containerized with Docker for easy deployment and is the first step of the pipeline.
+
+## Build and Run
 
 1. **Build the Docker image:**
    ```bash
-   docker build -t data-transcription-openai .    
+   docker build -t data-transcription-cpp .    
    ```
 
 2. **Run the Docker container:**
    
    For Unix/Linux/MacOS:
    ```bash
-   docker run -d -p 8000:8000 -v $(pwd)/app:/app -v $(pwd)/../_data:/data-transcription-openai data-transcription-openai
+   docker run -d -p 8000:8000 \
+       -v $(pwd)/app:/app \
+       -v $(pwd)/../_data:/data \
+       data-transcription-cpp
    ```
 
    For Windows (PowerShell):
    ```powershell
-   docker run -d -p 8000:8000 -v ${PWD}/app:/app -v ${PWD}/../_data:/data-transcription-openai data-transcription-openai
+   docker run -d -p 8000:8000 `
+       -v ${PWD}/app:/app `
+       -v ${PWD}/../_data:/data `
+       data-transcription-cpp
    ```
 
 ## Usage
@@ -26,10 +37,13 @@ Once the service is running, you can transcribe audio files by sending a POST re
 ### Example using `curl`:
 
 ```bash
-curl -X POST -H "X-API-Key: your_api_key_here" -F "audio_file=@filepath_to_audio_file.wav" http://localhost:8000/transcribe/
+curl -X POST \
+     -H "X-API-Key: your_api_key_here" \
+     -F "audio_file=@filepath_to_audio_file.wav" \
+     http://localhost:8000/transcribe/
 ```
 
-Replace `X-API-Key: your_api_key_here` with your API key and `filepath_to_audio_file.wav` with the path to your audio file.
+Replace `your_api_key_here` with your API key and `filepath_to_audio_file.wav` with the path to your audio file.
 
 ## Endpoints
 
@@ -61,10 +75,6 @@ Replace `X-API-Key: your_api_key_here` with your API key and `filepath_to_audio_
 
 ## Notes
 
-- The Whisper model used is the "tiny" version. You can change this in `app/main.py` to other sizes like "small", "medium", or "large" depending on your needs and available resources.
-
-- Ensure that the audio file is in a format supported by Whisper (e.g., WAV).
-
-## ToDo
-- [ ] Deploy and run other models like whisper-large-v3, whisper.cpp to compare the results
-- [ ] Implement a routing system that chooses the best model based on the audio file size, quality, language, etc.
+- This implementation uses Whisper.cpp, which provides better performance compared to the Python implementation.
+- The base model is used by default. You can change this in the Dockerfile to other sizes like "small", "medium", or "large".
+- Ensure that the audio file is in a format supported by Whisper (e.g. WAV).
