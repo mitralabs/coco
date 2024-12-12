@@ -18,9 +18,9 @@ if not API_KEY:
     raise ValueError("API_KEY environment variable must be set")
 # Setting the Model
 GGML_MODEL = os.getenv("GGML_MODEL")
+GGML_MODEL = "ggml-large-v3-turbo"
 if not GGML_MODEL:
     raise ValueError("Model environment variable must be set")
-
 
 api_key_header = APIKeyHeader(name="X-API-Key")
 
@@ -30,6 +30,29 @@ def get_api_key(api_key: str = Depends(api_key_header)):
             status_code=status.HTTP_403_FORBIDDEN, detail="Invalid API Key"
         )
     return api_key
+
+
+def process_whisper_output(audio_path):
+    # Construct JSON path from audio path
+    json_path = f"{audio_path}.json"
+    
+    # Check if JSON exists
+    if not os.path.exists(json_path):
+        raise FileNotFoundError(f"JSON output not found at {json_path}")
+        
+    # Read and parse JSON
+    try:
+        with open(json_path, 'r', encoding='utf-8') as f:
+            transcription_data = json.load(f)
+            
+        return transcription_data
+            
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON format: {e}")
+    except Exception as e:
+        raise Exception(f"Error processing JSON: {e}")
+
+
 
 @app.post("/transcribe/")
 async def transcribe_audio(audio_file: UploadFile = File(...), api_key: str = Depends(get_api_key)):
@@ -42,7 +65,7 @@ async def transcribe_audio(audio_file: UploadFile = File(...), api_key: str = De
             
             # Construct the absolute paths
             whisper_cpp_dir = os.path.join(os.path.dirname(os.getcwd()), "whisper.cpp")
-            whisper_executable = os.path.join(whisper_cpp_dir, "build/bin/main")
+            whisper_executable = os.path.join(whisper_cpp_dir, "./main")
             model_path = os.path.join(whisper_cpp_dir, f'models/{GGML_MODEL}.bin')
             
             # Prepare the command
@@ -50,7 +73,8 @@ async def transcribe_audio(audio_file: UploadFile = File(...), api_key: str = De
                 whisper_executable,
                 "-m", model_path,
                 "-f", temp_audio.name,
-                "-oj"  # Output in JSON format
+                "-l", "de",
+                "-oj", "true",  # Output in JSON format
             ]
             
             # Execute the command and capture output
@@ -62,23 +86,18 @@ async def transcribe_audio(audio_file: UploadFile = File(...), api_key: str = De
                     check=True
                 )
                 
-                print(result)
+                #print(result)
+                #print(result.stdout)
 
-                print("-----------------")
-
-                print(result.stdout)
-
-                print(type(result.stdout))
-
-                # Parse the JSON output
-                #whisper_output = json.loads(result.stdout)
-                
+                data = process_whisper_output(temp_audio.name)
+                # Access transcription data
+                transcription = data['transcription']  # Adjust based on actual JSON structure
 
                 # Format the response to match your previous structure
                 return JSONResponse(content={
                     "status": "success",
                     "document": {
-                        "text": result.stdout,
+                        "text": transcription,
                         "metadata": {
                             "language": "not yet implemented",
                             "filename": audio_file.filename
