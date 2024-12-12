@@ -22,6 +22,7 @@
 - Once turned on, coco will blink shortly, after that the led will be off. once it goes back on, the recording starts.
 
 # ToDo
-- [ ] Check why the device starts to record again after file transfer is complete and the device goes into sleep state...
+- [ ] There is too much pause between individual recordings! What happened? Different to cocoware firmware. (it's not the LED, my first guess)
+- [ ] Check why the device starts to record again after file transfer is complete and the device goes into sleep state... (Solution: It can be, that 10Mhz is too slow a clock for the device. So it restarts.)
 - [ ] Move offline version and old versions to archive
 - [ ] Check whether the CPU Clock has a notable effect on wifi transfer speed.

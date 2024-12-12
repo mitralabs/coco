@@ -1,43 +1,32 @@
-FROM ghcr.io/ggerganov/whisper.cpp:main
+# Use Python slim as the base image
+FROM python:3.9-slim-bullseye
 
-# Install Python and dependencies
+# Install necessary apt packages
 RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
+    ffmpeg \
+    build-essential \
+    cmake \
     curl \
-    wget \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
-# Set working directory to /whisper.cpp
+# Clone the whisper.cpp repository
+RUN git clone https://github.com/ggerganov/whisper.cpp.git
+
+# Set the working directory
 WORKDIR /whisper.cpp
 
-# Create models directory and download script directly from the repository
-RUN mkdir -p /models && \
-    wget -O /models/download-ggml-model.sh https://raw.githubusercontent.com/ggerganov/whisper.cpp/master/models/download-ggml-model.sh && \
-    chmod +x /models/download-ggml-model.sh && \
-    /models/download-ggml-model.sh base /models
+# Build the project
+RUN make
 
-# Set working directory for the application
+# CD to the root directory
+WORKDIR /
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY .env .
+
 WORKDIR /app
 
-# Copy requirements and install dependencies
-COPY requirements.txt .
-RUN pip3 install --no-cache-dir -r requirements.txt
-
-# Copy application files
-COPY app/main.py .
-COPY app/.env .
-
-# Set environment variables
-ENV PYTHONUNBUFFERED=1
-ENV WHISPER_BIN="/whisper.cpp/main"
-ENV MODEL_PATH="/models/ggml-base.bin"
-
-# Create directory for temporary files
-RUN mkdir -p /data
-
-# Expose port 8000
-EXPOSE 8000
-
-# Run the FastAPI application
-CMD ["python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
