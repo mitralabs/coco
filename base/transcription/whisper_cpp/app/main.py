@@ -16,9 +16,10 @@ app = FastAPI()
 API_KEY = os.getenv("API_KEY")
 if not API_KEY:
     raise ValueError("API_KEY environment variable must be set")
+
 # Setting the Model
 GGML_MODEL = os.getenv("GGML_MODEL")
-GGML_MODEL = "ggml-tiny-q8_0"
+#GGML_MODEL = "ggml-large-v3-turbo" #For testing only, helps since the .env file is included during the build.
 if not GGML_MODEL:
     raise ValueError("Model environment variable must be set")
 
@@ -65,7 +66,19 @@ async def transcribe_audio(audio_file: UploadFile = File(...), api_key: str = De
             
             # Construct the absolute paths
             whisper_cpp_dir = os.path.join(os.path.dirname(os.getcwd()), "whisper.cpp")
-            whisper_executable = os.path.join(whisper_cpp_dir, "./build/bin/main")
+
+            whisper_executable_paths = [
+                os.path.join(whisper_cpp_dir, "./main"),
+                os.path.join(whisper_cpp_dir, "./build/bin/main")
+            ]
+
+            for path in whisper_executable_paths:
+                if os.path.exists(path):
+                    whisper_executable = path
+                    break
+            else:
+                raise FileNotFoundError(f"whisper.cpp main executable not found in {whisper_executable_paths}")
+
             model_path = os.path.join(whisper_cpp_dir, f'models/{GGML_MODEL}.bin')
             
             # Prepare the command
@@ -99,7 +112,7 @@ async def transcribe_audio(audio_file: UploadFile = File(...), api_key: str = De
                     "document": {
                         "text": transcription,
                         "metadata": {
-                            "language": "not yet implemented",
+                            "language": "should be somewhere else in the JSON. Needs to be updated.",
                             "filename": audio_file.filename
                         }
                     }
