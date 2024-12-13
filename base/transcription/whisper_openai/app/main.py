@@ -63,7 +63,7 @@ async def transcribe_audio(audio_file: UploadFile = File(...), api_key: str = De
             }
         )
 
-# Keep the root endpoint for health checks
-@app.get("/")
-async def read_root():
-    return {"status": "success", "message": "Whisper Transcription Service"}
+# Keep the endpoint for health checks
+@app.get("/test")
+async def test_endpoint(api_key: str = Depends(get_api_key)):
+    return {"status": "success", "message": "Test endpoint accessed successfully"}

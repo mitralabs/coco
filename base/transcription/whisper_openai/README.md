@@ -57,7 +57,12 @@ Replace `X-API-Key: your_api_key_here` with your API key and `filepath_to_audio_
   }
   ```
 
-- **GET /**: Health check endpoint. Returns a simple message indicating the service is running.
+- **GET /test**: Health check endpoint. Requires API key authentication.
+  
+   **Example using curl:**
+  ```bash
+  curl -X GET -H "X-API-Key: your_api_key_here" http://localhost:8000/test
+  ```
 
 ## Notes
 
