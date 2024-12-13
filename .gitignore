@@ -161,8 +161,9 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-# Ignore all files in base/_data directory
-base/_data/*
+# Ignore all files in base/_data directory, but leave all subdirectories
+base/_data/**/*
+!base/_data/**/
 
 # Ignore all files that end with .wav
 *.wav
