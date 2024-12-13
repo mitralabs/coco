@@ -18,7 +18,7 @@ if not API_KEY:
     raise ValueError("API_KEY environment variable must be set")
 # Setting the Model
 GGML_MODEL = os.getenv("GGML_MODEL")
-GGML_MODEL = "ggml-large-v3-turbo"
+GGML_MODEL = "ggml-tiny-q8_0"
 if not GGML_MODEL:
     raise ValueError("Model environment variable must be set")
 
@@ -65,7 +65,7 @@ async def transcribe_audio(audio_file: UploadFile = File(...), api_key: str = De
             
             # Construct the absolute paths
             whisper_cpp_dir = os.path.join(os.path.dirname(os.getcwd()), "whisper.cpp")
-            whisper_executable = os.path.join(whisper_cpp_dir, "./main")
+            whisper_executable = os.path.join(whisper_cpp_dir, "./build/bin/main")
             model_path = os.path.join(whisper_cpp_dir, f'models/{GGML_MODEL}.bin')
             
             # Prepare the command
