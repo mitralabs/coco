@@ -2,6 +2,8 @@
 
 This is a Python-based orchestrator that coordinates the transcription and text chunking services. It handles the flow of data between services and manages the overall pipeline.
 
+At the moment, the orchestrator only calls the endpoints and does not run the docker containers. Start the docker containers before running the orchestrator on the ports specified in the following README.
+
 ## Usage
 
 1. **Set up environment:**
