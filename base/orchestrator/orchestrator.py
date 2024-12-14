@@ -23,26 +23,23 @@ if not API_KEY:
     logger.error("API_KEY environment variable must be set")
     sys.exit(1) # Exit if API key is missing
 
-USE_DOCKER_INTERNAL = False #<--- Change this to True if testing the host network on windows.
-TRANSCRIPTION_URL_BASE = "http://127.0.0.1:8000" if not USE_DOCKER_INTERNAL else "http://host.docker.internal:8000"
-CHUNK_URL_BASE = "http://127.0.0.1:8001" if not USE_DOCKER_INTERNAL else "http://host.docker.internal:8001"
+TRANSCRIPTION_URL_BASE = "http://127.0.0.1:8000"
+CHUNK_URL_BASE = "http://127.0.0.1:8001"
 
 TRANSCRIPTION_URL = TRANSCRIPTION_URL_BASE
 CHUNK_URL = CHUNK_URL_BASE
 
 
 def call_api(url, endpoint, method="GET", headers=None, data=None, files=None, timeout=100):
-    """Modular function to call API endpoints with logging, error handling, and timeout."""
+    #Modular function to call API endpoints with logging, error handling, and timeout
     full_url = f"{url}{endpoint}"
     
     try:
         logger.info(f"Calling {method} endpoint: {full_url}")
-        
         response = requests.request(
             method, full_url, headers=headers, data=data, files=files, timeout=timeout
         )
         response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
-        
         try:
             return response.json()
         except json.JSONDecodeError:
@@ -60,7 +57,7 @@ def call_api(url, endpoint, method="GET", headers=None, data=None, files=None, t
     
 
 def test_services():
-    """Test the transcription and chunking services with a timeout."""
+    #Test the transcription and chunking services with a timeout
     logger.info("Starting service tests...")
     
     # Test transcription service
