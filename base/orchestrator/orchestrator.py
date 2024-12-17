@@ -25,9 +25,13 @@ if not API_KEY:
 
 TRANSCRIPTION_URL_BASE = "http://127.0.0.1:8000"
 CHUNK_URL_BASE = "http://127.0.0.1:8001"
+EMBEDDING_URL_BASE = "http://127.0.0.1:8002"
+DATABASE_URL_BASE = "http://127.0.0.1:8003"
 
 TRANSCRIPTION_URL = TRANSCRIPTION_URL_BASE
 CHUNK_URL = CHUNK_URL_BASE
+EMBEDDING_URL = EMBEDDING_URL_BASE
+DATABASE_URL = DATABASE_URL_BASE
 
 
 def call_api(url, endpoint, method="GET", headers=None, data=None, files=None, timeout=100):
@@ -57,28 +61,24 @@ def call_api(url, endpoint, method="GET", headers=None, data=None, files=None, t
     
 
 def test_services():
-    #Test the transcription and chunking services with a timeout
     logger.info("Starting service tests...")
-    
-    # Test transcription service
     headers = {"X-API-Key": API_KEY}
-    test_transcription_response = call_api(
-        TRANSCRIPTION_URL, "/test", headers=headers, timeout=10 # increased from 5 to 10
-    )
-    if test_transcription_response and test_transcription_response.get("status") == "success":
-        logger.info("Transcription service test successful.")
-    else:
-        logger.error(f"Transcription service test failed. Response: {test_transcription_response}")
-        return False
-
-    # Test chunking service
-    test_chunk_response = call_api(CHUNK_URL, "/test", headers=headers, timeout=10  # Increased from 5 to 10
-)
-    if test_chunk_response and test_chunk_response.get("status") == "success":
-        logger.info("Chunking service test successful.")
-    else:
-        logger.error(f"Chunking service test failed. Response: {test_chunk_response}")
-        return False
+    
+    # Test all services
+    services = {
+        "transcription": TRANSCRIPTION_URL,
+        "chunking": CHUNK_URL,
+        "embedding": EMBEDDING_URL,
+        "database": DATABASE_URL
+    }
+    
+    for service_name, url in services.items():
+        test_response = call_api(url, "/test", headers=headers, timeout=10)
+        if test_response and test_response.get("status") == "success":
+            logger.info(f"{service_name.capitalize()} service test successful.")
+        else:
+            logger.error(f"{service_name.capitalize()} service test failed. Response: {test_response}")
+            return False
     
     logger.info("All services tested successfully.")
     return True
@@ -141,6 +141,71 @@ def chunk_text(document):
         logger.error(f"Chunking failed: {chunk_response.get('error')}")
         return None
 
+def create_embeddings(chunks):
+    """Create embeddings for the text chunks using the embedding service."""
+    logger.info("Starting embedding creation...")
+    
+    headers = {"X-API-Key": API_KEY, "Content-Type": "application/json"}
+    data = json.dumps({
+        "status": "success",
+        "chunks": chunks
+    })
+    
+    embedding_response = call_api(
+        EMBEDDING_URL,
+        "/embed",
+        method="POST",
+        headers=headers,
+        data=data
+    )
+    
+    if not embedding_response:
+        logger.error("Embedding creation failed (check previous errors)")
+        return None
+        
+    if embedding_response.get("status") == "success":
+        logger.info("Embedding creation successful.")
+        return embedding_response.get("chunks")
+    else:
+        logger.error(f"Embedding creation failed: {embedding_response}")
+        return None
+
+def store_in_database(chunks):
+    """Store the embedded chunks in the database."""
+    logger.info("Storing documents in database...")
+    
+    # Convert chunks to documents format expected by database
+    documents = []
+    for chunk in chunks:
+        documents.append({
+            "text": chunk["text"],
+            "metadata": chunk["metadata"]
+        })
+    
+    headers = {"X-API-Key": API_KEY, "Content-Type": "application/json"}
+    data = json.dumps({
+        "status": "success",
+        "documents": documents
+    })
+    
+    database_response = call_api(
+        DATABASE_URL,
+        "/add",
+        method="POST",
+        headers=headers,
+        data=data
+    )
+    
+    if not database_response:
+        logger.error("Database storage failed (check previous errors)")
+        return None
+        
+    if database_response.get("status") == "success":
+        logger.info("Database storage successful.")
+        return database_response
+    else:
+        logger.error(f"Database storage failed: {database_response}")
+        return None
 
 def main():
     """Main orchestration logic."""
@@ -165,13 +230,22 @@ def main():
          logger.error("Transcription failed. Aborting orchestration.")
          sys.exit(1)
 
-    chunked_document = chunk_text(transcription_doc)
-    if not chunked_document:
+    chunked_response = chunk_text(transcription_doc)
+    if not chunked_response:
          logger.error("Chunking failed. Aborting orchestration.")
+         sys.exit(1)
+    
+    embedded_chunks = create_embeddings(chunked_response.get("chunks", []))
+    if not embedded_chunks:
+         logger.error("Embedding failed. Aborting orchestration.")
+         sys.exit(1)
+    
+    storage_response = store_in_database(embedded_chunks)
+    if not storage_response:
+         logger.error("Database storage failed. Aborting orchestration.")
          sys.exit(1)
          
     logger.info("Orchestration completed successfully.")
-    logger.info(f"Chunked document: {chunked_document}")
 
 
 if __name__ == "__main__":
