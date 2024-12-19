@@ -12,7 +12,7 @@ At the moment, the orchestrator only calls the endpoints and does not run the do
    echo "API_KEY=your_api_key_here" > .env
    ```
 
-2. **Run the orchestrator:**
+2. **Build and run the Containers:**
    ```bash
    # Build Docker images
    docker build -t data-transcription-openai .
