@@ -1,6 +1,6 @@
 # Orchestrator Service
 
-This is a Python-based orchestrator that coordinates the transcription and text chunking services. It handles the flow of data between services and manages the overall pipeline.
+This is a Python-based orchestrator that coordinates the transcription, text chunking, embedding and database services. It handles the flow of data between services and manages the overall pipeline.
 
 At the moment, the orchestrator only calls the endpoints and does not run the docker containers. Start the docker containers before running the orchestrator on the ports specified in the following README.
 
@@ -14,6 +14,21 @@ At the moment, the orchestrator only calls the endpoints and does not run the do
 
 2. **Run the orchestrator:**
    ```bash
+   # Build Docker images
+   docker build -t data-transcription-openai .
+   docker build -t text-chunking .
+   docker build -t embedding .
+   docker build -t chroma-database .
+
+   # Run Docker containers
+   docker run -d -p 8000:8000 -v ${PWD}/app:/app -v ${PWD}/../../_data/models/whisper_cpp:/whisper.cpp/models --name whisper-cpp whisper-cpp
+   docker run -d -p 8001:8000 -v ${PWD}/app:/app -v ${PWD}/../_data:/data text-chunking
+   docker run -d -p 8002:8000 -v ${PWD}/app:/app embedding
+   docker run -d -p 8003:8000 -v ${PWD}/app:/app -v ${PWD}/../_data:/data chroma-database
+   ```
+   
+3. **Run the orchestrator:**
+   ```bash
    python orchestrator.py path/to/your/audio_file.wav
    ```
 
@@ -22,6 +37,8 @@ At the moment, the orchestrator only calls the endpoints and does not run the do
 The orchestrator connects to:
 - Transcription service on port 8000
 - Text chunking service on port 8001
+- Embedding service on port 8002
+- Database service on port 8003
 Make sure the Docker services are running on the specified ports and are accessible from the orchestrator.
 
 ## Endpoints Used
@@ -33,6 +50,14 @@ Make sure the Docker services are running on the specified ports and are accessi
 ### Chunking Service (Port 8001)
 - **GET /test**: Health check
 - **POST /chunk/json**: Process text into chunks
+
+### Embedding Service (Port 8002)
+- **GET /test**: Health check
+- **POST /embed**: Embed the chunks
+
+### Database Service (Port 8003)
+- **GET /test**: Health check
+- **POST /add**: Add the data (chunks and embeddings) into the database
 
 ## Example Usage
 
