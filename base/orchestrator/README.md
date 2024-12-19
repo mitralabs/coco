@@ -39,7 +39,7 @@ The orchestrator connects to:
 - Text chunking service on port 8001
 - Embedding service on port 8002
 - Database service on port 8003
-Make sure the Docker services are running on the specified ports and are accessible from the orchestrator.
+- Make sure the Docker services are running on the specified ports and are accessible from the orchestrator.
 
 ## Endpoints Used
 
