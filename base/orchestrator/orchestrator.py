@@ -171,7 +171,6 @@ def create_embeddings(chunks):
         return None
 
 def store_in_database(chunks):
-    """Store the embedded chunks in the database."""
     logger.info("Storing documents in database...")
     
     # Convert chunks to documents format expected by database
