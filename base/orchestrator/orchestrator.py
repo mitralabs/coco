@@ -45,7 +45,9 @@ def call_api(url, endpoint, method="GET", headers=None, data=None, files=None, t
         )
         response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
         try:
-            return response.json()
+            json_response = response.json()
+            print(f"Response from {full_url}: {json_response}")  # Print the response
+            return json_response
         except json.JSONDecodeError:
             logger.error(f"Invalid JSON response from {full_url}: Response Content: {response.text}")
             return None
@@ -99,6 +101,7 @@ def transcribe_audio(audio_file_path):
                 headers=headers,
                 files=files,
             )
+            #print(f"Transcription response: {transcription_response}")  # Print the transcription response
             
     except FileNotFoundError:
       logger.error(f"Error: Audio file not found at '{audio_file_path}'")
@@ -129,6 +132,7 @@ def chunk_text(document):
         headers=headers,
         data=data
     )
+    #print(f"Chunking response: {chunk_response}")  # Print the chunking response
     
     if not chunk_response:
         logger.error("Chunking failed (check previous errors)")
@@ -158,6 +162,7 @@ def create_embeddings(chunks):
         headers=headers,
         data=data
     )
+    #print(f"Embedding response: {embedding_response}")  # Print the embedding response
     
     if not embedding_response:
         logger.error("Embedding creation failed (check previous errors)")
@@ -178,7 +183,8 @@ def store_in_database(chunks):
     for chunk in chunks:
         documents.append({
             "text": chunk["text"],
-            "metadata": chunk["metadata"]
+            "metadata": chunk["metadata"],
+            "embeddings": chunk["embedding"]
         })
     
     headers = {"X-API-Key": API_KEY, "Content-Type": "application/json"}
@@ -194,6 +200,7 @@ def store_in_database(chunks):
         headers=headers,
         data=data
     )
+    #print(f"Database response: {database_response}")  # Print the database response
     
     if not database_response:
         logger.error("Database storage failed (check previous errors)")
