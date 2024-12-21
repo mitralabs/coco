@@ -68,7 +68,7 @@ python orchestrator.py ../data/sample.wav
 
 ## Notes
 
-- Ensure both transcription and chunking services are running before using the orchestrator
+- Ensure all Containers are running before using the orchestrator
 - Default chunk size is 1000 with 200 overlap
 - Uses 127.0.0.1 for local connections (more reliable than localhost on Windows)
 - The orchestrator will run a health check on the transcription and chunking services before processing the audio file.
