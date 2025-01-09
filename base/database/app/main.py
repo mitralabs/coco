@@ -55,6 +55,11 @@ class QueryResponse(BaseModel):
     status: str
     results: List[Dict[str, Any]]
 
+class AllDocumentsResponse(BaseModel):
+    status: str
+    count: int
+    documents: List[Dict[str, Any]]
+
 @app.post("/add", response_model=DocumentsResponse)
 async def add_documents(request: DocumentsRequest, api_key: str = Depends(get_api_key)):
     """
@@ -106,6 +111,39 @@ async def query_documents(request: QueryRequest, api_key: str = Depends(get_api_
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to query documents: {str(e)}"
+        )
+
+@app.get("/all", response_model=AllDocumentsResponse)
+async def get_all_documents(api_key: str = Depends(get_api_key)):
+    """
+    Retrieve all documents from the Chroma collection.
+    """
+    try:
+        # Get all documents (using a large number to ensure we get everything)
+        results = collection.query(
+            query_texts=[""],  # Empty query to match everything
+            n_results=10000,   # Large number to get all documents
+            include=["documents", "metadatas", "distances"]
+        )
+        
+        # Format the results into a list of dictionaries
+        formatted_documents = []
+        for i in range(len(results['documents'][0])):
+            formatted_documents.append({
+                'document': results['documents'][0][i],
+                'metadata': results['metadatas'][0][i],
+                'distance': results['distances'][0][i]
+            })
+
+        return AllDocumentsResponse(
+            status="success",
+            count=len(formatted_documents),
+            documents=formatted_documents
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve documents: {str(e)}"
         )
 
 # Super basic test endpoint
