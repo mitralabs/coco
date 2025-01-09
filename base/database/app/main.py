@@ -38,6 +38,7 @@ class DocumentMetadata(BaseModel):
 class Document(BaseModel):
     text: str
     metadata: DocumentMetadata
+    embeddings: List[float]
 
 class DocumentsRequest(BaseModel):
     status: str
@@ -76,9 +77,15 @@ async def add_documents(request: DocumentsRequest, api_key: str = Depends(get_ap
             }
             for doc in request.documents
         ]
+        embeddings = [doc.embeddings for doc in request.documents]
         ids = [f"doc_{i}" for i in range(len(documents))]
 
-        collection.add(documents=documents, metadatas=metadatas, ids=ids)
+        collection.add(
+            documents=documents,
+            metadatas=metadatas,
+            embeddings=embeddings,
+            ids=ids
+        )
 
         return DocumentsResponse(status="success", message="Documents added successfully")
     except Exception as e:
