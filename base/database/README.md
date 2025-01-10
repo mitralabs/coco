@@ -161,7 +161,6 @@ The service requires the following environment variables:
 ## Notes
 
 - The service uses ChromaDB for efficient vector storage and similarity search
-- All endpoints require API key authentication via the X-API-Key header
+- All endpoints require API key authentication
 - Documents are stored with their metadata for easy retrieval and filtering
-- The service maintains document embeddings for similarity search
 - For more information on ChromaDB, visit the [ChromaDB Documentation](https://github.com/chroma-core/chroma)
