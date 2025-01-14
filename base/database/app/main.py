@@ -126,20 +126,18 @@ async def get_all_documents(api_key: str = Depends(get_api_key)):
     Retrieve all documents from the Chroma collection.
     """
     try:
-        # Get all documents (using a large number to ensure we get everything)
-        results = collection.query(
-            query_texts=[""],  # Empty query to match everything
-            n_results=10000,   # Large number to get all documents
-            include=["documents", "metadatas", "distances"]
+        # Get all documents using collection.get()
+        results = collection.get(
+            include=["documents", "metadatas"]
         )
         
         # Format the results into a list of dictionaries
         formatted_documents = []
-        for i in range(len(results['documents'][0])):
+        for i in range(len(results['documents'])):
             formatted_documents.append({
-                'document': results['documents'][0][i],
-                'metadata': results['metadatas'][0][i],
-                'distance': results['distances'][0][i]
+                'document': results['documents'][i],
+                'metadata': results['metadatas'][i],
+                'distance': 0  # No distance since we're not doing similarity search
             })
 
         return AllDocumentsResponse(
