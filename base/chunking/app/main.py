@@ -3,11 +3,9 @@ from fastapi.security.api_key import APIKeyHeader
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import os
-from dotenv import load_dotenv
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from typing import List, Optional, Dict, Any
 
-load_dotenv()  # Load environment variables from .env file
 
 app = FastAPI()
 
@@ -110,4 +108,4 @@ async def chunk_json(
 # Keep the test endpoint for basic connectivity testing
 @app.get("/test")
 async def test_endpoint(api_key: str = Depends(get_api_key)):
-    return {"status": "success", "message": "Test endpoint accessed successfully"}
+    return {"status": "success", "message": "Chunking service: Test endpoint accessed successfully"}

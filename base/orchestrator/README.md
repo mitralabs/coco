@@ -5,29 +5,10 @@ This is a Python-based orchestrator that coordinates the transcription, text chu
 At the moment, the orchestrator only calls the endpoints and does not run the docker containers. Start the docker containers before running the orchestrator on the ports specified in the following README.
 
 ## Usage
-
-1. **Set up environment:**
-   ```bash
-   # Create a .env file with your API key
-   echo "API_KEY=your_api_key_here" > .env
-   ```
-
-2. **Build and run the Containers:**
-   ```bash
-   # Build Docker images
-   docker build -t data-transcription-openai .
-   docker build -t text-chunking .
-   docker build -t embedding .
-   docker build -t chroma-database .
-
-   # Run Docker containers
-   docker run -d -p 8000:8000 -v ${PWD}/app:/app -v ${PWD}/../../_data/models/whisper_cpp:/whisper.cpp/models --name whisper-cpp whisper-cpp
-   docker run -d -p 8001:8000 -v ${PWD}/app:/app -v ${PWD}/../_data:/data text-chunking
-   docker run -d -p 8002:8000 -v ${PWD}/app:/app embedding
-   docker run -d -p 8003:8000 -v ${PWD}/app:/app -v ${PWD}/../_data:/data chroma-database
-   ```
+1. **Make sure all services run**  
+   Follow [this readme](../README.md).
    
-3. **Run the orchestrator:**
+2. **Run the orchestrator:**
    ```bash
    python orchestrator.py path/to/your/audio_file.wav
    ```

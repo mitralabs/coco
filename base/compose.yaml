@@ -1,0 +1,76 @@
+services:
+
+  transcription:
+    build:
+      context: ./transcription/whisper_openai
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./transcription/whisper_openai/app:/app
+      - ./_data:/data-transcription-openai
+    environment:
+      - API_KEY=test
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
+      interval: 5s
+      timeout: 30s
+      retries: 10
+      start_period: 30s
+
+  chunking:
+    build:
+      context: ./chunking
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./chunking/app:/app
+      - ./_data:/data
+    environment:
+      - API_KEY=test
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
+      interval: 5s
+      timeout: 30s
+      retries: 10
+      start_period: 30s
+
+  embedding:
+    build:
+      context: ./embedding
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8000"
+    volumes:
+      - ./embedding/app:/app
+    environment:
+      - API_KEY=test
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
+      interval: 5s
+      timeout: 30s
+      retries: 10
+      start_period: 30s
+
+  database:
+    build:
+      context: ./database
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8000"
+    volumes:
+      - ./database/app:/app
+      - ./_data:/data
+    environment:
+      - API_KEY=test
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
+      interval: 5s
+      timeout: 30s
+      retries: 10
+      start_period: 30s

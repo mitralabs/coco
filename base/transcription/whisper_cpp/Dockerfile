@@ -10,6 +10,9 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
+# Install curl for health checks
+RUN apt-get update && apt-get install -y curl
+
 # Clone the whisper.cpp repository
 RUN git clone https://github.com/ggerganov/whisper.cpp.git
 
@@ -24,8 +27,6 @@ WORKDIR /
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
-COPY .env .
 
 WORKDIR /app
 

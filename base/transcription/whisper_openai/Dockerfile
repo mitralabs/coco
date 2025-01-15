@@ -7,13 +7,15 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
+# Install curl for health checks
+RUN apt-get update && apt-get install -y curl
+
 # Copy requirements and install dependencies
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 # Copy the main.py file directly into the working directory
 COPY app/main.py main.py
-COPY app/.env .
 
 # Create directory for models
 RUN mkdir -p /data/models
