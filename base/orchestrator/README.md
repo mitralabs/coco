@@ -7,8 +7,13 @@ At the moment, the orchestrator only calls the endpoints and does not run the do
 ## Usage
 1. **Make sure all services run**  
    Follow [this readme](../README.md).
+
+2. **Install Dependencies**
+   - Setup a virtual environment if you want to.
+   - Follow [this readme](../sdk/README.md) to install the Coco Python SDK.
+   - Install additional modules used in `orchestrator.py` manually.
    
-2. **Run the orchestrator:**
+3. **Run the orchestrator:**
    ```bash
    python orchestrator.py path/to/your/audio_file.wav
    ```

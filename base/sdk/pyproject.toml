@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cocosdk"
+version = "0.0.1"
+authors = [
+  { name = "Nicolas Stellwag", email = "stellwagnicolas@gmail.com" },
+  { name = "Alexander Wiener", email = "alex.wiener85@gmail.com" },
+]
+description = "Python SDK for the Coco Base API."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+]
+license = "MPL-2.0"
+license-files = ["LICEN[CS]E*"]
+dependencies = ["requests"]
+
+[project.optional-dependencies]
+dev = []
+test = ["pytest"]
+
+[project.urls]
+Homepage = "https://github.com/mitralabs/coco"
+Issues = "https://github.com/mitralabs/coco/issues"
