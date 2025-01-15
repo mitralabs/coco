@@ -59,6 +59,15 @@ class AllDocumentsResponse(BaseModel):
     count: int
     documents: List[Dict[str, Any]]
 
+class DeleteResponse(BaseModel):
+    status: str
+    message: str
+    count: int
+
+# Add these configurations after the API_KEY setup
+BASE_URL = "https://ollama.mitra-labs.ai/api"
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "nomic-embed-text")
+
 @app.post("/add", response_model=DocumentsResponse)
 async def add_documents(request: DocumentsRequest, api_key: str = Depends(get_api_key)):
     """
@@ -118,26 +127,24 @@ async def query_documents(request: QueryRequest, api_key: str = Depends(get_api_
             detail=f"Failed to query documents: {str(e)}"
         )
 
-@app.get("/all", response_model=AllDocumentsResponse)
+@app.get("/get_all", response_model=AllDocumentsResponse)
 async def get_all_documents(api_key: str = Depends(get_api_key)):
     """
     Retrieve all documents from the Chroma collection.
     """
     try:
-        # Get all documents (using a large number to ensure we get everything)
-        results = collection.query(
-            query_texts=[""],  # Empty query to match everything
-            n_results=10000,   # Large number to get all documents
-            include=["documents", "metadatas", "distances"]
+        # Get all documents using collection.get()
+        results = collection.get(
+            include=["documents", "metadatas"]
         )
         
         # Format the results into a list of dictionaries
         formatted_documents = []
-        for i in range(len(results['documents'][0])):
+        for i in range(len(results['documents'])):
             formatted_documents.append({
-                'document': results['documents'][0][i],
-                'metadata': results['metadatas'][0][i],
-                'distance': results['distances'][0][i]
+                'document': results['documents'][i],
+                'metadata': results['metadatas'][i],
+                'distance': 0  # No distance since we're not doing similarity search
             })
 
         return AllDocumentsResponse(
@@ -149,6 +156,31 @@ async def get_all_documents(api_key: str = Depends(get_api_key)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve documents: {str(e)}"
+        )
+
+@app.delete("/delete_all", response_model=DeleteResponse)
+async def delete_all_documents(api_key: str = Depends(get_api_key)):
+    """
+    Delete all documents from the Chroma collection.
+    """
+    try:
+        # Get all document IDs first
+        results = collection.get()
+        count = len(results['ids'])
+        
+        if count > 0:
+            # Delete all documents using their IDs
+            collection.delete(ids=results['ids'])
+        
+        return DeleteResponse(
+            status="success",
+            message="All documents deleted successfully",
+            count=count
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete documents: {str(e)}"
         )
 
 # Super basic test endpoint
