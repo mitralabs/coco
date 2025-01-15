@@ -23,7 +23,7 @@ This is a FastAPI-based service that provides vector database functionality usin
 
 ## Usage
 
-The service provides three endpoints:
+The service provides these endpoints:
 
 ### 1. Add Documents Endpoint (`/add`)
 
@@ -76,51 +76,31 @@ Parameters:
 - `query_text`: The text to search for (required)
 - `n_results`: Number of results to return (optional, default: 5)
 
-### 3. Get All Documents Endpoint (`/all`)
+### 3. Get All Documents Endpoint (`/get_all`)
 
 Send a GET request to retrieve all documents from the collection:
 
 ```bash
-curl -X GET "http://localhost:8000/all" \
+curl -X GET "http://localhost:8000/get_all" \
      -H "X-API-Key: your_api_key"
 ```
 
-Response format:
-```json
-{
-  "status": "success",
-  "count": 2,
-  "documents": [
-    {
-      "document": "Document content here",
-      "metadata": {
-        "language": "en",
-        "filename": "example.txt",
-        "chunk_index": 0,
-        "total_chunks": 1
-      },
-      "distance": 0.0
-    },
-    {
-      "document": "Another document content",
-      "metadata": {
-        "language": "en",
-        "filename": "example2.txt",
-        "chunk_index": 1,
-        "total_chunks": 2
-      },
-      "distance": 0.0
-    }
-  ]
-}
+### 4. Delete All Documents Endpoint (`/delete_all`)
+
+Send a DELETE request to remove all documents from the collection:
+
+```bash
+curl -X DELETE "http://localhost:8000/delete_all" \
+     -H "X-API-Key: your_api_key"
 ```
 
-### 4. Test Endpoint (`/test`)
+### 5. Test Endpoint (`/test`)
 
 Basic endpoint to verify the service is running:
 
 ```bash
-curl -X GET -H "X-API-Key: your_api_key" http://localhost:8000/test
+curl -X GET "http://localhost:8000/test" \
+     -H "X-API-Key: your_api_key"
 ```
 
 ## Response Formats
@@ -149,6 +129,35 @@ curl -X GET -H "X-API-Key: your_api_key" http://localhost:8000/test
       "distances": [0.123]
     }
   ]
+}
+```
+
+### Get All Documents Response:
+```json
+{
+  "status": "success",
+  "count": 2,
+  "documents": [
+    {
+      "document": "Document content here",
+      "metadata": {
+        "language": "en",
+        "filename": "example.txt",
+        "chunk_index": 0,
+        "total_chunks": 1
+      },
+      "distance": 0.0
+    }
+  ]
+}
+```
+
+### Delete All Response:
+```json
+{
+  "status": "success",
+  "message": "All documents deleted successfully",
+  "count": 2
 }
 ```
 
