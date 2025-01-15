@@ -23,4 +23,4 @@ def get_api_key(api_key: str = Depends(api_key_header)):
 # Super basic test endpoint
 @app.get("/test")
 async def test_endpoint(api_key: str = Depends(get_api_key)):
-    return {"status": "success", "message": "Test endpoint accessed successfully"}
+    return {"status": "success", "message": "[TEMPLATE] service: Test endpoint accessed successfully"}

@@ -3,11 +3,9 @@ from fastapi.security.api_key import APIKeyHeader
 from pydantic import BaseModel
 import os
 import httpx
-from dotenv import load_dotenv
 from typing import List, Optional, Dict, Any
 import json
 
-load_dotenv()
 
 app = FastAPI()
 
@@ -106,4 +104,4 @@ async def embed_text(request: ChunksRequest, api_key: str = Depends(get_api_key)
 # Health check endpoint
 @app.get("/test")
 async def test_endpoint(api_key: str = Depends(get_api_key)):
-    return {"status": "success", "message": "Test endpoint accessed successfully"}
+    return {"status": "success", "message": "Embedding service: Test endpoint accessed successfully"}

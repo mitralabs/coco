@@ -4,10 +4,6 @@ from fastapi.security.api_key import APIKeyHeader
 import whisper
 import tempfile
 import os
-from dotenv import load_dotenv
-
-dotenv_path = os.path.join(os.getcwd(), ".env")
-load_dotenv(dotenv_path=dotenv_path)
 
 app = FastAPI()
 
@@ -66,4 +62,4 @@ async def transcribe_audio(audio_file: UploadFile = File(...), api_key: str = De
 # Keep the endpoint for health checks
 @app.get("/test")
 async def test_endpoint(api_key: str = Depends(get_api_key)):
-    return {"status": "success", "message": "Test endpoint accessed successfully"}
+    return {"status": "success", "message": "Transcription service (openai): Test endpoint accessed successfully"}

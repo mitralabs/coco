@@ -5,10 +5,6 @@ import tempfile
 import os
 import json
 import subprocess
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()  # loads environment variables from.env file
 
 app = FastAPI()
 

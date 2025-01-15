@@ -2,11 +2,9 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security.api_key import APIKeyHeader
 from pydantic import BaseModel
 import os
-from dotenv import load_dotenv
 import chromadb
 from typing import List, Optional, Dict, Any
 
-load_dotenv()  # Load environment variables from .env file
 
 app = FastAPI()
 
@@ -156,4 +154,4 @@ async def get_all_documents(api_key: str = Depends(get_api_key)):
 # Super basic test endpoint
 @app.get("/test")
 async def test_endpoint(api_key: str = Depends(get_api_key)):
-    return {"status": "success", "message": "Test endpoint accessed successfully"}
+    return {"status": "success", "message": "Database service: Test endpoint accessed successfully"}
