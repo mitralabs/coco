@@ -11,8 +11,17 @@ load_dotenv(dotenv_path=dotenv_path)
 
 app = FastAPI()
 
-# Load the Whisper model
-model = whisper.load_model("tiny", download_root="/data/models")
+# Load the Whisper model at startup
+model = None
+
+@app.on_event("startup")
+async def load_model():
+    global model
+    try:
+        model = whisper.load_model("tiny", download_root="/data/models")
+        print("Whisper model loaded successfully.")
+    except Exception as e:
+        print(f"Error loading Whisper model: {e}")
 
 # API Key Authentication
 API_KEY = os.getenv("API_KEY")
@@ -29,6 +38,9 @@ def get_api_key(api_key: str = Depends(api_key_header)):
 
 @app.post("/transcribe/")
 async def transcribe_audio(audio_file: UploadFile = File(...), api_key: str = Depends(get_api_key)):
+    if model is None:
+        raise HTTPException(status_code=500, detail="Model not loaded")
+    
     try:
         # Create a temporary file to store the uploaded audio
         with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_audio:
@@ -66,4 +78,6 @@ async def transcribe_audio(audio_file: UploadFile = File(...), api_key: str = De
 # Keep the endpoint for health checks
 @app.get("/test")
 async def test_endpoint(api_key: str = Depends(get_api_key)):
+    if model is None:
+        raise HTTPException(status_code=500, detail="Model not loaded")
     return {"status": "success", "message": "Test endpoint accessed successfully"}
