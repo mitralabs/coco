@@ -76,4 +76,4 @@ async def transcribe_audio(audio_file: UploadFile = File(...), api_key: str = De
 async def test_endpoint(api_key: str = Depends(get_api_key)):
     if model is None:
         raise HTTPException(status_code=500, detail="Model not loaded")
-    return {"status": "success", "message": "Test endpoint accessed successfully"}
+    return {"status": "success", "message": "Transcription service (openai): Test endpoint accessed successfully"}
