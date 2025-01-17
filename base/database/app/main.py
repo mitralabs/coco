@@ -10,6 +10,7 @@ import httpx
 app = FastAPI()
 
 # API Key Authentication
+EMBEDDING_URL = os.getenv("EMBEDDING_URL")
 API_KEY = os.getenv("API_KEY")
 if not API_KEY:
     raise ValueError("API_KEY environment variable must be set")
@@ -101,23 +102,11 @@ async def add_documents(request: DocumentsRequest, api_key: str = Depends(get_ap
 
 @app.post("/query", response_model=QueryResponse)
 async def query_documents(request: QueryRequest, api_key: str = Depends(get_api_key)):
+   
     try:        
         async with httpx.AsyncClient(timeout=30.0, verify=False) as client:
-            # Test connection to the embedding service
-            test_url = "http://172.18.0.5:8000/test"
-            test_response = await client.get(
-                test_url,
-                headers={"X-API-Key": API_KEY}
-            )
-            
-            if test_response.status_code != 200:
-                raise HTTPException(
-                    status_code=status.HTTP_502_BAD_GATEWAY,
-                    detail={"message": "Failed to connect to embedding service"}
-                )
-
             # Now make the embedding request
-            embedding_url = "http://172.18.0.5:8000/embed_text"
+            embedding_url = f"{EMBEDDING_URL}/embed_text"
             embedding_response = await client.post(
                 embedding_url,
                 headers={
@@ -128,6 +117,7 @@ async def query_documents(request: QueryRequest, api_key: str = Depends(get_api_
                     "text": request.query_text
                 }
             )
+            
             if embedding_response.status_code != 200:
                 raise HTTPException(
                     status_code=status.HTTP_502_BAD_GATEWAY,

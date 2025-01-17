@@ -67,6 +67,7 @@ services:
       - ./_data:/data
     environment:
       - API_KEY=test
+      - EMBEDDING_URL=http://embedding:8000
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
