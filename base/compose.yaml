@@ -8,7 +8,7 @@ services:
       - "8000:8000"
     volumes:
       - ./transcription/whisper_openai/app:/app
-      - ./_data:/data-transcription-openai
+      - ./_data:/data
     environment:
       - API_KEY=test
     restart: unless-stopped
