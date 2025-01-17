@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import os
 import chromadb
 from typing import List, Optional, Dict, Any
+import httpx
 
 
 app = FastAPI()
@@ -64,9 +65,6 @@ class DeleteResponse(BaseModel):
     message: str
     count: int
 
-# Add these configurations after the API_KEY setup
-BASE_URL = "https://ollama.mitra-labs.ai/api"
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "nomic-embed-text")
 
 @app.post("/add", response_model=DocumentsResponse)
 async def add_documents(request: DocumentsRequest, api_key: str = Depends(get_api_key)):
@@ -103,12 +101,63 @@ async def add_documents(request: DocumentsRequest, api_key: str = Depends(get_ap
 
 @app.post("/query", response_model=QueryResponse)
 async def query_documents(request: QueryRequest, api_key: str = Depends(get_api_key)):
-    """
-    Query similar documents from Chroma collection.
-    """
-    try:
+    try:        
+        async with httpx.AsyncClient(timeout=30.0, verify=False) as client:
+            # Test connection to the embedding service
+            test_url = "http://172.18.0.5:8000/test"
+            test_response = await client.get(
+                test_url,
+                headers={"X-API-Key": API_KEY}
+            )
+            logs.append(f"Test response status code: {test_response.status_code}")
+            logs.append(f"Test response content: {test_response.text}")
+            
+            if test_response.status_code != 200:
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail={"message": "Failed to connect to embedding service", "logs": logs}
+                )
+            
+            logs.append("=== Test Connection Successful ===")
+            logs.append("Proceeding with embedding request...")
+
+            # Now make the embedding request
+            embedding_url = "http://172.18.0.5:8000/embed_text"
+            embedding_response = await client.post(
+                embedding_url,
+                headers={
+                    "X-API-Key": API_KEY,
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "text": request.query_text
+                }
+            )
+            logs.append(f"Embedding response status code: {embedding_response.status_code}")
+            logs.append(f"Embedding response content: {embedding_response.text}")
+
+            if embedding_response.status_code != 200:
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail={"message": "Failed to get embedding for query text", "logs": logs}
+                )
+            
+            # Log the embedding response
+            embedding_data = embedding_response.json()
+            logs.append(f"Embedding data received: {embedding_data}")
+
+            # Ensure the embedding data is in the expected format
+            if "embedding" not in embedding_data:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail={"message": "Invalid response format from embedding service", "logs": logs}
+                )
+            
+            query_embedding = embedding_data["embedding"]
+
+        # Query Chroma using the embedding
         results = collection.query(
-            query_texts=[request.query_text],
+            query_embeddings=[query_embedding],
             n_results=request.n_results,
             include=[
                 "documents",
@@ -117,14 +166,27 @@ async def query_documents(request: QueryRequest, api_key: str = Depends(get_api_
             ]
         )
 
+        # Format the results to match the expected QueryResponse structure
+        formatted_results = []
+        for i in range(len(results['documents'])):
+            formatted_results.append({
+                'id': results['ids'][i],
+                'document': results['documents'][i],
+                'metadata': results['metadatas'][i],
+                'distance': results['distances'][i] if 'distances' in results else None
+            })
+
         return QueryResponse(
             status="success",
-            results=results
+            results=formatted_results  # Ensure this is a valid list
         )
     except Exception as e:
+        logs.append("=== Unexpected Error ===")
+        logs.append(f"Error type: {type(e).__name__}")
+        logs.append(f"Error message: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to query documents: {str(e)}"
+            detail={"message": f"Failed to query documents: {str(e)}", "logs": logs}
         )
 
 @app.get("/get_all", response_model=AllDocumentsResponse)
