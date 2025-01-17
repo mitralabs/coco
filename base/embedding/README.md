@@ -23,7 +23,7 @@ This FastAPI-based service generates embeddings for text chunks using the Ollama
 
 ## Usage
 
-The service provides two main endpoints:
+The service provides three main endpoints:
 
 ### 1. Pull Model Endpoint
 
@@ -33,12 +33,12 @@ First, ensure the embedding model is available https://ollama.com/search
 curl -X GET -H "X-API-Key: your_api_key_here" http://localhost:8000/model/pull
 ```
 
-### 2. Embedding Endpoint
+### 2. Embed Chunks Endpoint
 
-Send text chunks for embedding:
+Send multiple text chunks for embedding:
 
 ```bash
-curl -X POST "http://localhost:8000/embed" \
+curl -X POST "http://localhost:8000/embed_chunks" \
      -H "X-API-Key: your_api_key_here" \
      -H "Content-Type: application/json" \
      -d '{
@@ -77,6 +77,28 @@ The response will maintain the same structure but include embeddings for each ch
 }
 ```
 
+### 3. Embed Single Text Endpoint
+
+Send a single text for embedding:
+
+```bash
+curl -X POST "http://localhost:8000/embed_text" \
+     -H "X-API-Key: your_api_key_here" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "text": "Your text here"
+     }'
+```
+
+The response will contain the embedding vector:
+
+```json
+{
+  "status": "success",
+  "embedding": [0.1, 0.2, 0.3, ...]
+}
+```
+
 ### Health Check
 
 Test if the service is running:
@@ -96,5 +118,5 @@ The service requires the following environment variables:
 
 - The service uses the Ollama API to generate embeddings
 - Ensure your API key is properly set in the environment variables
-- The service maintains the structure of input chunks while adding embeddings
+- The service provides both batch embedding (/embed_chunks) and single text embedding (/embed_text) capabilities
 - All endpoints require API key authentication via the X-API-Key header
