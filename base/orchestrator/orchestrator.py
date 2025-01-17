@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv() # call before imports because sdk package needs API KEY set
 import os
+import json
 import logging
 import sys
 from cocosdk import (
@@ -9,6 +10,7 @@ from cocosdk import (
     chunk_text,
     create_embeddings,
     store_in_database,
+    query_database,
     TRANSCRIPTION_URL,
     CHUNK_URL,
     EMBEDDING_URL,
@@ -94,7 +96,54 @@ def main():
         sys.exit(1)
 
     logger.info("Orchestration completed successfully.")
+    
+def ragquery(query):   
+    
+    PROMPT = """
+        Du bist ein zweites Gehirn für mich, ein Erinnerungsexperte, und deine Aufgabe ist es, basierend auf dem gegebenen Kontext den du aus meinen Erinnerungen in Form von Textausschnitten innerhalb der XML tags die dann folgende Frage so akkurat wie möglich beantwortest. Achte dabei darauf das deine Knowledge Base nur auf dem gegebenen Kontext basiert und du dich streng an das gegebene Format hälst:
+
+        <Kontext> 
+        {Kontext}
+        </Kontext>
+    
+        <Format>
+        Ein Satz mit maximal 50 Tokens. Deine Antwort ist klar und beantwortet die Frage indem es sich direkt auf den Kontext stützt. Gebe bei der Antwort KEINE XML tags oder sonstigen Werte an. Beantworte die Frage ausschließlich auf Deutsch.
+        </Format>
+
+        Du hast jetzt den Kontext in den <Kontext> XML Tags verstanden hast und das Format übernommen. Beantworte nun die nachfolgende Frage innerhalb der <Frage> XML Tags basierend auf dem gegebenen Kontext in den XML tags. Achte dabei darauf die streng an das Format aus den XML Tags zu halten.
+
+        <Frage>
+        {Frage}
+        </Frage>
+    """
+    # use the query_database endpoint to retrieve 5 chunks
+    chunks = query_database(query)  # Retrieve 5 chunks based on the query
+    if not chunks:
+        logger.error("No chunks found for the given query.")
+        return
+
+    # combine the 5 chunks with the question in the given prompt
+    context = "------/n".join(str(chunk['document']) for chunk in chunks)
+    prompt = PROMPT.format(Kontext=context, Frage=query)
+    print(prompt)
+    
+    response = call_api(
+    "https://ollama.mitra-labs.ai", "/api/generate", 
+    method="POST", 
+    data=json.dumps({
+        "model": "llama3.2",
+        "prompt": prompt,
+        "stream": False
+    }),
+    headers={"Content-Type": "application/json"}
+)
+
+    if response and response.get("status") == "success":
+        print(response.get("answer"))  # Print the answer from the LLM
+    else:
+        logger.error(f"LLM request failed. Response: {response}")
 
 
 if __name__ == "__main__":
-    main()
+    ragquery("Was weißt du?")
+    #main()

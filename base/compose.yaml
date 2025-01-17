@@ -14,10 +14,10 @@ services:
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
-      interval: 5s
-      timeout: 30s
+      interval: 1000s
+      timeout: 1000s
       retries: 10
-      start_period: 30s
+      start_period: 1000s
 
   chunking:
     build:
