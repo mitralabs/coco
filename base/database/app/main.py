@@ -109,17 +109,12 @@ async def query_documents(request: QueryRequest, api_key: str = Depends(get_api_
                 test_url,
                 headers={"X-API-Key": API_KEY}
             )
-            logs.append(f"Test response status code: {test_response.status_code}")
-            logs.append(f"Test response content: {test_response.text}")
             
             if test_response.status_code != 200:
                 raise HTTPException(
                     status_code=status.HTTP_502_BAD_GATEWAY,
-                    detail={"message": "Failed to connect to embedding service", "logs": logs}
+                    detail={"message": "Failed to connect to embedding service"}
                 )
-            
-            logs.append("=== Test Connection Successful ===")
-            logs.append("Proceeding with embedding request...")
 
             # Now make the embedding request
             embedding_url = "http://172.18.0.5:8000/embed_text"
@@ -133,24 +128,20 @@ async def query_documents(request: QueryRequest, api_key: str = Depends(get_api_
                     "text": request.query_text
                 }
             )
-            logs.append(f"Embedding response status code: {embedding_response.status_code}")
-            logs.append(f"Embedding response content: {embedding_response.text}")
-
             if embedding_response.status_code != 200:
                 raise HTTPException(
                     status_code=status.HTTP_502_BAD_GATEWAY,
-                    detail={"message": "Failed to get embedding for query text", "logs": logs}
+                    detail={"message": "Failed to get embedding for query text"}
                 )
             
             # Log the embedding response
             embedding_data = embedding_response.json()
-            logs.append(f"Embedding data received: {embedding_data}")
 
             # Ensure the embedding data is in the expected format
             if "embedding" not in embedding_data:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail={"message": "Invalid response format from embedding service", "logs": logs}
+                    detail={"message": "Invalid response format from embedding service"}
                 )
             
             query_embedding = embedding_data["embedding"]
@@ -181,12 +172,9 @@ async def query_documents(request: QueryRequest, api_key: str = Depends(get_api_
             results=formatted_results  # Ensure this is a valid list
         )
     except Exception as e:
-        logs.append("=== Unexpected Error ===")
-        logs.append(f"Error type: {type(e).__name__}")
-        logs.append(f"Error message: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"message": f"Failed to query documents: {str(e)}", "logs": logs}
+            detail={"message": f"Failed to query documents: {str(e)}"}
         )
 
 @app.get("/get_all", response_model=AllDocumentsResponse)
