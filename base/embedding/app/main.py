@@ -45,7 +45,7 @@ def get_api_key(api_key: str = Depends(api_key_header)):
         )
     return api_key
 
-@app.post("/embed", response_model=ChunksResponse)
+@app.post("/embed_chunks", response_model=ChunksResponse)
 async def embed_text(request: ChunksRequest, api_key: str = Depends(get_api_key)):
     """
     Get embeddings for chunks of text using the Ollama API

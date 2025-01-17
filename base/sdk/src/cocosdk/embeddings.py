@@ -18,7 +18,7 @@ def create_embeddings(chunks):
     data = json.dumps({"status": "success", "chunks": chunks})
 
     embedding_response = call_api(
-        EMBEDDING_URL, "/embed", method="POST", headers=headers, data=data
+        EMBEDDING_URL, "/embed_chunks", method="POST", headers=headers, data=data
     )
     # print(f"Embedding response: {embedding_response}")  # Print the embedding response
 
