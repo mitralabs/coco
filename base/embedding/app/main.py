@@ -11,8 +11,8 @@ app = FastAPI()
 
 # Configuration
 API_KEY = os.getenv("API_KEY")
-BASE_URL = "https://ollama.mitra-labs.ai/api"
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "nomic-embed-text")
+BASE_URL = os.getenv("BASE_URL")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 
 if not API_KEY:
     raise ValueError("API_KEY environment variable must be set")
