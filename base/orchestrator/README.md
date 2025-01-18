@@ -2,7 +2,7 @@
 
 This is a Python-based orchestrator that coordinates the transcription, text chunking, embedding, and database services. It handles the flow of data between services and manages the overall pipeline.
 
-At the moment, the orchestrator only calls the endpoints and does not run the docker containers. Start the docker containers before running the orchestrator on the ports specified in the following README.
+At the moment, the orchestrator only calls the endpoints and does not run the docker containers. Start the docker containers before running the orchestrator on the ports specified in the following README by using the SDK and compose.yaml file.
 
 ## Usage
 1. **Make sure all services run**  
