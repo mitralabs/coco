@@ -1,6 +1,6 @@
 # Orchestrator Service
 
-This is a Python-based orchestrator that coordinates the transcription, text chunking, embedding and database services. It handles the flow of data between services and manages the overall pipeline.
+This is a Python-based orchestrator that coordinates the transcription, text chunking, embedding, and database services. It handles the flow of data between services and manages the overall pipeline.
 
 At the moment, the orchestrator only calls the endpoints and does not run the docker containers. Start the docker containers before running the orchestrator on the ports specified in the following README.
 
@@ -45,11 +45,29 @@ The orchestrator connects to:
 - **GET /test**: Health check
 - **POST /add**: Add the data (chunks and embeddings) into the database
 
+## New Feature: RAG Query
+
+The `ragquery` function allows you to query the system using a specific question and context. It retrieves relevant chunks from the database and formats the response based on the provided context.
+
+### Example Usage
+To test the `ragquery` function, you can modify the `main` function in `orchestrator.py` as follows:
+
+```python
+def main():
+    ragquery("What do you know?")
+```
+
+### Required Containers
+To use the `ragquery` function, ensure the following containers are running:
+
+- **Embedding Service** (Port 8002)
+- **Database Service** (Port 8003)
+
 ## Example Usage
 
 ```bash
 # Process an audio file
-python orchestrator.py ../data/sample.wav
+python orchestrator.py
 ```
 
 ## Notes
@@ -61,7 +79,7 @@ python orchestrator.py ../data/sample.wav
 
 ##ToDo
 
-[ ] Change the containers to load the models/db at startup (see OpenAI container)
-[ ] Connect the Coco connection for end-to-end connection
-[ ] Optimize the data format between the endpoints
-[ ] Modular selection of the endpoints
+[ ] Change the containers to load the models/db at startup (see OpenAI container)  
+[ ] Connect the Coco connection for end-to-end connection  
+[ ] Optimize the data format between the endpoints  
+[ ] Modular selection of the endpoints  
