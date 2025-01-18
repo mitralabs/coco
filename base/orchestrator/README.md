@@ -45,7 +45,7 @@ The orchestrator connects to:
 - **GET /test**: Health check
 - **POST /add**: Add the data (chunks and embeddings) into the database
 
-## New Feature: RAG Query
+## RAG Query
 
 The `ragquery` function allows you to query the system using a specific question and context. It retrieves relevant chunks from the database and formats the response based on the provided context.
 
