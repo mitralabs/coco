@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv() # call before imports because sdk package needs API KEY set
 import os
+from pathlib import Path
 import json
 import logging
 import sys
@@ -65,7 +66,7 @@ def main():
 
     audio_file_path = sys.argv[1]
 
-    if not os.path.exists(audio_file_path):
+    if not Path(audio_file_path).exists():
         logger.error(f"Error: Audio file not found at '{audio_file_path}'")
         sys.exit(1)
 
