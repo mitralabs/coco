@@ -13,9 +13,9 @@ At the moment, the orchestrator only calls the endpoints and does not run the do
    - Follow [this readme](../sdk/README.md) to install the Coco Python SDK.
    - Install additional modules used in `orchestrator.py` manually.
    
-3. **Run the orchestrator:**
+3. **Run the Containers:**
    ```bash
-   python orchestrator.py path/to/your/audio_file.wav
+   docker compose up -d --wait
    ```
 
 ## Service Configuration
@@ -44,6 +44,8 @@ The orchestrator connects to:
 ### Database Service (Port 8003)
 - **GET /test**: Health check
 - **POST /add**: Add the data (chunks and embeddings) into the database
+- - **GET /query**: retrieve n chunks from the database
+
 
 ## RAG Query
 
