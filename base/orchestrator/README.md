@@ -44,8 +44,13 @@ The orchestrator connects to:
 ### Database Service (Port 8003)
 - **GET /test**: Health check
 - **POST /add**: Add the data (chunks and embeddings) into the database
-- - **GET /query**: retrieve n chunks from the database
+- **GET /query**: retrieve n chunks from the database
 
+
+**Run the orchestrator to store the wav. in the database:**
+```bash
+python orchestrator.py path/to/audio.wav
+```
 
 ## RAG Query
 
@@ -68,7 +73,6 @@ To use the `ragquery` function, ensure the following containers are running:
 ## Example Usage
 
 ```bash
-# Process an audio file
 python orchestrator.py
 ```
 
@@ -81,7 +85,6 @@ python orchestrator.py
 
 ##ToDo
 
-[ ] Change the containers to load the models/db at startup (see OpenAI container)  
 [ ] Connect the Coco connection for end-to-end connection  
 [ ] Optimize the data format between the endpoints  
 [ ] Modular selection of the endpoints  
