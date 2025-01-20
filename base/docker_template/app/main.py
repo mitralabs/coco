@@ -5,13 +5,14 @@ from dotenv import load_dotenv
 
 load_dotenv()  # Load environment variables from .env file
 
-app = FastAPI()
+app = FastAPI(debug=os.getenv("DEBUG") == "True")
 
 # API Key Authentication
 API_KEY = os.getenv("API_KEY")
 if not API_KEY:
     raise ValueError("API_KEY environment variable must be set")
 api_key_header = APIKeyHeader(name="X-API-Key")
+
 
 def get_api_key(api_key: str = Depends(api_key_header)):
     if api_key != API_KEY:
@@ -20,7 +21,11 @@ def get_api_key(api_key: str = Depends(api_key_header)):
         )
     return api_key
 
+
 # Super basic test endpoint
 @app.get("/test")
 async def test_endpoint(api_key: str = Depends(get_api_key)):
-    return {"status": "success", "message": "[TEMPLATE] service: Test endpoint accessed successfully"}
+    return {
+        "status": "success",
+        "message": "[TEMPLATE] service: Test endpoint accessed successfully",
+    }

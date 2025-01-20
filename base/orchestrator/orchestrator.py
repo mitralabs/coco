@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
-load_dotenv() # call before imports because sdk package needs API KEY set
+
+load_dotenv()  # call before imports because sdk package needs API KEY set
 import os
 from pathlib import Path
 import json
@@ -12,6 +13,7 @@ from cocosdk import (
     create_embeddings,
     store_in_database,
     query_database,
+    clear_database,
     TRANSCRIPTION_URL,
     CHUNK_URL,
     EMBEDDING_URL,
@@ -31,6 +33,7 @@ API_KEY = os.getenv("API_KEY")
 if not API_KEY:
     logger.error("API_KEY environment variable must be set")
     sys.exit(1)  # Exit if API key is missing
+
 
 def test_services():
     logger.info("Starting service tests...")
@@ -76,30 +79,21 @@ def main():
         logger.error("Service tests failed. Aborting orchestration.")
         sys.exit(1)
 
-    transcription_doc = transcribe_audio(audio_file_path)
-    if not transcription_doc:
-        logger.error("Transcription failed. Aborting orchestration.")
-        sys.exit(1)
-
-    chunked_response = chunk_text(transcription_doc)
-    if not chunked_response:
-        logger.error("Chunking failed. Aborting orchestration.")
-        sys.exit(1)
-
-    embedded_chunks = create_embeddings(chunked_response.get("chunks", []))
-    if not embedded_chunks:
-        logger.error("Embedding failed. Aborting orchestration.")
-        sys.exit(1)
-
-    storage_response = store_in_database(embedded_chunks)
-    if not storage_response:
-        logger.error("Database storage failed. Aborting orchestration.")
-        sys.exit(1)
+    text, language, filename = transcribe_audio(audio_file_path)
+    chunks = chunk_text(text=text, chunk_size=1000, chunk_overlap=200)
+    chunk_embeddings = create_embeddings(chunks)
+    store_in_database(
+        chunks=chunks,
+        embeddings=chunk_embeddings,
+        language=language,
+        filename=filename,
+    )
 
     logger.info("Orchestration completed successfully.")
-    
-def ragquery(query):   
-    
+
+
+def ragquery(query):
+
     PROMPT = """
         Du bist ein zweites Gehirn für mich, ein Erinnerungsexperte, und deine Aufgabe ist es, basierend auf dem gegebenen Kontext den du aus meinen Erinnerungen in Form von Textausschnitten innerhalb der XML tags die dann folgende Frage so akkurat wie möglich beantwortest. Achte dabei darauf das deine Knowledge Base nur auf dem gegebenen Kontext basiert und du dich streng an das gegebene Format hälst:
 
@@ -124,20 +118,17 @@ def ragquery(query):
         return
 
     # combine the 5 chunks with the question in the given prompt
-    context = "------/n".join(str(chunk['document']) for chunk in chunks)
+    context = "------/n".join(str(chunk["document"]) for chunk in chunks)
     prompt = PROMPT.format(Kontext=context, Frage=query)
     print(prompt)
-    
+
     response = call_api(
-    "https://ollama.mitra-labs.ai", "/api/generate", 
-    method="POST", 
-    data=json.dumps({
-        "model": "llama3.2",
-        "prompt": prompt,
-        "stream": False
-    }),
-    headers={"Content-Type": "application/json"}
-)
+        "https://ollama.mitra-labs.ai",
+        "/api/generate",
+        method="POST",
+        data=json.dumps({"model": "llama3.2", "prompt": prompt, "stream": False}),
+        headers={"Content-Type": "application/json"},
+    )
 
     if response and response.get("status") == "success":
         print(response.get("answer"))  # Print the answer from the LLM
@@ -146,5 +137,5 @@ def ragquery(query):
 
 
 if __name__ == "__main__":
-    ragquery("Was weißt du?")
-    #main()
+    # ragquery("Was weißt du?")
+    main()

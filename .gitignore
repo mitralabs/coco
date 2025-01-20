@@ -173,3 +173,4 @@ base/_data/**/*
 
 # Ignore all folders that start with "venv"
 venv*/
+.vscode/
