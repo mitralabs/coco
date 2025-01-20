@@ -11,8 +11,8 @@ app = FastAPI()
 
 # Configuration
 API_KEY = os.getenv("API_KEY")
-BASE_URL = "https://ollama.mitra-labs.ai/api"
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "nomic-embed-text")
+BASE_URL = os.getenv("BASE_URL")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 
 if not API_KEY:
     raise ValueError("API_KEY environment variable must be set")
@@ -38,6 +38,9 @@ class ChunksResponse(BaseModel):
     status: str
     chunks: List[Chunk]
 
+class SingleTextRequest(BaseModel):
+    text: str
+
 def get_api_key(api_key: str = Depends(api_key_header)):
     if api_key != API_KEY:
         raise HTTPException(
@@ -45,11 +48,8 @@ def get_api_key(api_key: str = Depends(api_key_header)):
         )
     return api_key
 
-@app.post("/embed", response_model=ChunksResponse)
+@app.post("/embed_chunks", response_model=ChunksResponse)
 async def embed_text(request: ChunksRequest, api_key: str = Depends(get_api_key)):
-    """
-    Get embeddings for chunks of text using the Ollama API
-    """
     try:
         # Extract just the texts from the chunks
         texts = [chunk.text for chunk in request.chunks]
@@ -89,6 +89,52 @@ async def embed_text(request: ChunksRequest, api_key: str = Depends(get_api_key)
             status="success",
             chunks=request.chunks
         )
+        
+    except httpx.RequestError as e:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Error connecting to Ollama API: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+@app.post("/embed_text")
+async def embed_single_text(request: SingleTextRequest, api_key: str = Depends(get_api_key)):
+    try:
+        headers = {
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "model": OLLAMA_MODEL,
+            "input": [request.text]  # Wrap single text in list as Ollama expects array
+        }
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(f"{BASE_URL}/embed", json=payload, headers=headers)
+        
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"Ollama API error: {response.status_code} - {response.text}"
+            )
+        
+        response_json = response.json()
+        
+        if "embeddings" not in response_json:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Invalid response from Ollama API"
+            )
+        
+        # Return just the first (and only) embedding
+        return {
+            "status": "success",
+            "embedding": response_json["embeddings"][0]
+        }
         
     except httpx.RequestError as e:
         raise HTTPException(

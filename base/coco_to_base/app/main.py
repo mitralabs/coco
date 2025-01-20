@@ -11,6 +11,7 @@ import aiofiles
 from datetime import datetime
 
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()  # loads environment variables from.env file
@@ -34,14 +35,14 @@ def get_api_key(api_key: str = Depends(api_key_header)):
 
 
 # Database file path
-db_file = "/data/database.db"
+db_file = Path("/data/database.db")
 
 if TO_DB.lower() in ("true"):
     # Check if SQLite database file exists
-    if not os.path.exists(db_file):
+    if not db_file.exists():
         # Create a new SQLite database if it doesn't exist
         print("Database file not found. Creating a new database file.")
-        conn = sqlite3.connect(db_file)
+        conn = sqlite3.connect(str(db_file))
         cursor = conn.cursor()
         cursor.execute('''
             CREATE TABLE soundfiles (
@@ -94,7 +95,7 @@ async def upload_audio(request: Request, api_key: str = Depends(get_api_key)):
             print("Saving audio data to database.")
             # Store the audio data in the SQLite database
             upload_datetime = datetime.now()
-            conn = sqlite3.connect(db_file)
+            conn = sqlite3.connect(str(db_file))
             cursor = conn.cursor()
             cursor.execute(
                 "INSERT INTO soundfiles (audio_data, recording_session, increment, upload_datetime) VALUES (?, ?, ?, ?)",

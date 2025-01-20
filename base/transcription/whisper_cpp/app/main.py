@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from fastapi.security.api_key import APIKeyHeader
 import tempfile
 import os
+from pathlib import Path
 import json
 import subprocess
 
@@ -34,7 +35,7 @@ def process_whisper_output(audio_path):
     json_path = f"{audio_path}.json"
     
     # Check if JSON exists
-    if not os.path.exists(json_path):
+    if not Path(json_path).exists():
         raise FileNotFoundError(f"JSON output not found at {json_path}")
         
     # Read and parse JSON
@@ -61,21 +62,21 @@ async def transcribe_audio(audio_file: UploadFile = File(...), api_key: str = De
             temp_audio.flush()
             
             # Construct the absolute paths
-            whisper_cpp_dir = os.path.join(os.path.dirname(os.getcwd()), "whisper.cpp")
+            whisper_cpp_dir = Path.cwd().parent / "whisper.cpp"
 
             whisper_executable_paths = [
-                os.path.join(whisper_cpp_dir, "./main"),
-                os.path.join(whisper_cpp_dir, "./build/bin/main")
+                whisper_cpp_dir / "main",
+                whisper_cpp_dir / "build/bin/main"
             ]
 
             for path in whisper_executable_paths:
-                if os.path.exists(path):
-                    whisper_executable = path
+                if path.exists():
+                    whisper_executable = str(path)
                     break
             else:
                 raise FileNotFoundError(f"whisper.cpp main executable not found in {whisper_executable_paths}")
 
-            model_path = os.path.join(whisper_cpp_dir, f'models/{GGML_MODEL}.bin')
+            model_path = whisper_cpp_dir / "models" / f"{GGML_MODEL}.bin"
             
             # Prepare the command
             command = [
