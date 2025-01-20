@@ -82,9 +82,3 @@ python orchestrator.py
 - Default chunk size is 1000 with 200 overlap
 - Uses 127.0.0.1 for local connections (more reliable than localhost on Windows)
 - The orchestrator will run a health check on the transcription and chunking services before processing the audio file.
-
-##ToDo
-
-[ ] Connect the Coco connection for end-to-end connection  
-[ ] Optimize the data format between the endpoints  
-[ ] Modular selection of the endpoints  
