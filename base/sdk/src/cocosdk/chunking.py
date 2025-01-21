@@ -1,3 +1,4 @@
+from typing import List
 import json
 import logging
 
@@ -10,28 +11,36 @@ CHUNK_URL_BASE = "http://127.0.0.1:8001"
 CHUNK_URL = CHUNK_URL_BASE
 
 
-def chunk_text(document):
-    """Chunk the transcribed text using the chunking service with a timeout."""
-    logger.info("Starting text chunking...")
+def chunk_text(
+    text: str, chunk_size: int = 1000, chunk_overlap: int = 200
+) -> List[str]:
+    """Chunk text using the chunking service.
 
+    Args:
+        text (str): Text to chunk.
+        chunk_size (int, optional): Size of each chunk. Defaults to 1000.
+        chunk_overlap (int, optional): Overlap between chunks. Defaults to 200.
+
+    Raises:
+        Exception: If service does not return a success status.
+
+    Returns:
+        List[str]: List of chunks.
+    """
     headers = {"X-API-Key": API_KEY, "Content-Type": "application/json"}
-    data = json.dumps({"document": document})
+    data = json.dumps(
+        {"text": text, "chunk_size": chunk_size, "chunk_overlap": chunk_overlap}
+    )
     chunk_response = call_api(
         CHUNK_URL,
-        "/chunk/json?chunk_size=1000&chunk_overlap=200",  # These defaults can be parameterized
+        "/chunk/json",
         method="POST",
         headers=headers,
         data=data,
     )
-    # print(f"Chunking response: {chunk_response}")  # Print the chunking response
 
-    if not chunk_response:
-        logger.error("Chunking failed (check previous errors)")
-        return None
+    if not chunk_response["status"] == "success":
+        raise Exception(f"Chunking failed: {chunk_response['error']}")
 
-    if chunk_response.get("status") == "success":
-        logger.info("Chunking successful.")
-        return chunk_response
-    else:
-        logger.error(f"Chunking failed: {chunk_response.get('error')}")
-        return None
+    chunks = chunk_response["chunks"]
+    return chunks

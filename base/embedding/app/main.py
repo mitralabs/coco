@@ -4,10 +4,8 @@ from pydantic import BaseModel
 import os
 import httpx
 from typing import List, Optional, Dict, Any
-import json
 
-
-app = FastAPI()
+app = FastAPI(debug=os.getenv("DEBUG") == "True")
 
 # Configuration
 API_KEY = os.getenv("API_KEY")
@@ -19,27 +17,14 @@ if not API_KEY:
 
 api_key_header = APIKeyHeader(name="X-API-Key")
 
-class ChunkMetadata(BaseModel):
-    language: Optional[str]
-    filename: Optional[str]
-    chunk_index: int
-    total_chunks: int
 
-class Chunk(BaseModel):
+class EmbedChunksRequest(BaseModel):
+    chunks: List[str]
+
+
+class EmbedTextRequest(BaseModel):
     text: str
-    metadata: ChunkMetadata
-    embedding: Optional[List[float]] = None
 
-class ChunksRequest(BaseModel):
-    status: str
-    chunks: List[Chunk]
-
-class ChunksResponse(BaseModel):
-    status: str
-    chunks: List[Chunk]
-
-class SingleTextRequest(BaseModel):
-    text: str
 
 def get_api_key(api_key: str = Depends(api_key_header)):
     if api_key != API_KEY:
@@ -48,106 +33,62 @@ def get_api_key(api_key: str = Depends(api_key_header)):
         )
     return api_key
 
-@app.post("/embed_chunks", response_model=ChunksResponse)
-async def embed_text(request: ChunksRequest, api_key: str = Depends(get_api_key)):
-    try:
-        # Extract just the texts from the chunks
-        texts = [chunk.text for chunk in request.chunks]
-        
-        headers = {
-            "Content-Type": "application/json"
-        }
-        
-        payload = {
-            "model": OLLAMA_MODEL,
-            "input": texts
-        }
-        
-        async with httpx.AsyncClient() as client:
-            response = await client.post(f"{BASE_URL}/embed", json=payload, headers=headers)
-        
-        if response.status_code != 200:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=f"Ollama API error: {response.status_code} - {response.text}"
-            )
-        
-        response_json = response.json()
-        
-        if "embeddings" not in response_json:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="Invalid response from Ollama API"
-            )
-        
-        # Add embeddings to chunks
-        for chunk, embedding in zip(request.chunks, response_json["embeddings"]):
-            chunk.embedding = embedding
-        
-        # Return the same structure with added embeddings
-        return ChunksResponse(
-            status="success",
-            chunks=request.chunks
+
+async def embed(chunks: List[str]) -> List[List[float]]:
+    """Embed a list of chunks using the Ollama API.
+
+    Args:
+        chunks (List[str]): The chunks to embed.
+
+    Raises:
+        HTTPException: If the Ollama API returns an error.
+
+    Returns:
+        List[List[float]]: The embeddings of the chunks.
+    """
+    headers = {"Content-Type": "application/json"}
+    embedding_api_data = {"model": OLLAMA_MODEL, "input": chunks}
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{BASE_URL}/embed", json=embedding_api_data, headers=headers
         )
-        
-    except httpx.RequestError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Error connecting to Ollama API: {str(e)}"
-        )
-    except Exception as e:
+    if not response.status_code == 200:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Internal server error: {str(e)}"
+            detail="Ollama API not 200.",
         )
+    response_json = response.json()
+    if "embeddings" not in response_json:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error.",
+        )
+    embeddings = response_json["embeddings"]
+    return embeddings
+
+
+@app.post("/embed_chunks")
+async def embed_chunks(data: EmbedChunksRequest, api_key: str = Depends(get_api_key)):
+    embeddings = await embed(data.chunks)
+    return {
+        "status": "success",
+        "embeddings": embeddings,
+    }
+
 
 @app.post("/embed_text")
-async def embed_single_text(request: SingleTextRequest, api_key: str = Depends(get_api_key)):
-    try:
-        headers = {
-            "Content-Type": "application/json"
-        }
-        
-        payload = {
-            "model": OLLAMA_MODEL,
-            "input": [request.text]  # Wrap single text in list as Ollama expects array
-        }
-        
-        async with httpx.AsyncClient() as client:
-            response = await client.post(f"{BASE_URL}/embed", json=payload, headers=headers)
-        
-        if response.status_code != 200:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=f"Ollama API error: {response.status_code} - {response.text}"
-            )
-        
-        response_json = response.json()
-        
-        if "embeddings" not in response_json:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="Invalid response from Ollama API"
-            )
-        
-        # Return just the first (and only) embedding
-        return {
-            "status": "success",
-            "embedding": response_json["embeddings"][0]
-        }
-        
-    except httpx.RequestError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Error connecting to Ollama API: {str(e)}"
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Internal server error: {str(e)}"
-        )
+async def embed_text(request: EmbedTextRequest, api_key: str = Depends(get_api_key)):
+    embeddings = await embed([request.text])
+    return {
+        "status": "success",
+        "embedding": embeddings[0],
+    }
+
 
 # Health check endpoint
 @app.get("/test")
 async def test_endpoint(api_key: str = Depends(get_api_key)):
-    return {"status": "success", "message": "Embedding service: Test endpoint accessed successfully"}
+    return {
+        "status": "success",
+        "message": "Embedding service: Test endpoint accessed successfully",
+    }
