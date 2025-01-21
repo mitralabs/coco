@@ -162,8 +162,8 @@ cython_debug/
 #.idea/
 
 # Ignore all files in base/_data directory, but leave all subdirectories
-base/_data/**/*
-!base/_data/**/
+services/_data/**/*
+!services/_data/**/
 
 # Ignore all files that end with .wav
 *.wav
