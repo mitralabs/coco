@@ -111,22 +111,18 @@ def ragquery(query):
         {Frage}
         </Frage>
     """
-    # use the query_database endpoint to retrieve 5 chunks
-    chunks = query_database(query)  # Retrieve 5 chunks based on the query
-    if not chunks:
-        logger.error("No chunks found for the given query.")
-        return
+    ids, documents, metadatas, distances = query_database(query)
 
     # combine the 5 chunks with the question in the given prompt
-    context = "------/n".join(str(chunk["document"]) for chunk in chunks)
+    context = "------/n".join(documents)
     prompt = PROMPT.format(Kontext=context, Frage=query)
     print(prompt)
 
     response = call_api(
-        "https://ollama.mitra-labs.ai",
+        "https://jetson-ollama.mitra-labs.ai",
         "/api/generate",
         method="POST",
-        data=json.dumps({"model": "llama3.2", "prompt": prompt, "stream": False}),
+        data=json.dumps({"model": "llama3.2:1b", "prompt": prompt, "stream": False}),
         headers={"Content-Type": "application/json"},
     )
 
@@ -137,5 +133,5 @@ def ragquery(query):
 
 
 if __name__ == "__main__":
-    # ragquery("Was weißt du?")
     main()
+    ragquery("Was weißt du?")

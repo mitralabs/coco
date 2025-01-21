@@ -98,11 +98,11 @@ async def query(request: QueryRequest, api_key: str = Depends(get_api_key)):
     for i in range(len(results["documents"])):
         formatted_results.append(
             {
-                "id": results["ids"][i],
-                "document": results["documents"][i],
-                "metadata": results["metadatas"][i],
+                "id": results["ids"][i][0],
+                "document": results["documents"][i][0],
+                "metadata": results["metadatas"][i][0],
                 "distance": (
-                    results["distances"][i] if "distances" in results else None
+                    results["distances"][i][0] if "distances" in results else None
                 ),
             }
         )

@@ -50,7 +50,7 @@ services:
       - ./embedding/app:/app
     environment:
       - API_KEY=test
-      - BASE_URL=https://ollama.mitra-labs.ai/api
+      - BASE_URL=https://jetson-ollama.mitra-labs.ai/api
       - OLLAMA_MODEL=nomic-embed-text
       - DEBUG=True
     restart: unless-stopped
