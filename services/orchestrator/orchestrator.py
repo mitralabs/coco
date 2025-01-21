@@ -1,6 +1,3 @@
-from dotenv import load_dotenv
-
-load_dotenv()  # call before imports because sdk package needs API KEY set
 import os
 from pathlib import Path
 import json
@@ -29,11 +26,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-API_KEY = os.getenv("API_KEY")
-if not API_KEY:
-    logger.error("API_KEY environment variable must be set")
-    sys.exit(1)  # Exit if API key is missing
-
+API_KEY = os.getenv("API_KEY", "test")
 
 def test_services():
     logger.info("Starting service tests...")
@@ -118,7 +111,7 @@ def ragquery(query):
     prompt = PROMPT.format(Kontext=context, Frage=query)
     print(prompt)
 
-    response = call_api(
+    ollama_response = call_api(
         "https://jetson-ollama.mitra-labs.ai",
         "/api/generate",
         method="POST",
@@ -126,12 +119,8 @@ def ragquery(query):
         headers={"Content-Type": "application/json"},
     )
 
-    if response and response.get("status") == "success":
-        print(response.get("answer"))  # Print the answer from the LLM
-    else:
-        logger.error(f"LLM request failed. Response: {response}")
-
+    print(ollama_response['response'])
 
 if __name__ == "__main__":
     main()
-    ragquery("Was weißt du?")
+    ragquery("What is rice usually served in?")
