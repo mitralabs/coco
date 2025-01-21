@@ -3,7 +3,7 @@ from pydub import AudioSegment
 import shutil
 import re
 
-def append_session_audio(base_dir="_data", output_dir="appended_audio", delete_source=False):
+def append_session_audio(base_dir="_data", output_dir="all_sessions", delete_source=False):
     """
     Append audio files from session directories and save as single files.
     
