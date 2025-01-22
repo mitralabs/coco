@@ -3,7 +3,7 @@ This directory contains all services running on the base station.
 
 ## Services
 - **Transcription**: A FastAPI-based service that transcribes audio files into text using the Whisper model.
-- **Chunking**: Provides text chunking functionality using LangChain's `RecursiveCharacterTextSplitter`.
+- **Chunking**: Provides text chunking functionality using LangChain.
 - **Embedding**: Generates embeddings for text chunks using the Ollama API, supporting both batch and single text embedding.
 - **Database**: Offers vector database functionality using ChromaDB for storing embeddings and metadata.
 - **Orchestrator**: Coordinates the transcription, chunking, embedding, and database services, managing the overall data flow.
