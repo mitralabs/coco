@@ -6,9 +6,12 @@ import chromadb
 from typing import List
 import httpx
 import uuid
+import logging
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-app = FastAPI(debug=os.getenv("DEBUG") == "True")
+app = FastAPI()
 
 # API Key Authentication
 EMBEDDING_URL = os.getenv("EMBEDDING_URL")

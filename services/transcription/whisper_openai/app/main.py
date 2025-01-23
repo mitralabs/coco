@@ -4,8 +4,12 @@ from fastapi.security.api_key import APIKeyHeader
 import whisper
 import tempfile
 import os
+import logging
 
-app = FastAPI(debug=os.getenv("DEBUG") == "True")
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = FastAPI()
 
 # Load the Whisper model at startup
 model = None

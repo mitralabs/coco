@@ -6,8 +6,12 @@ import os
 from pathlib import Path
 import json
 import subprocess
+import logging
 
-app = FastAPI(debug=os.getenv("DEBUG") == "True")
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = FastAPI()
 
 # API Key Authentication
 API_KEY = os.getenv("API_KEY")

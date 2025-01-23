@@ -9,6 +9,7 @@ import uvicorn
 import time
 import aiofiles
 from datetime import datetime
+import logging
 
 import os
 from pathlib import Path
@@ -16,7 +17,10 @@ from dotenv import load_dotenv
 
 load_dotenv()  # loads environment variables from.env file
 
-app = FastAPI(debug=os.getenv("DEBUG") == "True")
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = FastAPI()
 
 # API Key Authentication
 API_KEY = os.getenv("API_KEY")
