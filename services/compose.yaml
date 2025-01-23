@@ -11,7 +11,6 @@ services:
       - ./_data:/data
     environment:
       - API_KEY=test
-      - DEBUG=True
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
@@ -31,7 +30,6 @@ services:
       - ./_data:/data
     environment:
       - API_KEY=test
-      - DEBUG=True
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
@@ -52,7 +50,6 @@ services:
       - API_KEY=test
       - BASE_URL=https://jetson-ollama.mitra-labs.ai/api
       - OLLAMA_MODEL=nomic-embed-text
-      - DEBUG=True
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
@@ -73,7 +70,6 @@ services:
     environment:
       - API_KEY=test
       - EMBEDDING_URL=http://embedding:8000
-      - DEBUG=True
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
