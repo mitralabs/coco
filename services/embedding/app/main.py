@@ -4,8 +4,12 @@ from pydantic import BaseModel
 import os
 import httpx
 from typing import List, Optional, Dict, Any
+import logging
 
-app = FastAPI(debug=os.getenv("DEBUG") == "True")
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = FastAPI()
 
 # Configuration
 API_KEY = os.getenv("API_KEY")
@@ -61,7 +65,7 @@ async def embed(chunks: List[str]) -> List[List[float]]:
     if "embeddings" not in response_json:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error.",
+            detail=f"Ollama did not return embeddings.",
         )
     embeddings = response_json["embeddings"]
     return embeddings

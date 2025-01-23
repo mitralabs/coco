@@ -11,7 +11,6 @@ DATABASE_URL_BASE = "http://127.0.0.1:8003"
 DATABASE_URL = DATABASE_URL_BASE
 
 
-# New function to query the database
 def query_database(
     query_text: str, n_results: int = 5
 ) -> Tuple[List[str], List[str], List[str], List[float]]:
@@ -45,6 +44,21 @@ def query_database(
     distances = [result["distance"] for result in results]
 
     return ids, documents, metadatas, distances
+
+
+def get_full_database():
+    headers = {"X-API-Key": API_KEY}
+    response = call_api(DATABASE_URL, "/get_all", method="GET", headers=headers)
+
+    if not response.get("status") == "success":
+        logger.error(f"Database get failed: {response['error']}")
+
+    results = response["results"]
+    ids = [result["id"] for result in results]
+    documents = [result["document"] for result in results]
+    metadatas = [result["metadata"] for result in results]
+
+    return ids, documents, metadatas
 
 
 def store_in_database(

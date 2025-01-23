@@ -5,9 +5,12 @@ from pydantic import BaseModel
 import os
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from typing import List, Optional, Dict, Any
+import logging
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-app = FastAPI(debug=os.getenv("DEBUG") == "True")
+app = FastAPI()
 
 # API Key Authentication
 API_KEY = os.getenv("API_KEY")
