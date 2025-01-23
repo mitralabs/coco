@@ -58,18 +58,22 @@ services:
       retries: 10
       start_period: 30s
 
-  database:
+  db-api:
     build:
-      context: ./database
+      context: ./db_api
       dockerfile: Dockerfile
     ports:
       - "8003:8000"
     volumes:
-      - ./database/app:/app
+      - ./db_api/app:/app
       - ./_data:/data
     environment:
       - API_KEY=test
       - EMBEDDING_URL=http://embedding:8000
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=coco
+      - POSTGRES_HOST=db
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
@@ -77,3 +81,15 @@ services:
       timeout: 30s
       retries: 10
       start_period: 30s
+    depends_on:
+      - db
+
+  db:
+    image: pgvector/pgvector:0.8.0-pg17
+    volumes:
+      - ./_data/db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=coco
+    restart: unless-stopped

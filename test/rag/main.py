@@ -3,7 +3,7 @@ from pathlib import Path
 import time
 from datetime import timedelta
 from cocosdk.embeddings import create_embeddings
-from cocosdk.database import store_in_database
+from cocosdk.database import store_in_database, get_full_database, clear_database
 from cocosdk.rag import rag_query
 
 
@@ -67,6 +67,7 @@ def main():
     train_ds, _ = init_dataset()
     unique = unique_texts(train_ds)
     texts = [text for text, _ in unique]  # don't use titles for now
+    texts = texts[:10]  # ! tmp
     dataset_duration = time.time() - dataset_start
     print(f"\nDataset loading completed in {format_duration(dataset_duration)}")
 
@@ -118,6 +119,9 @@ def main():
     print(f"Storage:         {format_duration(storage_duration)}")
     print(f"RAG Query:       {format_duration(rag_duration)}")
     print(f"Total Time:      {format_duration(total_duration)}")
+
+    # clear database
+    clear_database()
 
 
 if __name__ == "__main__":
