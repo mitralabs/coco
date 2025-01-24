@@ -161,9 +161,8 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-# Ignore all files in base/_data directory, but leave all subdirectories
-services/_data/**/*
-!services/_data/**/
+# Ignore everything in the services/_data folder, including subdirectories and their contents
+services/_data/
 
 # Ignore all files that end with .wav
 *.wav
@@ -174,3 +173,6 @@ services/_data/**/*
 # Ignore all folders that start with "venv"
 venv*/
 .vscode/
+
+# Ignore the file with the name "ollama_api.md"
+ollama_api.md
