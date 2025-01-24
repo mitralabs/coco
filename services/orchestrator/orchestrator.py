@@ -1,21 +1,13 @@
 import os
 from pathlib import Path
-import json
 import logging
 import sys
-from cocosdk import (
-    call_api,
-    transcribe_audio,
-    chunk_text,
-    create_embeddings,
-    store_in_database,
-    query_database,
-    clear_database,
-    TRANSCRIPTION_URL,
-    CHUNK_URL,
-    EMBEDDING_URL,
-    DATABASE_URL,
-)
+from coco.chunking import chunk_text, CHUNK_URL
+from coco.database import store_in_database, DATABASE_URL
+from coco.embeddings import create_embeddings, EMBEDDING_URL
+from coco.transcription import transcribe_audio, TRANSCRIPTION_URL
+from coco.utils import call_api
+from coco.rag import rag_query
 
 
 # Configure logging
@@ -27,6 +19,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 API_KEY = os.getenv("API_KEY", "test")
+
 
 def test_services():
     logger.info("Starting service tests...")
@@ -85,42 +78,6 @@ def main():
     logger.info("Orchestration completed successfully.")
 
 
-def ragquery(query):
-
-    PROMPT = """
-        Du bist ein zweites Gehirn für mich, ein Erinnerungsexperte, und deine Aufgabe ist es, basierend auf dem gegebenen Kontext den du aus meinen Erinnerungen in Form von Textausschnitten innerhalb der XML tags die dann folgende Frage so akkurat wie möglich beantwortest. Achte dabei darauf das deine Knowledge Base nur auf dem gegebenen Kontext basiert und du dich streng an das gegebene Format hälst:
-
-        <Kontext> 
-        {Kontext}
-        </Kontext>
-    
-        <Format>
-        Ein Satz mit maximal 50 Tokens. Deine Antwort ist klar und beantwortet die Frage indem es sich direkt auf den Kontext stützt. Gebe bei der Antwort KEINE XML tags oder sonstigen Werte an. Beantworte die Frage ausschließlich auf Deutsch.
-        </Format>
-
-        Du hast jetzt den Kontext in den <Kontext> XML Tags verstanden hast und das Format übernommen. Beantworte nun die nachfolgende Frage innerhalb der <Frage> XML Tags basierend auf dem gegebenen Kontext in den XML tags. Achte dabei darauf die streng an das Format aus den XML Tags zu halten.
-
-        <Frage>
-        {Frage}
-        </Frage>
-    """
-    ids, documents, metadatas, distances = query_database(query)
-
-    # combine the 5 chunks with the question in the given prompt
-    context = "------/n".join(documents)
-    prompt = PROMPT.format(Kontext=context, Frage=query)
-    print(prompt)
-
-    ollama_response = call_api(
-        "https://jetson-ollama.mitra-labs.ai",
-        "/api/generate",
-        method="POST",
-        data=json.dumps({"model": "llama3.2:1b", "prompt": prompt, "stream": False}),
-        headers={"Content-Type": "application/json"},
-    )
-
-    print(ollama_response['response'])
-
 if __name__ == "__main__":
     main()
-    ragquery("What is rice usually served in?")
+    print(rag_query("What is rice usually served in?"))
