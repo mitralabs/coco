@@ -2,9 +2,15 @@ from datasets import load_dataset
 from pathlib import Path
 import time
 from datetime import timedelta
-from coco.embeddings import create_embeddings
-from coco.database import store_in_database, get_full_database, clear_database
-from coco.rag import rag_query
+from coco import CocoClient, rag_query
+
+cc = CocoClient(
+    chunking_base="http://127.0.0.1:8001",
+    embedding_base="http://127.0.0.1:8002",
+    db_api_base="http://127.0.0.1:8003",
+    transcription_base="http://127.0.0.1:8000",
+    api_key="test",
+)
 
 
 def format_duration(duration_seconds: float) -> str:
@@ -92,19 +98,19 @@ def main():
 
     # Create embeddings
     embedding_start = time.time()
-    embeddings = create_embeddings(texts, show_progress=True)
+    embeddings = cc.embedding.create_embeddings(texts, show_progress=True)
     embedding_duration = time.time() - embedding_start
     print(f"Embedding creation completed in {format_duration(embedding_duration)}")
 
     # Store in database
     storage_start = time.time()
-    store_in_database(texts, embeddings, "de", "germandpr")
+    cc.db_api.store_in_database(texts, embeddings, "de", "germandpr")
     storage_duration = time.time() - storage_start
     print(f"Database storage completed in {format_duration(storage_duration)}")
 
     # Query RAG system
     rag_start = time.time()
-    answer = rag_query(query, verbose=True)
+    answer = rag_query(cc.db_api, query, verbose=True)
     rag_duration = time.time() - rag_start
     print(f"RAG query completed in {format_duration(rag_duration)}")
 
@@ -121,7 +127,7 @@ def main():
     print(f"Total Time:      {format_duration(total_duration)}")
 
     # clear database
-    clear_database()
+    cc.db_api.clear_database()
 
 
 if __name__ == "__main__":

@@ -2,13 +2,15 @@ import os
 from pathlib import Path
 import logging
 import sys
-from coco.chunking import chunk_text, CHUNK_URL
-from coco.database import store_in_database, DATABASE_URL
-from coco.embeddings import create_embeddings, EMBEDDING_URL
-from coco.transcription import transcribe_audio, TRANSCRIPTION_URL
-from coco.utils import call_api
-from coco.rag import rag_query
+from coco import CocoClient, rag_query
 
+cc = CocoClient(
+    chunking_base="http://127.0.0.1:8001",
+    embedding_base="http://127.0.0.1:8002",
+    db_api_base="http://127.0.0.1:8003",
+    transcription_base="http://127.0.0.1:8000",
+    api_key="test",
+)
 
 # Configure logging
 logging.basicConfig(
@@ -19,32 +21,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 API_KEY = os.getenv("API_KEY", "test")
-
-
-def test_services():
-    logger.info("Starting service tests...")
-    headers = {"X-API-Key": API_KEY}
-
-    # Test all services
-    services = {
-        "transcription": TRANSCRIPTION_URL,
-        "chunking": CHUNK_URL,
-        "embedding": EMBEDDING_URL,
-        "database": DATABASE_URL,
-    }
-
-    for service_name, url in services.items():
-        test_response = call_api(url, "/test", headers=headers, timeout=10)
-        if test_response and test_response.get("status") == "success":
-            logger.info(f"{service_name.capitalize()} service test successful.")
-        else:
-            logger.error(
-                f"{service_name.capitalize()} service test failed. Response: {test_response}"
-            )
-            return False
-
-    logger.info("All services tested successfully.")
-    return True
 
 
 def main():
@@ -59,16 +35,15 @@ def main():
         logger.error(f"Error: Audio file not found at '{audio_file_path}'")
         sys.exit(1)
 
+    logger.info("Starting health check...")
+    cc.health_check()
+    logger.info("Health check completed successfully.")
+
     logger.info(f"Starting orchestration for {audio_file_path}")
-
-    if not test_services():
-        logger.error("Service tests failed. Aborting orchestration.")
-        sys.exit(1)
-
-    text, language, filename = transcribe_audio(audio_file_path)
-    chunks = chunk_text(text=text, chunk_size=1000, chunk_overlap=200)
-    chunk_embeddings = create_embeddings(chunks)
-    store_in_database(
+    text, language, filename = cc.transcription.transcribe_audio(audio_file_path)
+    chunks = cc.chunking.chunk_text(text=text, chunk_size=1000, chunk_overlap=200)
+    chunk_embeddings = cc.embedding.create_embeddings(chunks)
+    cc.db_api.store_in_database(
         chunks=chunks,
         embeddings=chunk_embeddings,
         language=language,
