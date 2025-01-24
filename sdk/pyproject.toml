@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "cocosdk"
+name = "coco"
 version = "0.0.1"
 authors = [
   { name = "Nicolas Stellwag", email = "stellwagnicolas@gmail.com" },
@@ -18,7 +18,7 @@ classifiers = [
 ]
 license = "MPL-2.0"
 license-files = ["LICEN[CS]E*"]
-dependencies = ["requests"]
+dependencies = ["httpx", "tqdm"]
 
 [project.optional-dependencies]
 dev = []

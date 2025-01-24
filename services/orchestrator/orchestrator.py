@@ -2,12 +2,12 @@ import os
 from pathlib import Path
 import logging
 import sys
-from cocosdk.chunking import chunk_text, CHUNK_URL
-from cocosdk.database import store_in_database, DATABASE_URL
-from cocosdk.embeddings import create_embeddings, EMBEDDING_URL
-from cocosdk.transcription import transcribe_audio, TRANSCRIPTION_URL
-from cocosdk.utils import call_api
-from cocosdk.rag import rag_query
+from coco.chunking import chunk_text, CHUNK_URL
+from coco.database import store_in_database, DATABASE_URL
+from coco.embeddings import create_embeddings, EMBEDDING_URL
+from coco.transcription import transcribe_audio, TRANSCRIPTION_URL
+from coco.utils import call_api
+from coco.rag import rag_query
 
 
 # Configure logging

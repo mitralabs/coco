@@ -52,7 +52,7 @@ async def embed(chunks: List[str]) -> List[List[float]]:
     """
     headers = {"Content-Type": "application/json"}
     embedding_api_data = {"model": OLLAMA_MODEL, "input": chunks}
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=300.0) as client:
         response = await client.post(
             f"{BASE_URL}/embed", json=embedding_api_data, headers=headers
         )

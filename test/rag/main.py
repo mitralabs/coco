@@ -2,9 +2,9 @@ from datasets import load_dataset
 from pathlib import Path
 import time
 from datetime import timedelta
-from cocosdk.embeddings import create_embeddings
-from cocosdk.database import store_in_database, get_full_database, clear_database
-from cocosdk.rag import rag_query
+from coco.embeddings import create_embeddings
+from coco.database import store_in_database, get_full_database, clear_database
+from coco.rag import rag_query
 
 
 def format_duration(duration_seconds: float) -> str:
@@ -67,7 +67,7 @@ def main():
     train_ds, _ = init_dataset()
     unique = unique_texts(train_ds)
     texts = [text for text, _ in unique]  # don't use titles for now
-    texts = texts[:10]  # ! tmp
+    texts = texts[:300]  # ! tmp
     dataset_duration = time.time() - dataset_start
     print(f"\nDataset loading completed in {format_duration(dataset_duration)}")
 
@@ -92,7 +92,7 @@ def main():
 
     # Create embeddings
     embedding_start = time.time()
-    embeddings = create_embeddings(texts)
+    embeddings = create_embeddings(texts, show_progress=True)
     embedding_duration = time.time() - embedding_start
     print(f"Embedding creation completed in {format_duration(embedding_duration)}")
 
