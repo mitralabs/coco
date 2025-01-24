@@ -1,7 +1,5 @@
-import json
-
-from .database import query_database
-from .utils import call_api
+import httpx
+from .db_api import DbApiClient
 
 PROMPT = """
     Du bist ein zweites Gehirn für mich, ein Erinnerungsexperte, und deine Aufgabe ist es, basierend auf dem gegebenen Kontext den du aus meinen Erinnerungen in Form von Textausschnitten innerhalb der XML tags die dann folgende Frage so akkurat wie möglich beantwortest. Achte dabei darauf das deine Knowledge Base nur auf dem gegebenen Kontext basiert und du dich streng an das gegebene Format hälst:
@@ -22,8 +20,8 @@ PROMPT = """
 """
 
 
-def rag_query(query, verbose=False):
-    _, documents, _, distances = query_database(query)
+def rag_query(db_client: DbApiClient, query: str, verbose=False):
+    _, documents, _, distances = db_client.query_database(query)
     if verbose:
         for doc, dist in zip(documents, distances):
             print(f"Distance: {dist}")
@@ -31,11 +29,12 @@ def rag_query(query, verbose=False):
             print("------")
     context = "------/n".join(documents)
     prompt = PROMPT.format(Kontext=context, Frage=query)
-    ollama_response = call_api(
-        "https://jetson-ollama.mitra-labs.ai",
-        "/api/generate",
-        method="POST",
-        data=json.dumps({"model": "llama3.2:1b", "prompt": prompt, "stream": False}),
-        headers={"Content-Type": "application/json"},
-    )
-    return ollama_response["response"]
+    with httpx.Client() as client:
+        response = client.post(
+            "https://jetson-ollama.mitra-labs.ai/api/generate",
+            json={"model": "llama3.2:1b", "prompt": prompt, "stream": False},
+            headers={"Content-Type": "application/json"},
+            timeout=100,
+        )
+        response.raise_for_status()
+        return response.json()["response"]
