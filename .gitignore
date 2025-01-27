@@ -176,3 +176,6 @@ venv*/
 
 # Ignore the file with the name "ollama_api.md"
 ollama_api.md
+
+# Ignore Napkin export
+napkin_export.json
