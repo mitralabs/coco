@@ -1,6 +1,8 @@
 import os
 import httpx
+from typing import List
 
+from .async_utils import batched_parallel
 from .chunking import ChunkingClient
 from .embeddings import EmbeddingClient
 from .db_api import DbApiClient
@@ -60,3 +62,43 @@ class CocoClient:
                 test_response = response.json()
             if not test_response.get("status") == "success":
                 raise Exception(f"{service_name} service test failed: {test_response}")
+
+    async def _embed_and_store(self, chunks, language, filename):
+        embeddings = await self.embedding._create_embeddings(chunks)
+        ns_added, ns_skipped = await self.db_api._store_in_database(
+            chunks, embeddings, language, filename
+        )
+        return ns_added, ns_skipped
+
+    def embed_and_store(
+        self,
+        chunks: List[str],
+        language: str,
+        filename: str,
+        batch_size: int = 20,
+        limit_parallel: int = 10,
+        show_progress: bool = True,
+    ):
+        """Util function to embed and store chunks in the database.
+        Just a wrapper around the `embedding.create_embeddings` and `db_api._store_in_database` functions.
+
+        Args:
+            chunks (List[str]): The chunks to embed and store.
+            language (str): The language of the chunks.
+            filename (str): The filename of the chunks.
+            batch_size (int, optional): The size of each batch. Defaults to 20.
+            limit_parallel (int, optional): The maximum number of parallel tasks / batches. Defaults to 10.
+            show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to True.
+
+        Returns:
+            Tuple[int, int]: The number of documents added and skipped.
+        """
+        batched_embed_and_store = batched_parallel(
+            function=self._embed_and_store,
+            batch_size=batch_size,
+            limit_parallel=limit_parallel,
+            show_progress=show_progress,
+            description="Embedding and storing",
+        )
+        n_added, n_skipped = batched_embed_and_store(chunks, language, filename)
+        return sum(n_added), sum(n_skipped)

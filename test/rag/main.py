@@ -82,26 +82,14 @@ def fill_database():
     texts = [text for text, _ in unique]  # don't use titles for now
     dataset_duration = time.time() - start
     start = time.time()
-    embeddings = cc.embedding.create_embeddings(
-        texts, batch_size=30, limit_parallel=10, show_progress=True
+    added, skipped = cc.embed_and_store(
+        texts, "de", "germandpr", batch_size=30, limit_parallel=20, show_progress=True
     )
-    embedding_duration = time.time() - start
-    start = time.time()
-    added, skipped = cc.db_api.store_in_database(
-        texts,
-        embeddings,
-        "de",
-        "germandpr",
-        batch_size=30,
-        limit_parallel=20,
-        show_progress=True,
-    )
-    storage_duration = time.time() - start
+    embed_store_duration = time.time() - start
     print(f"Dataset loading: {format_duration(dataset_duration)}")
-    print(f"Embedding:       {format_duration(embedding_duration)}")
-    print(f"Storage:         {format_duration(storage_duration)}")
+    print(f"Embedding and storing: {format_duration(embed_store_duration)}")
     print(
-        f"Total:           {format_duration(dataset_duration + embedding_duration + storage_duration)}"
+        f"Total:           {format_duration(dataset_duration + embed_store_duration)}"
     )
     print(f"Added: {added}, Skipped: {skipped}")
 

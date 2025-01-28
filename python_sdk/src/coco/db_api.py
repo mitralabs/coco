@@ -91,8 +91,26 @@ class DbApiClient:
 
     async def _store_in_database(
         self,
-        documents: List[dict],
+        chunks: List[str],
+        embeddings: List[List[float]],
+        language: str,
+        filename: str,
     ) -> Tuple[List[int], List[int]]:
+        documents = []
+        n_chunks = len(chunks)
+        for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
+            documents.append(
+                {
+                    "text": chunk,
+                    "embedding": embedding,
+                    "metadata": {
+                        "language": language,
+                        "filename": filename,
+                        "chunk_index": i,
+                        "total_chunks": n_chunks,
+                    },
+                }
+            )
         headers = {"X-API-Key": self.api_key, "Content-Type": "application/json"}
         async with httpx.AsyncClient(timeout=300.0) as client:
             response = await client.post(
@@ -133,21 +151,6 @@ class DbApiClient:
         Returns:
             Tuple[int, int]: The number of documents added and skipped.
         """
-        documents = []
-        n_chunks = len(chunks)
-        for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
-            documents.append(
-                {
-                    "text": chunk,
-                    "embedding": embedding,
-                    "metadata": {
-                        "language": language,
-                        "filename": filename,
-                        "chunk_index": i,
-                        "total_chunks": n_chunks,
-                    },
-                }
-            )
 
         batched_store_in_database = batched_parallel(
             function=self._store_in_database,
@@ -156,5 +159,7 @@ class DbApiClient:
             show_progress=show_progress,
             description="Storing in database",
         )
-        added, skipped = batched_store_in_database(documents)
-        return sum(added), sum(skipped)
+        ns_added, ns_skipped = batched_store_in_database(
+            chunks, embeddings, language, filename
+        )
+        return sum(ns_added), sum(ns_skipped)
