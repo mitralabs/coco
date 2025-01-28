@@ -2,6 +2,8 @@ from typing import Tuple, List
 import logging
 import httpx
 
+from .async_utils import batched_parallel
+
 
 logger = logging.getLogger(__name__)
 
@@ -67,19 +69,72 @@ class DbApiClient:
 
         return ids, documents, metadatas
 
+    def clear_database(self) -> int:
+        """Clear the database.
+
+        Returns:
+            int: The number of documents deleted.
+        """
+        with httpx.Client() as client:
+            response = client.delete(
+                f"{self.base_url}/delete_all",
+                headers={"X-API-Key": self.api_key},
+            )
+            response.raise_for_status()
+            del_response = response.json()
+
+        if not del_response.get("status") == "success":
+            logger.error(f"Database clear failed: {del_response['error']}")
+
+        deleted_count = del_response["count"]
+        return deleted_count
+
+    async def _store_in_database(
+        self,
+        documents: List[dict],
+    ) -> Tuple[List[int], List[int]]:
+        headers = {"X-API-Key": self.api_key, "Content-Type": "application/json"}
+        async with httpx.AsyncClient(timeout=300.0) as client:
+            response = await client.post(
+                f"{self.base_url}/add",
+                json={"documents": documents},
+                headers=headers,
+            )
+            response.raise_for_status()
+            add_response = response.json()
+
+        if not add_response.get("status") == "success":
+            raise Exception(f"Database storage failed: {add_response['error']}")
+
+        n_added, n_skipped = add_response["added"], add_response["skipped"]
+        return [n_added], [n_skipped]
+
     def store_in_database(
         self,
         chunks: List[str],
         embeddings: List[List[float]],
         language: str,
         filename: str,
-    ):
-        assert len(chunks) == len(
-            embeddings
-        ), "Number of chunks must match number of embeddings"
+        batch_size: int = 20,
+        limit_parallel: int = 10,
+        show_progress: bool = False,
+    ) -> Tuple[int, int]:
+        """Store documents in the database.
 
-        n_chunks = len(chunks)
+        Args:
+            chunks (List[str]): The chunks to store.
+            embeddings (List[List[float]]): The embeddings of the chunks.
+            language (str): The language of the chunks.
+            filename (str): The filename of the chunks.
+            batch_size (int, optional): The size of each batch. Defaults to 20.
+            limit_parallel (int, optional): The maximum number of parallel tasks / batches. Defaults to 10.
+            show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to False.
+
+        Returns:
+            Tuple[int, int]: The number of documents added and skipped.
+        """
         documents = []
+        n_chunks = len(chunks)
         for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
             documents.append(
                 {
@@ -94,26 +149,12 @@ class DbApiClient:
                 }
             )
 
-        with httpx.Client() as client:
-            response = client.post(
-                f"{self.base_url}/add",
-                json={"documents": documents},
-                headers={"X-API-Key": self.api_key, "Content-Type": "application/json"},
-            )
-            response.raise_for_status()
-            add_response = response.json()
-
-        if not add_response.get("status") == "success":
-            logger.error(f"Database storage failed: {add_response['error']}")
-
-    def clear_database(self):
-        with httpx.Client() as client:
-            response = client.delete(
-                f"{self.base_url}/delete_all",
-                headers={"X-API-Key": self.api_key},
-            )
-            response.raise_for_status()
-            del_response = response.json()
-
-        if not del_response.get("status") == "success":
-            logger.error(f"Database clear failed: {del_response['error']}")
+        batched_store_in_database = batched_parallel(
+            function=self._store_in_database,
+            batch_size=batch_size,
+            limit_parallel=limit_parallel,
+            show_progress=show_progress,
+            description="Storing in database",
+        )
+        added, skipped = batched_store_in_database(documents)
+        return sum(added), sum(skipped)

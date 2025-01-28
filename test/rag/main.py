@@ -2,6 +2,8 @@ from datasets import load_dataset
 from pathlib import Path
 import time
 from datetime import timedelta
+import sys
+
 from coco import CocoClient, rag_query
 
 cc = CocoClient(
@@ -65,19 +67,47 @@ def unique_texts(ds, verbose=False):
     return merged
 
 
-def main():
-    total_start = time.time()
+def clear_database():
+    start = time.time()
+    deleted_count = cc.db_api.clear_database()
+    duration = time.time() - start
+    print(f"Database cleared in {format_duration(duration)}")
+    print(f"Deleted {deleted_count} documents")
 
-    # Load dataset
-    dataset_start = time.time()
+
+def fill_database():
+    start = time.time()
     train_ds, _ = init_dataset()
     unique = unique_texts(train_ds)
     texts = [text for text, _ in unique]  # don't use titles for now
-    texts = texts[:300]  # ! tmp
-    dataset_duration = time.time() - dataset_start
-    print(f"\nDataset loading completed in {format_duration(dataset_duration)}")
+    dataset_duration = time.time() - start
+    start = time.time()
+    embeddings = cc.embedding.create_embeddings(
+        texts, batch_size=30, limit_parallel=10, show_progress=True
+    )
+    embedding_duration = time.time() - start
+    start = time.time()
+    added, skipped = cc.db_api.store_in_database(
+        texts,
+        embeddings,
+        "de",
+        "germandpr",
+        batch_size=30,
+        limit_parallel=20,
+        show_progress=True,
+    )
+    storage_duration = time.time() - start
+    print(f"Dataset loading: {format_duration(dataset_duration)}")
+    print(f"Embedding:       {format_duration(embedding_duration)}")
+    print(f"Storage:         {format_duration(storage_duration)}")
+    print(
+        f"Total:           {format_duration(dataset_duration + embedding_duration + storage_duration)}"
+    )
+    print(f"Added: {added}, Skipped: {skipped}")
 
-    # Get example query and ground truth
+
+def rag():
+    train_ds, _ = init_dataset()
     query = train_ds[0]["question"]
     print("\nQuery:")
     print(query)
@@ -96,38 +126,25 @@ def main():
     print("=" * 50)
     print()
 
-    # Create embeddings
-    embedding_start = time.time()
-    embeddings = cc.embedding.create_embeddings(texts, show_progress=True)
-    embedding_duration = time.time() - embedding_start
-    print(f"Embedding creation completed in {format_duration(embedding_duration)}")
-
-    # Store in database
-    storage_start = time.time()
-    cc.db_api.store_in_database(texts, embeddings, "de", "germandpr")
-    storage_duration = time.time() - storage_start
-    print(f"Database storage completed in {format_duration(storage_duration)}")
-
-    # Query RAG system
     rag_start = time.time()
     answer = rag_query(cc.db_api, query, verbose=True)
     rag_duration = time.time() - rag_start
-    print(f"RAG query completed in {format_duration(rag_duration)}")
 
-    print("\nGenerated Answer:")
+    print(f"\nGenerated Answer (took {format_duration(rag_duration)}):")
     print(answer)
 
-    # Print timing summary
-    total_duration = time.time() - total_start
-    print("\nTiming Summary:")
-    print(f"Dataset Loading: {format_duration(dataset_duration)}")
-    print(f"Embedding:       {format_duration(embedding_duration)}")
-    print(f"Storage:         {format_duration(storage_duration)}")
-    print(f"RAG Query:       {format_duration(rag_duration)}")
-    print(f"Total Time:      {format_duration(total_duration)}")
 
-    # clear database
-    cc.db_api.clear_database()
+def main():
+    assert len(sys.argv) == 2, "Usage: python main.py <clear_db|fill_db>"
+
+    if sys.argv[1] == "clear_db":
+        clear_database()
+    elif sys.argv[1] == "fill_db":
+        fill_database()
+    elif sys.argv[1] == "rag":
+        rag()
+    else:
+        raise ValueError(f"Invalid argument: {sys.argv[1]}")
 
 
 if __name__ == "__main__":
