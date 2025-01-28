@@ -42,7 +42,8 @@ class Pipe:
             "messages": messages,
             "stream": body.get("stream", False),
         }
-
+        
+        #add your URL that points directly to your container (correlating with the URL from the docker command)
         url = "http://host.docker.internal:11434/api/chat"
 
         try:
