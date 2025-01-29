@@ -1,0 +1,3 @@
+get_top_chunks:
+  top_k: 100
+  file_name: ${general.data_dir}/retrieval/${data.name}/${retrieval.get_top_chunks.top_k}.json
