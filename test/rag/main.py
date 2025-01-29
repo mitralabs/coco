@@ -13,6 +13,7 @@ import os  # ! tmp
 os.environ["WANDB_MODE"] = "offline"  # ! tmp
 
 logging.basicConfig(level=logging.INFO)
+logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 # def rag():

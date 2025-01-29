@@ -19,7 +19,7 @@ def get_top_chunks(cc: CocoClient, cfg: DictConfig, ds: Dataset):
             f"Loaded retrieved chunks from {cfg.retrieval.get_top_chunks.file_name}"
         )
         if (
-            not len(top_chunks[top_chunks.keys()[0]]["ids"])
+            not len(top_chunks[next(iter(top_chunks))]["ids"])
             == cfg.retrieval.get_top_chunks.top_k
         ):
             logger.warning(
@@ -29,11 +29,17 @@ def get_top_chunks(cc: CocoClient, cfg: DictConfig, ds: Dataset):
 
     # obtain from db
     top_chunks = {}
-    for sample in tqdm(ds, desc="Retrieving top chunks", total=len(ds)):
-        query = sample["question"]
-        ids, documents, metadatas, distances = cc.db_api.query_database(
-            query_text=query, n_results=cfg.retrieval.get_top_chunks.top_k
+    queries = [sample["question"] for sample in ds]
+    all_ids, all_documents, all_metadatas, all_distances = (
+        cc.db_api.query_database_batch(
+            query_texts=queries,
+            n_results=cfg.retrieval.get_top_chunks.top_k,
+            show_progress=True,
         )
+    )
+    for query, ids, documents, metadatas, distances in zip(
+        queries, all_ids, all_documents, all_metadatas, all_distances
+    ):
         top_chunks[query] = {
             "ids": ids,
             "documents": documents,
@@ -54,3 +60,10 @@ def get_top_chunks(cc: CocoClient, cfg: DictConfig, ds: Dataset):
 
 def handle_retrieval(cc: CocoClient, cfg: DictConfig, ds: Dataset):
     top_chunks = get_top_chunks(cc, cfg, ds)
+    logger.info(f"First query: {next(iter(top_chunks))}")
+    logger.info(
+        f"Number of chunks in first query: {len(top_chunks[next(iter(top_chunks))]['ids'])}"
+    )
+    logger.info(
+        f"Best chunk for first query: {top_chunks[next(iter(top_chunks))]['documents'][0]}"
+    )
