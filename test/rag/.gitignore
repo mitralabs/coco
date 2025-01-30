@@ -180,3 +180,5 @@ pyrightconfig.json
 .DS_Store
 
 data/
+outputs/
+wandb/

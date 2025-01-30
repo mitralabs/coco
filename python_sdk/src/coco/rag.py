@@ -1,5 +1,10 @@
-import httpx
+import ollama
+from typing import Generator
+
 from .db_api import DbApiClient
+
+client = ollama.Client(host="https://jetson-ollama.mitra-labs.ai")
+
 
 PROMPT = """
     Du bist ein zweites Gehirn für mich, ein Erinnerungsexperte, und deine Aufgabe ist es, basierend auf dem gegebenen Kontext den du aus meinen Erinnerungen in Form von Textausschnitten innerhalb der XML tags die dann folgende Frage so akkurat wie möglich beantwortest. Achte dabei darauf das deine Knowledge Base nur auf dem gegebenen Kontext basiert und du dich streng an das gegebene Format hälst:
@@ -20,7 +25,9 @@ PROMPT = """
 """
 
 
-def rag_query(db_client: DbApiClient, query: str, verbose=False):
+def rag_query(
+    db_client: DbApiClient, query: str, verbose=False
+) -> Generator[ollama.GenerateResponse, None, None]:
     _, documents, _, distances = db_client.query_database(query)
     if verbose:
         for doc, dist in zip(documents, distances):
@@ -29,12 +36,17 @@ def rag_query(db_client: DbApiClient, query: str, verbose=False):
             print("------")
     context = "------/n".join(documents)
     prompt = PROMPT.format(Kontext=context, Frage=query)
-    with httpx.Client() as client:
-        response = client.post(
-            "https://jetson-ollama.mitra-labs.ai/api/generate",
-            json={"model": "llama3.2:1b", "prompt": prompt, "stream": False},
-            headers={"Content-Type": "application/json"},
-            timeout=100,
-        )
-        response.raise_for_status()
-        return response.json()["response"]
+    response = client.generate(
+        model="bengt0/em_german_leo_mistral", prompt=prompt, stream=True
+    )
+    answer = ""
+    eval_count = 0
+    eval_duration = 0
+    for chunk in response:
+        if "response" in chunk:
+            token = chunk.response
+            answer += token
+            eval_count += chunk.eval_count if chunk.eval_count else 0
+            eval_duration += chunk.eval_duration if chunk.eval_duration else 0
+    tok_s = eval_count / eval_duration * 10**9
+    return answer, tok_s

@@ -5,11 +5,14 @@ import os
 import httpx
 from typing import List, Optional, Dict, Any
 import logging
+import ollama
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+
+ollama_client = ollama.Client(host="http://jetson-ollama.mitra-labs.ai")
 
 # Configuration
 API_KEY = os.getenv("API_KEY")
@@ -68,6 +71,7 @@ async def embed(chunks: List[str]) -> List[List[float]]:
             detail=f"Ollama did not return embeddings.",
         )
     embeddings = response_json["embeddings"]
+    # embeddings = ollama_client.embed(model=OLLAMA_MODEL, input=chunks).embeddings
     return embeddings
 
 
