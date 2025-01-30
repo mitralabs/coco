@@ -13,13 +13,11 @@ class DbApiClient:
         self.base_url = base_url
         self.api_key = api_key
 
-    def query_database(
-        self, query_text: str, n_results: int = 5
-    ) -> Tuple[List[str], List[str], List[str], List[float]]:
-        """Retrieve the top n most similar results from the database service.
+    def get_closest(self, embedding: List[float], n_results: int = 5):
+        """Retrieve the closest results from the database service.
 
         Args:
-            query_text (str): The query text to search for.
+            embedding (List[float]): The embedding to search for.
             n_results (int, optional): The number of results to return. Defaults to 5.
 
         Returns:
@@ -32,23 +30,85 @@ class DbApiClient:
         """
         with httpx.Client() as client:
             response = client.post(
-                f"{self.base_url}/query",
-                json={"text": query_text, "n_results": n_results},
+                f"{self.base_url}/get_closest",
+                json={"embedding": embedding, "n_results": n_results},
                 headers={"X-API-Key": self.api_key, "Content-Type": "application/json"},
             )
             response.raise_for_status()
-            database_response = response.json()
+            closest_response = response.json()
 
-        if not database_response.get("status") == "success":
-            logger.error(f"Database query failed: {database_response['error']}")
+        if not closest_response.get("status") == "success":
+            logger.error(f"Database get closest failed: {closest_response['error']}")
 
-        results = database_response["results"]
+        results = closest_response["results"]
         ids = [result["id"] for result in results]
         documents = [result["document"] for result in results]
         metadatas = [result["metadata"] for result in results]
         distances = [result["distance"] for result in results]
 
         return ids, documents, metadatas, distances
+
+    async def _get_multiple_closest(
+        self, embeddings: List[List[float]], n_results: int = 5
+    ):
+        async with httpx.AsyncClient(timeout=300.0) as client:
+            response = await client.post(
+                f"{self.base_url}/get_multiple_closest",
+                json={"embeddings": embeddings, "n_results": n_results},
+                headers={"X-API-Key": self.api_key, "Content-Type": "application/json"},
+            )
+            response.raise_for_status()
+            closest_response = response.json()
+
+        if not closest_response.get("status") == "success":
+            logger.error(
+                f"Database get multiple closest failed: {closest_response['error']}"
+            )
+
+        all_formatted_results = closest_response["results"]
+        query_answers = []
+        for formatted_results in all_formatted_results:
+            ids = [result["id"] for result in formatted_results]
+            documents = [result["document"] for result in formatted_results]
+            metadatas = [result["metadata"] for result in formatted_results]
+            distances = [result["distance"] for result in formatted_results]
+            query_answers.append((ids, documents, metadatas, distances))
+
+        return query_answers
+
+    def get_multiple_closest(
+        self,
+        embeddings: List[List[float]],
+        n_results: int = 5,
+        batch_size: int = 20,
+        limit_parallel: int = 10,
+        show_progress: bool = True,
+    ):
+        """Get the closest results from the database service for multiple embeddings.
+
+        Args:
+            embeddings (List[List[float]]): The embeddings to search for.
+            n_results (int, optional): The number of results to return for each embedding. Defaults to 5.
+            batch_size (int, optional): The size of each batch. Defaults to 20.
+            limit_parallel (int, optional): The maximum number of parallel tasks / batches. Defaults to 10.
+            show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to True.
+
+        Returns:
+            List[Tuple[List[str], List[str], List[Dict], List[float]]]: The closest results for each embedding.
+            metadata dict:
+                - language: str (the chunk's language)
+                - filename: str (the audio filename the chunk was extracted from)
+                - chunk_index: int (the index of the chunk in the audio file)
+                - total_chunks: int (the total number of chunks of the audio file)
+        """
+        batched_get_multiple_closest = batched_parallel(
+            function=self._get_multiple_closest,
+            batch_size=batch_size,
+            limit_parallel=limit_parallel,
+            show_progress=show_progress,
+            description="Getting multiple closest",
+        )
+        return batched_get_multiple_closest(embeddings, n_results)
 
     def get_full_database(self):
         with httpx.Client() as client:
@@ -163,62 +223,3 @@ class DbApiClient:
             chunks, embeddings, language, filename
         )
         return sum(ns_added), sum(ns_skipped)
-
-    async def _query_database_async(
-        self, query_texts: List[str], n_results: int = 5
-    ) -> Tuple[List[str], List[str], List[str], List[float]]:
-        """Async version of query_database."""
-        ids, documents, metadatas, distances = [], [], [], []
-        async with httpx.AsyncClient(timeout=300.0) as client:
-            for query_text in query_texts:
-                response = await client.post(
-                    f"{self.base_url}/query",
-                    json={"text": query_text, "n_results": n_results},
-                    headers={
-                        "X-API-Key": self.api_key,
-                        "Content-Type": "application/json",
-                    },
-                )
-                response.raise_for_status()
-                database_response = response.json()
-
-            if not database_response.get("status") == "success":
-                logger.error(f"Database query failed: {database_response['error']}")
-
-            results = database_response["results"]
-            ids.append([result["id"] for result in results])
-            documents.append([result["document"] for result in results])
-            metadatas.append([result["metadata"] for result in results])
-            distances.append([result["distance"] for result in results])
-
-        return ids, documents, metadatas, distances
-
-    def query_database_batch(
-        self,
-        query_texts: List[str],
-        n_results: int = 5,
-        show_progress: bool = False,
-    ) -> Tuple[List[str], List[str], List[str], List[float]]:
-        """Query multiple texts in parallel batches.
-
-        Args:
-            query_texts (List[str]): List of query texts to search for.
-            n_results (int, optional): Number of results to return per query. Defaults to 5.
-            batch_size (int, optional): Size of each batch. Defaults to 20.
-            limit_parallel (int, optional): Maximum number of parallel tasks. Defaults to 10.
-            show_progress (bool, optional): Whether to show progress bar. Defaults to False.
-
-        Returns:
-            Tuple[List[str], List[str], List[Dict], List[float]]: (ids, documents, metadatas, distances)
-            Each element in the tuple is a list of results, one per input query.
-        """
-        batched_query = batched_parallel(
-            function=self._query_database_async,
-            batch_size=50,
-            limit_parallel=20,
-            show_progress=show_progress,
-            description="Querying database",
-        )
-
-        ids, documents, metadatas, distances = batched_query(query_texts, n_results)
-        return ids, documents, metadatas, distances

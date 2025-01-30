@@ -8,9 +8,6 @@ from data import handle_data
 from retrieval import handle_retrieval
 from generation import handle_generation
 
-import os  # ! tmp
-
-os.environ["WANDB_MODE"] = "offline"  # ! tmp
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("httpx").setLevel(logging.WARNING)

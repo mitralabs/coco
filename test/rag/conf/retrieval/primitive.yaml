@@ -1,3 +1,5 @@
 get_top_chunks:
   top_k: 100
   file_name: ${general.data_dir}/retrieval/${data.name}/${retrieval.get_top_chunks.top_k}.json
+metric_ks: [1, 5, 10, 20, 50, 100]
+rank_first_relevant_punishment: 101 # if gt chunk was not retrieved at all, then this value is its the rank

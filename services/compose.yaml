@@ -48,7 +48,8 @@ services:
       - ./embedding/app:/app
     environment:
       - API_KEY=test
-      - BASE_URL=https://jetson-ollama.mitra-labs.ai/api
+      # - BASE_URL=https://jetson-ollama.mitra-labs.ai/api
+      - BASE_URL=http://host.docker.internal:11434/api
       - OLLAMA_MODEL=nomic-embed-text
     restart: unless-stopped
     healthcheck:
@@ -69,7 +70,6 @@ services:
       - ./_data:/data
     environment:
       - API_KEY=test
-      - EMBEDDING_URL=http://embedding:8000
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_DB=coco

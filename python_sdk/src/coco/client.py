@@ -1,6 +1,6 @@
 import os
 import httpx
-from typing import List
+from typing import List, Tuple, Dict
 
 from .async_utils import batched_parallel
 from .chunking import ChunkingClient
@@ -102,3 +102,36 @@ class CocoClient:
         )
         n_added, n_skipped = batched_embed_and_store(chunks, language, filename)
         return sum(n_added), sum(n_skipped)
+
+    async def _retrieve_chunks(self, query_texts, n_results):
+        embeddings = await self.embedding._create_embeddings(query_texts)
+        return await self.db_api._get_multiple_closest(embeddings, n_results)
+
+    def retrieve_chunks(
+        self,
+        query_texts: List[str],
+        n_results: int = 5,
+        batch_size: int = 20,
+        limit_parallel: int = 10,
+        show_progress: bool = True,
+    ) -> List[Tuple[List[str], List[str], List[Dict], List[float]]]:
+        """Retrieve chunks from the database.
+
+        Args:
+            query_texts (List[str]): The query texts to retrieve chunks for.
+            n_results (int, optional): The number of results to retrieve. Defaults to 5.
+            batch_size (int, optional): The size of each batch. Defaults to 20.
+            limit_parallel (int, optional): The maximum number of parallel tasks / batches. Defaults to 10.
+            show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to True.
+
+        Returns:
+            List[Tuple[List[str], List[str], List[Dict], List[float]]]: The retrieved chunks.
+        """
+        batched_retrieve_chunks = batched_parallel(
+            function=self._retrieve_chunks,
+            batch_size=batch_size,
+            limit_parallel=limit_parallel,
+            show_progress=show_progress,
+            description="Retrieving chunks",
+        )
+        return batched_retrieve_chunks(query_texts, n_results)

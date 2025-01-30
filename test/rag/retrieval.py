@@ -1,11 +1,13 @@
+import numpy as np
+import wandb
 from datasets import Dataset
+from collections import defaultdict
 from omegaconf import DictConfig
 import json
 from pathlib import Path
 import logging
-from tqdm import tqdm
 from coco import CocoClient
-
+from typing import Dict, Any, List
 
 logger = logging.getLogger(__name__)
 
@@ -30,16 +32,12 @@ def get_top_chunks(cc: CocoClient, cfg: DictConfig, ds: Dataset):
     # obtain from db
     top_chunks = {}
     queries = [sample["question"] for sample in ds]
-    all_ids, all_documents, all_metadatas, all_distances = (
-        cc.db_api.query_database_batch(
-            query_texts=queries,
-            n_results=cfg.retrieval.get_top_chunks.top_k,
-            show_progress=True,
-        )
+    results = cc.retrieve_chunks(
+        query_texts=queries,
+        n_results=cfg.retrieval.get_top_chunks.top_k,
+        show_progress=True,
     )
-    for query, ids, documents, metadatas, distances in zip(
-        queries, all_ids, all_documents, all_metadatas, all_distances
-    ):
+    for query, (ids, documents, metadatas, distances) in zip(queries, results):
         top_chunks[query] = {
             "ids": ids,
             "documents": documents,
@@ -58,12 +56,112 @@ def get_top_chunks(cc: CocoClient, cfg: DictConfig, ds: Dataset):
     return top_chunks
 
 
+def precision_at_k(retrieved_chunks: List[str], gt_chunks: List[str], k: int):
+    if k > len(retrieved_chunks):
+        return float("nan")
+    retrieved_chunks_k = retrieved_chunks[:k]
+    n_correct = len(set(gt_chunks) & set(retrieved_chunks_k))
+    return n_correct / k
+
+
+def recall_at_k(retrieved_chunks: List[str], gt_chunks: List[str], k: int):
+    if k > len(retrieved_chunks):
+        return float("nan")
+    retrieved_chunks_k = retrieved_chunks[:k]
+    n_correct = len(set(gt_chunks) & set(retrieved_chunks_k))
+    return n_correct / len(gt_chunks)
+
+
+def f1_score(precision: float, recall: float):
+    if precision == float("nan") or recall == float("nan"):
+        return float("nan")
+    if precision == 0 or recall == 0:
+        return 0
+    return 2 * (precision * recall) / (precision + recall)
+
+
+def rank_first_relevant(
+    retrieved_chunks: List[str], gt_chunks: List[str], cfg: DictConfig
+):
+    for i, retrieved_chunk in enumerate(retrieved_chunks):
+        if retrieved_chunk in gt_chunks:
+            return i + 1
+    return cfg.retrieval.rank_first_relevant_punishment
+
+
+def mean_reciprocal_rank(ranks: List[int]):
+    return np.nanmean(1 / np.array(ranks))
+
+
+def average_precision(retrieved_chunks: List[str], gt_chunks: List[str]):
+    weighted_precision = 0
+    for gt_chunk in gt_chunks:
+        try:
+            idx = retrieved_chunks.index(gt_chunk)
+        except ValueError:  # not present
+            continue
+        weighted_precision += precision_at_k(retrieved_chunks, gt_chunks, idx + 1)
+    return weighted_precision / len(gt_chunks)
+
+
+def mean_average_precision(aps: List[float]):
+    return np.nanmean(np.array(aps))
+
+
+def compute_metrics(
+    top_chunks: Dict[str, Dict[str, Any]], cfg: DictConfig, ds: Dataset
+):
+    precs, recs, f1s = (
+        defaultdict(list),
+        defaultdict(list),
+        defaultdict(list),
+    )
+    ranks, aps = [], []
+
+    # sample wise metrics
+    for sample in ds:
+        query = sample["question"]
+        gt_chunks = sample["positive_ctxs"]["text"]
+        retrieved_chunks = top_chunks[query]["documents"]
+
+        # order independent metrics
+        for k in cfg.retrieval.metric_ks:
+            prec = precision_at_k(retrieved_chunks, gt_chunks, k)
+            rec = recall_at_k(retrieved_chunks, gt_chunks, k)
+            f1 = f1_score(prec, rec)
+            precs[k].append(prec)
+            recs[k].append(rec)
+            f1s[k].append(f1)
+
+        # order aware metrics
+        ranks.append(rank_first_relevant(retrieved_chunks, gt_chunks, cfg))
+        aps.append(average_precision(retrieved_chunks, gt_chunks))
+
+    # dataset wise order independent metrics
+    macro_avg_prec, macro_avg_rec, macro_avg_f1 = {}, {}, {}
+    for k in cfg.retrieval.metric_ks:
+        macro_avg_prec[k] = np.nanmean(np.array(precs[k]))
+        macro_avg_rec[k] = np.nanmean(np.array(recs[k]))
+        macro_avg_f1[k] = np.nanmean(np.array(f1s[k]))
+
+    # dataset wise order aware metrics
+    m_r = np.nanmean(np.array(ranks))
+    m_rr = mean_reciprocal_rank(ranks)
+    m_ap = mean_average_precision(aps)
+
+    metrics = {
+        "mr": m_r,
+        "mrr": m_rr,
+        "map": m_ap,
+    }
+    for k in cfg.retrieval.metric_ks:
+        metrics[f"precision@{str(k).zfill(4)}"] = np.nanmean(np.array(precs[k]))
+        metrics[f"recall@{str(k).zfill(4)}"] = np.nanmean(np.array(recs[k]))
+        metrics[f"f1@{str(k).zfill(4)}"] = np.nanmean(np.array(f1s[k]))
+    return metrics
+
+
 def handle_retrieval(cc: CocoClient, cfg: DictConfig, ds: Dataset):
     top_chunks = get_top_chunks(cc, cfg, ds)
-    logger.info(f"First query: {next(iter(top_chunks))}")
-    logger.info(
-        f"Number of chunks in first query: {len(top_chunks[next(iter(top_chunks))]['ids'])}"
-    )
-    logger.info(
-        f"Best chunk for first query: {top_chunks[next(iter(top_chunks))]['documents'][0]}"
-    )
+    metrics = compute_metrics(top_chunks, cfg, ds)
+    wandb.log({f"retrieval/{k}": v for k, v in metrics.items()})
