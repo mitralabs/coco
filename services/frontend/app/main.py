@@ -3,26 +3,14 @@ import gradio as gr
 import aiohttp
 import requests
 import asyncio
-
-def query_text(text: str, n_results: int = 5) -> str:
-    response = requests.post(
-        "http://localhost:8003/query",
-        headers={
-            "accept": "application/json",
-            "X-API-Key": "test",
-            "Content-Type": "application/json",
-        },
-        json={"text": text, "n_results": n_results},
-    )
-    return "\n".join(f"- {r['document']}\n" for r in response.json()["results"])
-
+from coco import rag_query
 
 async def slow_echo(user_message, history):
     
-    rag_content = query_text(user_message)
+    rag_content = rag_query(user_message)
     print(rag_content)
     system_prompt = """
-    **This is something that came to your mind with regard to the user's last message. Think through if you want to use it.**
+    **Das ist etwas, das dir in Bezug auf die letzte Nachricht des Benutzers in den Sinn gekommen ist. Überlegen Sie, ob du es verwenden möchtest.**
     {{rag_result}}
     """
     user_message = f'With this in your mind:\n{rag_content}\n\n{user_message}'
