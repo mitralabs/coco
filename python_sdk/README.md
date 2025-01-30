@@ -8,16 +8,11 @@ From **this directory** (`python_sdk`):
 pip install -e .
 ```
 
-(Note that this installs the package for development.
-When installing this way, code changes made in this
-directory are directly reflected in the package
-without reinstallation. Only if new dependencies
-are added to `pyproject.toml`, the installation
-has to be rerun.)
+This installs the package for development. When installing this way, code changes made in this directory are directly reflected in the package without reinstallation. Only if new dependencies are added to `pyproject.toml`, the installation has to be rerun.
 
-## Initialization
+## Configuration
 
-The SDK can be initialized either through environment variables or by passing the configuration directly to the client:
+The SDK can be initialized either through environment variables or by passing the configuration directly to the clients.
 
 ### Environment Variables
 
@@ -31,6 +26,24 @@ export COCO_API_KEY="your-api-key"
 
 ### Direct Initialization
 
+Each client requires:
+
+- `base_url`: The base URL of the respective service
+- `api_key`: API key for authentication
+
+Default service endpoints:
+
+```python
+chunking_base = "http://127.0.0.1:8001"
+embedding_base = "http://127.0.0.1:8002"
+db_api_base = "http://127.0.0.1:8003"
+transcription_base = "http://127.0.0.1:8000"
+```
+
+## Usage
+
+The SDK provides a main client class with specialized clients for different services:
+
 ```python
 from coco import CocoClient
 
@@ -41,50 +54,92 @@ client = CocoClient(
     transcription_base="http://your-transcription-service",
     api_key="your-api-key"
 )
+
+# Access specialized clients
+client.db       # Database operations
+client.embed    # Embedding generation
+client.chunk    # Text chunking
+client.rag      # RAG queries
+client.transcribe  # Audio transcription
 ```
 
-### Combination
+### Database Operations
 
-You can also set URLs partially as client arguments
-and partially via environment variables.
-Not that **for API key and URLs,
-client arguments take precedence over environment
-variables**.
+```python
+# Get closest matches for a single embedding
+ids, documents, metadatas, distances = client.db.get_closest(
+    embedding,   # List[float]: The query embedding
+    n_results=5  # int: Number of results to return
+)
 
-## Available Modules
+# Get closest matches for multiple embeddings
+results = client.db.get_multiple_closest(
+    embeddings,        # List[List[float]]: Query embeddings
+    n_results=5,       # int: Results per query
+    batch_size=20,     # int: Batch size for processing
+    limit_parallel=10, # int: Max parallel batches
+    show_progress=True # bool: Show progress bar
+)
 
-The SDK provides several specialized clients for different services:
+# Get full database contents
+ids, documents, metadatas = client.db.get_full_database()
 
-### Transcription Client
+# Clear database
+deleted_count = client.db.clear_database()
 
-- Handles audio file transcription
-- Converts audio files to text with language detection
-- Returns transcribed text, detected language, and filename
+# Store documents in database
+n_added, n_skipped = client.db.store_in_database(
+    chunks,           # List[str]: Text chunks to store
+    embeddings,       # List[List[float]]: Chunk embeddings
+    language,         # str: Language code
+    filename,         # str: Source filename
+    batch_size=20,    # int: Batch size
+    limit_parallel=10,# int: Max parallel batches
+    show_progress=False
+)
+```
 
-### Chunking Client
+### Embedding Generation
 
-- Processes text into semantic chunks
-- Configurable chunk size and overlap
-- Optimized for maintaining context and meaning
+```python
+# Create embeddings for text chunks
+embeddings = client.embed.create_embeddings(
+    chunks,           # List[str]: Text chunks to embed
+    batch_size=20,    # int: Batch size for processing
+    limit_parallel=10,# int: Max parallel batches
+    show_progress=False
+)
+```
 
-### Embedding Client
+### RAG Queries
 
-- Creates vector embeddings from text chunks
-- Supports batch processing with progress tracking
-- Handles large-scale embedding generation efficiently
+```python
+# Perform a RAG query
+answer, tokens_per_second = client.rag.query(
+    query,        # str: The query to answer
+    verbose=False # bool: Whether to print retrieved documents and distances
+)
+```
 
-### DB API Client
+### Text Chunking
 
-- Manages vector database operations
-- Supports similarity search queries
-- Stores and retrieves embeddings with metadata
-- Provides database management functions (clear, get all)
+```python
+# Process text into semantic chunks
+chunks = client.chunk.create_chunks(
+    text,        # str: Text to chunk
+    language     # str: Language of the text
+)
+```
 
-### RAG (Retrieval-Augmented Generation)
+### Audio Transcription
 
-- Implements RAG query functionality
-- Combines vector search with LLM generation
-- Provides context-aware responses in German
+```python
+# Transcribe audio file
+text, language = client.transcribe.process_file(
+    file_path,   # str: Path to audio file
+    language     # str: Expected language (optional)
+)
+```
 
 ## Health Check
 
