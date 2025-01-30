@@ -1,6 +1,6 @@
 from typing import Callable, Awaitable, Any
 import asyncio
-from tqdm import tqdm
+import tqdm.asyncio
 
 
 def batched_parallel(
@@ -97,36 +97,19 @@ def batched_parallel(
                 batch_kwargs = {key: value[i] for key, value in new_kwargs.items()}
                 tasks.append(waiting_wrapper(batch_args, batch_kwargs, semaphore))
 
-            # run the tasks
             if show_progress:
-                return_values = None  # will be initialized as tuple of lists or list depending on return type
-                for f in tqdm(
-                    asyncio.as_completed(tasks),
-                    total=len(tasks),
-                    desc=description,
-                    unit="batch",
-                ):
-                    result = await f
-                    if return_values is None:
-                        if isinstance(result, tuple):
-                            return_values = tuple([] for _ in result)
-                        else:
-                            return_values = []
-
-                    if isinstance(result, tuple):
-                        for i, sublist in enumerate(result):
-                            return_values[i].extend(sublist)
-                    else:
-                        return_values.extend(result)
+                results = await tqdm.asyncio.tqdm.gather(
+                    *tasks, desc=description, unit="batch"
+                )
             else:
                 results = await asyncio.gather(*tasks)
-                if isinstance(results[0], tuple):
-                    return_values = tuple([] for _ in results[0])
-                    for batch in results:
-                        for i, sublist in enumerate(batch):
-                            return_values[i].extend(sublist)
-                else:
-                    return_values = [e for batch in results for e in batch]
+            if isinstance(results[0], tuple):
+                return_values = tuple([] for _ in results[0])
+                for batch in results:
+                    for i, sublist in enumerate(batch):
+                        return_values[i].extend(sublist)
+            else:
+                return_values = [e for batch in results for e in batch]
 
             return return_values
 
