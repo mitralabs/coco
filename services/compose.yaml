@@ -75,7 +75,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_DB=coco
       - POSTGRES_HOST=db
-      - VEKTOR_DIM = 1024 # BGE-M3 // Nomic Embedding = 768
+      - VEKTOR_DIM=1024 # BGE-M3 // Nomic Embedding = 768
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
