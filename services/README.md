@@ -10,6 +10,9 @@ This directory contains all services running on the base station.
 - **Docker Template**: A boilerplate FastAPI service for creating new services, including basic API key authentication.
 
 ## Usage
+
+First, check the `compose.yaml`and set correct URLs for the Ollama Instance and the Models to be used.
+
 From **this directory**:
 ```sh
 docker compose up -d --wait
