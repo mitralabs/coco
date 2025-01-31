@@ -48,9 +48,10 @@ services:
       - ./embedding/app:/app
     environment:
       - API_KEY=test
-      # - BASE_URL=https://jetson-ollama.mitra-labs.ai/api
-      - BASE_URL=http://host.docker.internal:11434/api
-      - OLLAMA_MODEL=nomic-embed-text
+      #- BASE_URL=https://jetson-ollama.mitra-labs.ai/api
+      - BASE_URL=http://192.168.178.34:11434/api
+      #- BASE_URL=http://host.docker.internal:11434/api
+      - OLLAMA_MODEL=bge-m3:latest #Alternative: nomic-embed-text
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
@@ -74,6 +75,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_DB=coco
       - POSTGRES_HOST=db
+      - VEKTOR_DIM = 1024 # BGE-M3 // Nomic Embedding = 768
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
@@ -91,6 +93,8 @@ services:
     image: pgvector/pgvector:0.8.0-pg17
     volumes:
       - ./_data/db:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
     environment:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_USER=postgres
