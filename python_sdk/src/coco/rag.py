@@ -19,7 +19,17 @@ PROMPT = """
     </Frage>
 """
 
-
+def only_rag(db_client: DbApiClient, query: str, verbose=False):
+    _, documents, _, distances = db_client.query_database(query)
+    if verbose:
+        for doc, dist in zip(documents, distances):
+            print(f"Distance: {dist}")
+            print(doc)
+            print("------")
+    context = "------/n".join(documents)
+    prompt = PROMPT.format(Kontext=context, Frage=query)
+    return prompt
+    
 def rag_query(db_client: DbApiClient, query: str, verbose=False):
     _, documents, _, distances = db_client.query_database(query)
     if verbose:

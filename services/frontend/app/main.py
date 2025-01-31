@@ -3,23 +3,24 @@ import gradio as gr
 import aiohttp
 import requests
 import asyncio
-from coco import rag_query
+
+from coco import CocoClient, only_rag, rag_query
+
+cc = CocoClient(
+    chunking_base="http://127.0.0.1:8001",
+    embedding_base="http://127.0.0.1:8002",
+    db_api_base="http://127.0.0.1:8003",
+    transcription_base="http://127.0.0.1:8000",
+    api_key="test",
+)
 
 async def slow_echo(user_message, history):
     
-    rag_content = rag_query(user_message)
+    rag_content = rag_query(cc, user_message)
     print(rag_content)
-    system_prompt = """
-    **Das ist etwas, das dir in Bezug auf die letzte Nachricht des Benutzers in den Sinn gekommen ist. Überlegen Sie, ob du es verwenden möchtest.**
-    {{rag_result}}
-    """
-    user_message = f'With this in your mind:\n{rag_content}\n\n{user_message}'
-
     messages_ollama = [{"role": m['role'], "content": m['content']} for m in history]
     #messages_ollama.extend([{"role": "system","content": system_prompt.format(rag_result=rag_content)}])
-
-    messages_ollama.append({"role": "user", "content": user_message})
-
+    messages_ollama.append({"role": "user", "content": rag_content})
 
     url = "https://jetson-ollama.mitra-labs.ai/api/chat"
     payload = {
