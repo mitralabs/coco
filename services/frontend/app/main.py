@@ -16,13 +16,13 @@ cc = CocoClient(
 
 async def slow_echo(user_message, history):
     
-    rag_content = rag_query(cc, user_message)
+    rag_content = only_rag(cc, user_message)
     print(rag_content)
     messages_ollama = [{"role": m['role'], "content": m['content']} for m in history]
     #messages_ollama.extend([{"role": "system","content": system_prompt.format(rag_result=rag_content)}])
     messages_ollama.append({"role": "user", "content": rag_content})
 
-    url = "https://jetson-ollama.mitra-labs.ai/api/chat"
+    url = "https://jetson-ollama.mitra-labs.ai/api/generate"
     payload = {
         "model": "deepseek-r1:14b",
         "messages": messages_ollama,
