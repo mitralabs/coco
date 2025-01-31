@@ -22,7 +22,7 @@ async def slow_echo(user_message, history):
     #messages_ollama.extend([{"role": "system","content": system_prompt.format(rag_result=rag_content)}])
     messages_ollama.append({"role": "user", "content": rag_content})
 
-    url = "https://jetson-ollama.mitra-labs.ai/api/generate"
+    url = "https://jetson-ollama.mitra-labs.ai/api/chat"
     payload = {
         "model": "deepseek-r1:14b",
         "messages": messages_ollama,
