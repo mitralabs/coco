@@ -14,6 +14,7 @@ coco:
   embedding_base: http://127.0.0.1:8002
   db_api_base: http://127.0.0.1:8003
   transcription_base: http://127.0.0.1:8000
+  ollama_base: http://127.0.0.1:11434
   api_key: test
 
 general:

@@ -161,7 +161,8 @@ def compute_metrics(
     return metrics
 
 
-def handle_retrieval(cc: CocoClient, cfg: DictConfig, ds: Dataset):
+def retrieval_stage(cc: CocoClient, cfg: DictConfig, ds: Dataset):
     top_chunks = get_top_chunks(cc, cfg, ds)
     metrics = compute_metrics(top_chunks, cfg, ds)
     wandb.log({f"retrieval/{k}": v for k, v in metrics.items()})
+    return top_chunks

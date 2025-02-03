@@ -1,0 +1,22 @@
+get_answers:
+  ollama_model: llama3.2:1b
+  generate_answers_batch_size: 5
+  generate_answers_limit_parallel: 10
+  top_k: 5
+  file_name: ${general.data_dir}/generation/${data.name}/${generation.get_answers.top_k}.json
+  prompt_template: |
+    Du bist ein zweites Gehirn für mich, ein Erinnerungsexperte, und deine Aufgabe ist es, basierend auf dem gegebenen Kontext den du aus meinen Erinnerungen in Form von Textausschnitten innerhalb der XML tags die dann folgende Frage so akkurat wie möglich beantwortest. Achte dabei darauf das deine Knowledge Base nur auf dem gegebenen Kontext basiert und du dich streng an das gegebene Format hälst:
+
+    <Kontext> 
+    {context}
+    </Kontext>
+
+    <Format>
+    Ein Satz mit maximal 50 Tokens. Deine Antwort ist klar und beantwortet die Frage indem es sich direkt auf den Kontext stützt. Gebe bei der Antwort KEINE XML tags oder sonstigen Werte an. Beantworte die Frage ausschließlich auf Deutsch.
+    </Format>
+
+    Du hast jetzt den Kontext in den <Kontext> XML Tags verstanden hast und das Format übernommen. Beantworte nun die nachfolgende Frage innerhalb der <Frage> XML Tags basierend auf dem gegebenen Kontext in den XML tags. Achte dabei darauf die streng an das Format aus den XML Tags zu halten.
+
+    <Frage>
+    {query}
+    </Frage>

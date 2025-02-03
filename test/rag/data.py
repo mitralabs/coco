@@ -107,7 +107,7 @@ def fill_database(cc: CocoClient, cfg: DictConfig, dataset: Dataset):
     )
 
 
-def handle_data(cc: CocoClient, cfg: DictConfig) -> Dataset:
+def data_stage(cc: CocoClient, cfg: DictConfig) -> Dataset:
     ds = init_dataset(cfg)
     backup_database(cfg)
     clear_database(cc, cfg)
