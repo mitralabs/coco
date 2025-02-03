@@ -1,11 +1,12 @@
 import os
 import httpx
-from typing import List, Tuple, Dict
+from typing import List
 
 from .async_utils import batched_parallel
 from .chunking import ChunkingClient
 from .embeddings import EmbeddingClient
 from .db_api import DbApiClient
+from .rag import RagClient
 from .transcription import TranscriptionClient
 
 
@@ -16,12 +17,14 @@ class CocoClient:
         embedding_base: str = None,
         db_api_base: str = None,
         transcription_base: str = None,
+        ollama_base: str = None,
         api_key: str = None,
     ):
         self.chunking_base = chunking_base
         self.embedding_base = embedding_base
         self.db_api_base = db_api_base
         self.transcription_base = transcription_base
+        self.ollama_base = ollama_base
         self.api_key = api_key
 
         if not self.chunking_base:
@@ -32,6 +35,8 @@ class CocoClient:
             self.db_api_base = os.getenv("COCO_DB_API_URL_BASE")
         if not self.transcription_base:
             self.transcription_base = os.getenv("COCO_TRANSCRIPTION_URL_BASE")
+        if not self.ollama_base:
+            self.ollama_base = os.getenv("COCO_OLLAMA_URL_BASE")
         if not self.api_key:
             self.api_key = os.getenv("COCO_API_KEY")
 
@@ -39,12 +44,14 @@ class CocoClient:
         assert self.embedding_base, "Embedding base URL is not set"
         assert self.db_api_base, "DB API base URL is not set"
         assert self.transcription_base, "Transcription base URL is not set"
+        assert self.ollama_base, "Ollama base URL is not set"
         assert self.api_key, "API key is not set"
 
         self.chunking = ChunkingClient(self.chunking_base, self.api_key)
         self.embedding = EmbeddingClient(self.embedding_base, self.api_key)
         self.db_api = DbApiClient(self.db_api_base, self.api_key)
         self.transcription = TranscriptionClient(self.transcription_base, self.api_key)
+        self.rag = RagClient(self.ollama_base)
 
     def health_check(self):
         services = {
@@ -102,36 +109,3 @@ class CocoClient:
         )
         n_added, n_skipped = batched_embed_and_store(chunks, language, filename)
         return sum(n_added), sum(n_skipped)
-
-    async def _retrieve_chunks(self, query_texts, n_results):
-        embeddings = await self.embedding._create_embeddings(query_texts)
-        return await self.db_api._get_multiple_closest(embeddings, n_results)
-
-    def retrieve_chunks(
-        self,
-        query_texts: List[str],
-        n_results: int = 5,
-        batch_size: int = 20,
-        limit_parallel: int = 10,
-        show_progress: bool = True,
-    ) -> List[Tuple[List[str], List[str], List[Dict], List[float]]]:
-        """Retrieve chunks from the database.
-
-        Args:
-            query_texts (List[str]): The query texts to retrieve chunks for.
-            n_results (int, optional): The number of results to retrieve. Defaults to 5.
-            batch_size (int, optional): The size of each batch. Defaults to 20.
-            limit_parallel (int, optional): The maximum number of parallel tasks / batches. Defaults to 10.
-            show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to True.
-
-        Returns:
-            List[Tuple[List[str], List[str], List[Dict], List[float]]]: The retrieved chunks.
-        """
-        batched_retrieve_chunks = batched_parallel(
-            function=self._retrieve_chunks,
-            batch_size=batch_size,
-            limit_parallel=limit_parallel,
-            show_progress=show_progress,
-            description="Retrieving chunks",
-        )
-        return batched_retrieve_chunks(query_texts, n_results)

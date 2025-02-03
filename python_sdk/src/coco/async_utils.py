@@ -67,7 +67,7 @@ def batched_parallel(
 
         # if there is only one batch, run the function directly
         if n_batches is None or n_batches == 1:
-            return function(*args, **kwargs)
+            return asyncio.run(function(*args, **kwargs))
 
         async def waiting_wrapper(args, kwargs, semaphore: asyncio.Semaphore | None):
             """
