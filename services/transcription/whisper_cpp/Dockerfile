@@ -19,6 +19,9 @@ RUN git clone https://github.com/ggerganov/whisper.cpp.git
 # Set the working directory
 WORKDIR /whisper.cpp
 
+# Commit that was successfully tested
+RUN git checkout 6aa1d7b89216dc6d9c41fc1536fae59adb214024
+
 # Build the project
 RUN make
 

@@ -11,6 +11,7 @@ POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
 POSTGRES_DB = os.getenv("POSTGRES_DB")
 POSTGRES_HOST = os.getenv("POSTGRES_HOST")
 POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
+VEKTOR_DIM = int(os.getenv("VEKTOR_DIM", "768"))
 SQLALCHEMY_DATABASE_URL = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
@@ -23,7 +24,7 @@ class Document(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     text = Column(String, nullable=False, unique=True)
     embedding = Column(
-        Vector(768), nullable=False
+        Vector(VEKTOR_DIM), nullable=False
     )  # dim for nomic model, change if necessary
     language = Column(String, nullable=False)
     filename = Column(String, nullable=False)

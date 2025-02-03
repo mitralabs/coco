@@ -1,0 +1,11 @@
+name: germandpr
+hf_name: deepset/germandpr
+language: de
+use_train: true
+use_test: false
+backup_db: false
+clear_db: false
+fill_db:
+  skip: true
+  embed_and_store_batch_size: 25
+  embed_and_store_limit_parallel: 10

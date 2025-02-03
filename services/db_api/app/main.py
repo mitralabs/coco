@@ -3,7 +3,6 @@ from fastapi.security.api_key import APIKeyHeader
 from pydantic import BaseModel
 import os
 from typing import List
-import httpx
 import logging
 from sqlalchemy.orm import Session
 from sqlalchemy import select, delete
@@ -17,7 +16,6 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-EMBEDDING_URL = os.getenv("EMBEDDING_URL")
 API_KEY = os.getenv("API_KEY")
 if not API_KEY:
     raise ValueError("API_KEY environment variable must be set")
@@ -49,8 +47,13 @@ class AddRequest(BaseModel):
     documents: List[Document]
 
 
-class QueryRequest(BaseModel):
-    text: str
+class GetClosestRequest(BaseModel):
+    embedding: List[float]
+    n_results: int = 5
+
+
+class GetMultipleClosestRequest(BaseModel):
+    embeddings: List[List[float]]
     n_results: int = 5
 
 
@@ -65,6 +68,32 @@ def nearest_neighbor_query(db: Session, query_embedding: List[float], n_results:
     )
     results = db.execute(query)
     return results
+
+
+def get_closest_from_embeddings(
+    db: Session, embeddings: List[List[float]], n_results: int
+):
+    all_formatted_results = []
+    for embedding in embeddings:
+        formatted_results = []
+        results = nearest_neighbor_query(db, embedding, n_results)
+        formatted_results = []
+        for doc, distance in results:
+            formatted_results.append(
+                {
+                    "id": doc.id,
+                    "document": doc.text,
+                    "metadata": {
+                        "language": doc.language,
+                        "filename": doc.filename,
+                        "chunk_index": doc.chunk_index,
+                        "total_chunks": doc.total_chunks,
+                    },
+                    "distance": distance,
+                }
+            )
+        all_formatted_results.append(formatted_results)
+    return all_formatted_results
 
 
 @app.post("/add")
@@ -99,50 +128,37 @@ async def add(
     return {"status": "success", "added": added_count, "skipped": skipped_count}
 
 
-@app.post("/query")
-async def query(
-    request: QueryRequest,
+@app.post("/get_closest")
+async def get_closest(
+    request: GetClosestRequest,
     db: Session = Depends(get_db),
     api_key: str = Depends(get_api_key),
 ):
-    async with httpx.AsyncClient(timeout=30.0, verify=False) as client:
-        embedding_url = f"{EMBEDDING_URL}/embed_text"
-        embedding_response = await client.post(
-            embedding_url,
-            headers={"X-API-Key": API_KEY, "Content-Type": "application/json"},
-            json={"text": request.text},
-        )
-
-    if not embedding_response.status_code == 200:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail={"message": "Failed to get embedding for query text"},
-        )
-
-    embedding_response_json = embedding_response.json()
-    embedding = embedding_response_json["embedding"]
-
-    results = nearest_neighbor_query(db, embedding, request.n_results)
-    formatted_results = []
-    for doc, distance in results:
-        formatted_results.append(
-            {
-                "id": doc.id,
-                "document": doc.text,
-                "metadata": {
-                    "language": doc.language,
-                    "filename": doc.filename,
-                    "chunk_index": doc.chunk_index,
-                    "total_chunks": doc.total_chunks,
-                },
-                "distance": distance,
-            }
-        )
-
+    formatted_results = get_closest_from_embeddings(
+        db=db, embeddings=[request.embedding], n_results=request.n_results
+    )[0]
     return {
         "status": "success",
         "count": len(formatted_results),
         "results": formatted_results,
+    }
+
+
+@app.post("/get_multiple_closest")
+async def get_multiple_closest(
+    request: GetMultipleClosestRequest,
+    db: Session = Depends(get_db),
+    api_key: str = Depends(get_api_key),
+):
+    all_formatted_results = get_closest_from_embeddings(
+        db=db, embeddings=request.embeddings, n_results=request.n_results
+    )
+    assert len(all_formatted_results) > 0
+    return {
+        "status": "success",
+        "embedding_count": len(all_formatted_results),
+        "docs_per_embedding_count": len(all_formatted_results[0]),
+        "results": all_formatted_results,
     }
 
 

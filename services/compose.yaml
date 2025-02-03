@@ -14,10 +14,10 @@ services:
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
-      interval: 1000s
-      timeout: 1000s
-      retries: 10
-      start_period: 1000s
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
   chunking:
     build:
@@ -33,10 +33,10 @@ services:
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
-      interval: 5s
-      timeout: 30s
-      retries: 10
-      start_period: 30s
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
   embedding:
     build:
@@ -48,15 +48,17 @@ services:
       - ./embedding/app:/app
     environment:
       - API_KEY=test
-      - BASE_URL=https://jetson-ollama.mitra-labs.ai/api
-      - OLLAMA_MODEL=nomic-embed-text
+      #- BASE_URL=https://jetson-ollama.mitra-labs.ai/api
+      - BASE_URL=http://192.168.178.34:11434/api
+      #- BASE_URL=http://host.docker.internal:11434/api
+      - OLLAMA_MODEL=bge-m3:latest #Alternative: nomic-embed-text
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
-      interval: 5s
-      timeout: 30s
-      retries: 10
-      start_period: 30s
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
   db-api:
     build:
@@ -69,27 +71,38 @@ services:
       - ./_data:/data
     environment:
       - API_KEY=test
-      - EMBEDDING_URL=http://embedding:8000
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_DB=coco
       - POSTGRES_HOST=db
+      - VEKTOR_DIM=1024 # BGE-M3 // Nomic Embedding = 768
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
-      interval: 5s
-      timeout: 30s
-      retries: 10
-      start_period: 30s
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      embedding:
+        condition: service_healthy
 
   db:
     image: pgvector/pgvector:0.8.0-pg17
     volumes:
       - ./_data/db:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
     environment:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_DB=coco
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s

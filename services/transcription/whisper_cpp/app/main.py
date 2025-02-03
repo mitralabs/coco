@@ -15,12 +15,13 @@ app = FastAPI()
 
 # API Key Authentication
 API_KEY = os.getenv("API_KEY")
+API_KEY = "please_smile"
 if not API_KEY:
     raise ValueError("API_KEY environment variable must be set")
 
 # Setting the Model
 GGML_MODEL = os.getenv("GGML_MODEL")
-# GGML_MODEL = "ggml-large-v3-turbo" #For testing only, helps since the .env file is included during the build.
+GGML_MODEL = "ggml-large-v3-turbo" #For testing only, helps since the .env file is included during the build.
 if not GGML_MODEL:
     raise ValueError("Model environment variable must be set")
 
