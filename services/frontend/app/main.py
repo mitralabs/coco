@@ -79,7 +79,8 @@ with gr.Blocks(fill_height=True) as demo:
                     placeholder="Type your message here...",
                     lines=1,
                     label="Input",
-                    scale=2
+                    scale=2,
+                    elem_classes="input-height"
                 )
                 submit_btn = gr.Button(
                     "Submit",
@@ -123,9 +124,13 @@ with gr.Blocks(fill_height=True) as demo:
             margin-left: 8px;
         }
         .small-button {
-            height: 36px !important;
-            min-height: 36px !important;
+            height: 46px !important;
+            min-height: 46px !important;
             line-height: 1 !important;
+        }
+        .input-height textarea {
+            height: 46px !important;
+            min-height: 46px !important;
         }
         </style>
     """)
