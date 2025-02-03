@@ -73,38 +73,63 @@ with gr.Blocks(fill_height=True) as demo:
     
     with gr.Row():
         with gr.Column(scale=2):
-            # Chat interface column
             chatbot = gr.Chatbot(height=600)
             with gr.Row():
                 input_message = gr.Textbox(
                     placeholder="Type your message here...",
-                    lines=2,
+                    lines=1,
                     label="Input",
-                    scale=4
+                    scale=2
                 )
-                submit_btn = gr.Button("Submit", scale=1)
+                submit_btn = gr.Button(
+                    "Submit",
+                    scale=1,
+                    variant="primary",
+                    elem_classes="orange-button small-button"
+                )
+                file_upload = gr.File(
+                    label="Upload Audio",
+                    file_types=[".wav"],
+                    type="filepath",
+                    file_count="single",
+                    scale=1,
+                    elem_classes="file-upload small-button"
+                )
             
-            # Corrected file upload component parameters
-            file_upload = gr.File(
-                label="Upload Audio",
-                file_types=[".wav"],
-                type="filepath",
-                file_count="single"
-            )
             upload_status = gr.Textbox(
                 label="Upload Status",
                 interactive=False
             )
             
         with gr.Column(scale=1):
-            # RAG context display
             gr.Markdown("### RAG Context")
             rag_context_display = gr.Textbox(
                 label="Retrieved Context",
                 lines=10,
                 interactive=False
             )
-    
+
+    gr.Markdown("""
+        <style>
+        .orange-button {
+            background-color: #FF8C00 !important;
+            border-color: #FF8C00 !important;
+        }
+        .orange-button:hover {
+            background-color: #FFA500 !important;
+            border-color: #FFA500 !important;
+        }
+        .file-upload {
+            margin-left: 8px;
+        }
+        .small-button {
+            height: 36px !important;
+            min-height: 36px !important;
+            line-height: 1 !important;
+        }
+        </style>
+    """)
+
     # Event handlers
     submit_btn.click(
         fn=call_rag,
