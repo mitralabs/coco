@@ -51,7 +51,7 @@ class CocoClient:
         self.embedding = EmbeddingClient(self.embedding_base, self.api_key)
         self.db_api = DbApiClient(self.db_api_base, self.api_key)
         self.transcription = TranscriptionClient(self.transcription_base, self.api_key)
-        self.rag = RagClient(self.ollama_base)
+        self.rag = RagClient(self.ollama_base, self.db_api, self.embedding)
 
     def health_check(self):
         services = {
