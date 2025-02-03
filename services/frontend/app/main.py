@@ -1,105 +1,133 @@
-import json
 import gradio as gr
 import aiohttp
-import requests
-import asyncio
+import json
 
-from coco import CocoClient, only_rag, rag_query
+from coco import CocoClient
 
 cc = CocoClient(
     chunking_base="http://127.0.0.1:8001",
     embedding_base="http://127.0.0.1:8002",
     db_api_base="http://127.0.0.1:8003",
     transcription_base="http://127.0.0.1:8000",
+    ollama_base="https://jetson-ollama.mitra-labs.ai",
     api_key="test",
 )
 
-async def slow_echo(user_message, history):
-    
-    rag_content = only_rag(cc, user_message)
-    print(rag_content)
-    messages_ollama = [{"role": m['role'], "content": m['content']} for m in history]
-    #messages_ollama.extend([{"role": "system","content": system_prompt.format(rag_result=rag_content)}])
-    messages_ollama.append({"role": "user", "content": rag_content})
+async def call_rag(user_message, history):
+    # Get RAG context
+    rag_context = (await cc.rag._retrieve_chunks([user_message], 5))[0]   
+    formatted_prompt = cc.rag.format_prompt(user_message, rag_context[1])
 
-    url = "https://jetson-ollama.mitra-labs.ai/api/chat"
+    # Prepare messages for Ollama
+    messages = []
+    if history:
+        messages.extend([{"role": m[0], "content": m[1]} for m in history])
+    messages.append({"role": "user", "content": user_message})
+
+    # Call Ollama API
+    url = f"{cc.ollama_base}/api/chat"
     payload = {
         "model": "deepseek-r1:14b",
-        "messages": messages_ollama,
+        "messages": messages,
         "stream": True,
     }
-    
-    thought_buffer = ""
-    response_buffer = ""
-    in_thought = False
-    response_started = False
 
+    response_buffer = ""
     async with aiohttp.ClientSession() as session:
         try:
             async with session.post(url, json=payload) as response:
                 async for line in response.content:
                     if line:
-                        line = line.decode("utf-8")
                         try:
-                            data = json.loads(line)
+                            data = json.loads(line.decode('utf-8'))
                             content = data.get("message", {}).get("content", "")
-
-                            if "<think>" in content and not in_thought:
-                                in_thought = True
-                                content = content.replace("<think>", "")
-
-                            if "</think>" in content and in_thought:
-                                in_thought = False                        
-                                response_started = True
-
-                                thought_content = gr.ChatMessage(
-                                        role="assistant",
-                                        content=thought_buffer,
-                                        metadata={"title": "Thinking completed", "status": "done"}
-                                    )
-                                yield thought_content, gr.Textbox(label="",lines = 10,value=rag_content) # more info https://www.gradio.app/docs/gradio/textbox
-
-                            if in_thought:
-                                thought_buffer += content
-                                yield gr.ChatMessage(
-                                        role="assistant",
-                                        content=thought_buffer,
-                                        metadata={"title": "Thinking...", "status": "pending"}
-                                    ) , gr.Textbox(label="",lines = 10,value=rag_content) # more info https://www.gradio.app/docs/gradio/textbox
-
-                            elif response_started:
-                                response_buffer += content
-                                yield [
-                                    thought_content,
-                                    gr.ChatMessage(
-                                        role="assistant",
-                                        content=response_buffer,
-                                    )
-                                    ] , gr.Textbox(label="",lines = 10,value=rag_content) # more info https://www.gradio.app/docs/gradio/textbox
-                                
+                            response_buffer += content
+                            
+                            # Update the chat interface
+                            history_update = history + [(user_message, response_buffer)]
+                            yield history_update, str(rag_context)
+                            
                         except json.JSONDecodeError:
                             print(f"Failed to parse JSON: {line}")
-        except aiohttp.ClientError as e:
+                            
+        except Exception as e:
             print(f"Error: {e}")
+            yield history + [(user_message, f"Error: {str(e)}")], str(rag_context)
 
+async def handle_audio_upload(file):
+    if file is None:
+        return "Please upload a WAV file"
+    
+    if not file.name.lower().endswith('.wav'):
+        return "Only WAV files are supported"
+    
+    try:
+        # Store the audio file and get embeddings
+        result = await cc.store(file.name)
+        return f"Successfully processed and stored audio file: {file.name}"
+    except Exception as e:
+        return f"Error processing file: {str(e)}"
 
 with gr.Blocks(fill_height=True) as demo:
+    gr.Markdown("# CoCo")
     
-    rag_reply = gr.Textbox(render=False)
-    gr.Markdown("# A Gradio Chatinterface for CoCo Development")
     with gr.Row():
-        with gr.Column():
-            #gr.Markdown("### ")
-            gr.ChatInterface(
-                slow_echo,
-                type="messages",
-                #flagging_mode="manual",
-                #save_history=True,
-                #additional_outputs=[rag_reply]
+        with gr.Column(scale=2):
+            # Chat interface column
+            chatbot = gr.Chatbot(height=600)
+            with gr.Row():
+                input_message = gr.Textbox(
+                    placeholder="Type your message here...",
+                    lines=2,
+                    label="Input",
+                    scale=4
+                )
+                submit_btn = gr.Button("Submit", scale=1)
+            
+            # Corrected file upload component parameters
+            file_upload = gr.File(
+                label="Upload Audio",
+                file_types=[".wav"],
+                type="filepath",
+                file_count="single"
             )
-        with gr.Column():
-            gr.Markdown("### Reply from RAG System")
-            rag_reply.render()
+            upload_status = gr.Textbox(
+                label="Upload Status",
+                interactive=False
+            )
+            
+        with gr.Column(scale=1):
+            # RAG context display
+            gr.Markdown("### RAG Context")
+            rag_context_display = gr.Textbox(
+                label="Retrieved Context",
+                lines=10,
+                interactive=False
+            )
     
+    # Event handlers
+    submit_btn.click(
+        fn=call_rag,
+        inputs=[input_message, chatbot],
+        outputs=[chatbot, rag_context_display],
+        api_name="chat"
+    )
+    
+    # Also allow Enter key to submit
+    input_message.submit(
+        fn=call_rag,
+        inputs=[input_message, chatbot],
+        outputs=[chatbot, rag_context_display],
+        api_name="chat"
+    )
+    
+    # Add file upload handler
+    file_upload.upload(
+        fn=handle_audio_upload,
+        inputs=[file_upload],
+        outputs=[upload_status],
+        api_name="upload_audio"
+    )
+
 if __name__ == "__main__":
     demo.launch()
