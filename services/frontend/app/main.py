@@ -13,16 +13,18 @@ cc = CocoClient(
     api_key="test",
 )
 
+cc.health_check()
+
 async def call_rag(user_message, history):
     # Get RAG context
-    rag_context = (await cc.rag._retrieve_chunks([user_message], 5))[0]   
+    rag_context = (await cc.rag.retrieve_chunks([user_message], 5))[0]   
     formatted_prompt = cc.rag.format_prompt(user_message, rag_context[1])
 
     # Prepare messages for Ollama
     messages = []
     if history:
         messages.extend([{"role": m[0], "content": m[1]} for m in history])
-    messages.append({"role": "user", "content": user_message})
+    messages.append({"role": "user", "content": formatted_prompt})
 
     # Call Ollama API
     url = f"{cc.ollama_base}/api/chat"
