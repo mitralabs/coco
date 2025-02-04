@@ -16,45 +16,55 @@ cc = CocoClient(
 cc.health_check()
 
 async def call_rag(user_message, history):
-    # Get RAG context
-    rag_context = (await cc.rag.retrieve_chunks([user_message], 5))[0]   
-    formatted_prompt = cc.rag.format_prompt(user_message, rag_context[1])
+    try:
+        # Get RAG context
+        rag_results = await cc.rag.retrieve_chunks([user_message], 5)
+        rag_context = rag_results[0]
+        
+        # Format context chunks
+        context_chunks = [chunk['document'] for chunk in rag_context[0]]
+        
+        # Format prompt
+        formatted_prompt = cc.rag.format_prompt(user_message, context_chunks)
 
-    # Prepare messages for Ollama
-    messages = []
-    if history:
-        messages.extend([{"role": m[0], "content": m[1]} for m in history])
-    messages.append({"role": "user", "content": formatted_prompt})
+        # Prepare messages for Ollama
+        messages = []
+        if history:
+            messages.extend([{"role": m[0], "content": m[1]} for m in history])
+        messages.append({"role": "user", "content": formatted_prompt})
 
-    # Call Ollama API
-    url = f"{cc.ollama_base}/api/chat"
-    payload = {
-        "model": "deepseek-r1:14b",
-        "messages": messages,
-        "stream": True,
-    }
+        # Call Ollama API
+        url = f"{cc.ollama_base}/api/chat"
+        payload = {
+            "model": "deepseek-r1:14b",
+            "messages": messages,
+            "stream": True,
+        }
 
-    response_buffer = ""
-    async with aiohttp.ClientSession() as session:
-        try:
-            async with session.post(url, json=payload) as response:
-                async for line in response.content:
-                    if line:
-                        try:
-                            data = json.loads(line.decode('utf-8'))
-                            content = data.get("message", {}).get("content", "")
-                            response_buffer += content
-                            
-                            # Update the chat interface
-                            history_update = history + [(user_message, response_buffer)]
-                            yield history_update, str(rag_context)
-                            
-                        except json.JSONDecodeError:
-                            print(f"Failed to parse JSON: {line}")
-                            
-        except Exception as e:
-            print(f"Error: {e}")
-            yield history + [(user_message, f"Error: {str(e)}")], str(rag_context)
+        response_buffer = ""
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.post(url, json=payload) as response:
+                    async for line in response.content:
+                        if line:
+                            try:
+                                data = json.loads(line.decode('utf-8'))
+                                content = data.get("message", {}).get("content", "")
+                                response_buffer += content
+                                
+                                # Update the chat interface
+                                history_update = history + [(user_message, response_buffer)]
+                                yield history_update, str(rag_context)
+                                
+                            except json.JSONDecodeError:
+                                print(f"Failed to parse JSON: {line}")
+                                
+            except Exception as e:
+                print(f"Error: {e}")
+                yield history + [(user_message, f"Error: {str(e)}")], str(rag_context)
+    except Exception as e:
+        print(f"Error in call_rag: {e}")
+        yield history + [(user_message, f"Error: {str(e)}")], "Error in call_rag"
 
 async def handle_audio_upload(file):
     if file is None:
@@ -64,9 +74,31 @@ async def handle_audio_upload(file):
         return "Only WAV files are supported"
     
     try:
-        # Store the audio file and get embeddings
-        result = await cc.store(file.name)
-        return f"Successfully processed and stored audio file: {file.name}"
+        # Full processing pipeline
+        # 1. Transcribe audio to text
+        text, language, filename = await cc.transcription.transcribe_audio(file.name)
+        
+        # 2. Chunk the text
+        chunks = await cc.chunking.chunk_text(text)
+        
+        # 3. Create embeddings
+        embeddings = await cc.embedding.create_embeddings(chunks)
+        
+        # 4. Store in DB
+        documents = [{
+            "text": chunk,
+            "embedding": embedding,
+            "metadata": {
+                "language": language,
+                "filename": filename,
+                "chunk_index": i,
+                "total_chunks": len(chunks)
+            }
+        } for i, (chunk, embedding) in enumerate(zip(chunks, embeddings))]
+        
+        await cc.db_api.add(documents)
+        
+        return f"Processed {len(chunks)} chunks from {filename}"
     except Exception as e:
         return f"Error processing file: {str(e)}"
 
