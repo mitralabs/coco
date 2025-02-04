@@ -18,6 +18,8 @@ class CocoClient:
         db_api_base: str = None,
         transcription_base: str = None,
         ollama_base: str = None,
+        ionos_base: str = None,
+        ionos_api_key: str = None,
         api_key: str = None,
     ):
         self.chunking_base = chunking_base
@@ -25,6 +27,8 @@ class CocoClient:
         self.db_api_base = db_api_base
         self.transcription_base = transcription_base
         self.ollama_base = ollama_base
+        self.ionos_base = ionos_base
+        self.ionos_api_key = ionos_api_key
         self.api_key = api_key
 
         if not self.chunking_base:
@@ -37,6 +41,10 @@ class CocoClient:
             self.transcription_base = os.getenv("COCO_TRANSCRIPTION_URL_BASE")
         if not self.ollama_base:
             self.ollama_base = os.getenv("COCO_OLLAMA_URL_BASE")
+        if not self.ionos_base:
+            self.ionos_base = os.getenv("COCO_IONOS_URL_BASE")
+        if not self.ionos_api_key:
+            self.ionos_api_key = os.getenv("COCO_IONOS_API_KEY")
         if not self.api_key:
             self.api_key = os.getenv("COCO_API_KEY")
 
@@ -44,14 +52,25 @@ class CocoClient:
         assert self.embedding_base, "Embedding base URL is not set"
         assert self.db_api_base, "DB API base URL is not set"
         assert self.transcription_base, "Transcription base URL is not set"
-        assert self.ollama_base, "Ollama base URL is not set"
+        assert (
+            self.ollama_base or self.ionos_base
+        ), "Ollama and Ionos base URL are not set"
+        assert not (
+            self.ollama_base and self.ionos_base
+        ), "Ollama and Ionos base URL are both set"
         assert self.api_key, "API key is not set"
 
         self.chunking = ChunkingClient(self.chunking_base, self.api_key)
         self.embedding = EmbeddingClient(self.embedding_base, self.api_key)
         self.db_api = DbApiClient(self.db_api_base, self.api_key)
         self.transcription = TranscriptionClient(self.transcription_base, self.api_key)
-        self.rag = RagClient(self.ollama_base, self.db_api, self.embedding)
+        self.rag = RagClient(
+            self.ollama_base,
+            self.ionos_base,
+            self.ionos_api_key,
+            self.db_api,
+            self.embedding,
+        )
 
     def health_check(self):
         services = {

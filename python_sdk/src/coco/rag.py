@@ -1,6 +1,7 @@
 import ollama
 from typing import Tuple, List, Dict, Any
 import logging
+from openai import AsyncOpenAI
 
 from .async_utils import batched_parallel
 from .db_api import DbApiClient
@@ -29,12 +30,18 @@ PROMPT = """
 
 class RagClient:
     def __init__(
-        self, ollama_base_url: str, db_api: DbApiClient, embedding: EmbeddingClient
+        self,
+        ollama_base_url: str,
+        ionos_base_url: str,
+        ionos_api_key: str,
+        db_api: DbApiClient,
+        embedding: EmbeddingClient,
     ):
         self.db_api = db_api
         self.embedding = embedding
         self.async_ollama_client = ollama.AsyncClient(host=ollama_base_url)
         self.ollama_client = ollama.Client(host=ollama_base_url)
+        self.ionos_client = AsyncOpenAI(base_url=ionos_base_url, api_key=ionos_api_key)
 
     async def _retrieve_chunks(self, query_texts, n_results):
         embeddings = await self.embedding._create_embeddings(query_texts)
@@ -93,21 +100,30 @@ class RagClient:
         queries: List[str],
         context_chunks: List[List[str]],
         prompt_template: str | None = None,
-        ollama_model: str = "llama3.2:1b",
+        ollama_model: str | None = "llama3.2:1b",
+        ionos_model: str | None = None,
     ) -> Dict[str, Dict[str, Any]]:
-
         answers, tok_ss = [], []
         for query, context_chunks in zip(queries, context_chunks):
-            response = await self.async_ollama_client.generate(
-                model=ollama_model,
-                prompt=self.format_prompt(
-                    query,
-                    context_chunks=context_chunks,
-                    prompt_template=prompt_template,
-                ),
+            prompt = self.format_prompt(
+                query,
+                context_chunks=context_chunks,
+                prompt_template=prompt_template,
             )
-            answers.append(response.response)
-            tok_ss.append(response.eval_count / response.eval_duration * 10**9)
+            if ollama_model:
+                response = await self.async_ollama_client.generate(
+                    model=ollama_model,
+                    prompt=prompt,
+                )
+                answers.append(response.response)
+                tok_ss.append(response.eval_count / response.eval_duration * 10**9)
+            else:
+                response = await self.ionos_client.chat.completions.create(
+                    model=ionos_model,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                answers.append(response.choices[0].message.content)
+                tok_ss.append(float("nan"))
         return answers, tok_ss
 
     def generate_answers(
@@ -117,6 +133,7 @@ class RagClient:
         prompt_template: str | None = None,
         ollama_model: str = "llama3.2:1b",
         pull_model: bool = False,
+        ionos_model: str | None = None,
         batch_size: int = 20,
         limit_parallel: int = 10,
         show_progress: bool = True,
@@ -136,7 +153,14 @@ class RagClient:
         Returns:
             Tuple[List[str], List[float]]: The generated answers and the token speeds.
         """
-        if pull_model:
+        assert (
+            ollama_model or ionos_model
+        ), "Either ollama_model or ionos_model must be provided"
+        assert not (
+            ollama_model and ionos_model
+        ), "ollama_model and ionos_model cannot both be provided"
+
+        if ollama_model and pull_model:
             list_response = self.ollama_client.list()
             models = [i["model"] for i in list_response.models]
             if ollama_model not in models:
@@ -156,4 +180,5 @@ class RagClient:
             context_chunks=context_chunks,
             prompt_template=prompt_template,
             ollama_model=ollama_model,
+            ionos_model=ionos_model,
         )

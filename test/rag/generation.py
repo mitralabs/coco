@@ -33,15 +33,24 @@ def get_answers(
         queries=queries,
         context_chunks=context_chunks,
         prompt_template=cfg.generation.get_answers.prompt_template,
-        ollama_model=cfg.generation.get_answers.ollama_model,
+        ollama_model=(
+            cfg.generation.get_answers.ollama_model
+            if cfg.generation.get_answers.ollama_model
+            else None
+        ),
+        ionos_model=(
+            cfg.generation.get_answers.ionos_model
+            if cfg.generation.get_answers.ionos_model
+            else None
+        ),
         pull_model=True,
         batch_size=cfg.generation.get_answers.generate_answers_batch_size,
         limit_parallel=cfg.generation.get_answers.generate_answers_limit_parallel,
         show_progress=True,
     )
-    wandb.log({"generation/m_tok_s": np.mean(tok_ss)})
+    wandb.log({"generation/m_tok_s": np.nanmean(np.array(tok_ss))})
     logger.info(
-        f"Generated {len(generated_answers)} answers with mean tok_s {np.mean(tok_ss)}"
+        f"Generated {len(generated_answers)} answers with mean tok_s {np.nanmean(np.array(tok_ss))}"
     )
 
     # save to file
@@ -72,7 +81,7 @@ def relevance(ds: Dataset, answers: Dict[str, Dict[str, Any]]):
 
 # generated answer vs. gt answer
 # bertscore, rouge, (sacre)bleu, semscore
-def correctness(ds: Dataset, answers: Dict[str, Dict[str, Any]]):
+def correctness(ds: Dataset, answers: Dict[str, Dict[str, Any]], wandb_prefix: str):
     bertscore_metric = load("bertscore")
     rouge_metric = load("rouge")
     sacrebleu_metric = load("sacrebleu")
@@ -131,7 +140,7 @@ def correctness(ds: Dataset, answers: Dict[str, Dict[str, Any]]):
         "sacrebleu_4gram_precision": np.mean(sacrebleu_4gram_precisions),
         "sacrebleu_brevity_penalty": np.mean(sacrebleu_bp),
     }
-    wandb.log({f"generation/answer_correctness/{k}": v for k, v in metrics.items()})
+    wandb.log({f"{wandb_prefix}/answer_correctness/{k}": v for k, v in metrics.items()})
 
 
 def generation_stage(
@@ -146,4 +155,4 @@ def generation_stage(
     # print(k, answers[k])
     groundedness(ds, answers, top_chunks)
     relevance(ds, answers)
-    correctness(ds, answers)
+    correctness(ds, answers, "generation_ret")
