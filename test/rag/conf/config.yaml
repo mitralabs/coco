@@ -14,7 +14,8 @@ coco:
   embedding_base: http://127.0.0.1:8002
   db_api_base: http://127.0.0.1:8003
   transcription_base: http://127.0.0.1:8000
-  ollama_base: http://127.0.0.1:11434
+  # ollama_base: http://127.0.0.1:11434
+  ollama_base: https://jetson-ollama.mitra-labs.ai
   api_key: test
 
 general:

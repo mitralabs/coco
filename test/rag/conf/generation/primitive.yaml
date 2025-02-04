@@ -1,7 +1,7 @@
 get_answers:
   ollama_model: llama3.2:1b
   generate_answers_batch_size: 5
-  generate_answers_limit_parallel: 10
+  generate_answers_limit_parallel: 3
   top_k: 5
   file_name: ${general.data_dir}/generation/${data.name}/${generation.get_answers.top_k}.json
   prompt_template: |
@@ -20,3 +20,6 @@ get_answers:
     <Frage>
     {query}
     </Frage>
+ragas:
+  ollama_model: ragas-llama3.1:8b
+  ollama_base_url: https://jetson-ollama.mitra-labs.ai
