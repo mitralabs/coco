@@ -13,10 +13,12 @@ cc = CocoClient(
     api_key="test",
 )
 
-cc.health_check()
-
 async def call_rag(user_message, history):
     try:
+        
+        # Start a health check
+        cc.health_check()
+
         # Get RAG context
         rag_results = await cc.rag.retrieve_chunks([user_message], 5)
         rag_context = rag_results[0]
