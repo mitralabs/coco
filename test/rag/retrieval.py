@@ -8,6 +8,7 @@ from pathlib import Path
 import logging
 from coco import CocoClient
 from typing import Dict, Any, List
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +33,10 @@ def get_top_chunks(cc: CocoClient, cfg: DictConfig, ds: Dataset):
     # obtain from db
     top_chunks = {}
     queries = [sample["question"] for sample in ds]
-    results = cc.retrieve_chunks(
+    results = cc.rag.retrieve_chunks(
         query_texts=queries,
         n_results=cfg.retrieval.get_top_chunks.top_k,
+        model=cfg.data.fill_db.embedding_model,
         show_progress=True,
     )
     for query, (ids, documents, metadatas, distances) in zip(queries, results):
@@ -108,9 +110,14 @@ def mean_average_precision(aps: List[float]):
     return np.nanmean(np.array(aps))
 
 
-def compute_metrics(
-    top_chunks: Dict[str, Dict[str, Any]], cfg: DictConfig, ds: Dataset
-):
+def relevance(top_chunks: Dict[str, Dict[str, Any]], cfg: DictConfig, ds: Dataset):
+    """Compute context relevance metrics and log to wandb.
+
+    Args:
+        top_chunks (Dict[str, Dict[str, Any]]): top chunks for each query
+        cfg (DictConfig): config
+        ds (Dataset): dataset
+    """
     precs, recs, f1s = (
         defaultdict(list),
         defaultdict(list),
@@ -119,7 +126,7 @@ def compute_metrics(
     ranks, aps = [], []
 
     # sample wise metrics
-    for sample in ds:
+    for sample in tqdm(ds, desc="Computing context relevance metrics"):
         query = sample["question"]
         gt_chunks = sample["positive_ctxs"]["text"]
         retrieved_chunks = top_chunks[query]["documents"]
@@ -158,10 +165,10 @@ def compute_metrics(
         metrics[f"precision@{str(k).zfill(4)}"] = np.nanmean(np.array(precs[k]))
         metrics[f"recall@{str(k).zfill(4)}"] = np.nanmean(np.array(recs[k]))
         metrics[f"f1@{str(k).zfill(4)}"] = np.nanmean(np.array(f1s[k]))
-    return metrics
+    wandb.log({f"retrieval/context_relevance/{k}": v for k, v in metrics.items()})
 
 
-def handle_retrieval(cc: CocoClient, cfg: DictConfig, ds: Dataset):
+def retrieval_stage(cc: CocoClient, cfg: DictConfig, ds: Dataset):
     top_chunks = get_top_chunks(cc, cfg, ds)
-    metrics = compute_metrics(top_chunks, cfg, ds)
-    wandb.log({f"retrieval/{k}": v for k, v in metrics.items()})
+    relevance(top_chunks, cfg, ds)
+    return top_chunks

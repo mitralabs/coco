@@ -101,9 +101,59 @@ coco:
   embedding_base: http://127.0.0.1:8002
   db_api_base: http://127.0.0.1:8003
   transcription_base: http://127.0.0.1:8000
+  ollama_base: http://127.0.0.1:11434
+  openai_base: https://openai.example.com
+  embedding_api: ollama # Embedding provider
+  llm_api: ollama # Generation provider
+  api_key: test
 ```
 
 Data directories:
 
 - Services data: `services_data_dir: ../../services/_data`
 - Application data: `data_dir: ./data`
+
+## Configuration Changes
+
+Update your `conf/config.yaml` with LM API selection:
+
+```yaml
+coco:
+  ollama_base: http://127.0.0.1:11434
+  openai_base: https://openai.example.com
+  embedding_api: ollama # Embedding provider
+  llm_api: ollama # Generation provider
+  api_key: test
+```
+
+## Key Pipeline Updates
+
+1. **Embedding Integration**
+
+   - Embeddings now generated through LM module
+   - Removed separate embedding service dependency
+
+2. **Dual-Model Support**
+
+   ```python
+   # Example using different providers for embedding/generation
+   client = CocoClient(
+       embedding_api="openai",
+       llm_api="ollama",
+       # ... other params
+   )
+   ```
+
+3. **Batch Processing**
+
+   - All RAG operations use batched_parallel
+   - Improved memory management for large datasets
+
+4. **Model Management**
+   ```python
+   # Auto-download missing Ollama models
+   answers = generation_stage(
+       cc, cfg, top_chunks, ds,
+       pull_model=True
+   )
+   ```
