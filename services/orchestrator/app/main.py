@@ -1,0 +1,212 @@
+from fastapi import FastAPI, Request, Depends
+from fastapi.responses import JSONResponse
+from fastapi.security.api_key import APIKeyHeader
+from fastapi import status, HTTPException
+
+import time
+import aiofiles
+from datetime import datetime
+import logging
+
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+import sys
+
+from pydub import AudioSegment
+import re
+
+from coco import CocoClient
+
+cc = CocoClient(
+    chunking_base="http://127.0.0.1:8001",
+    embedding_base="http://127.0.0.1:8002",
+    db_api_base="http://127.0.0.1:8003",
+    transcription_base="http://127.0.0.1:8000",
+    api_key="test",
+    ollama_base="http://host.docker.internal:11434"
+)
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],  # Output to console
+)
+logger = logging.getLogger(__name__)
+
+# API Key Authentication
+API_KEY = os.getenv("API_KEY", "test")
+
+if not API_KEY:
+    raise ValueError("API_KEY environment variable must be set")
+api_key_header = APIKeyHeader(name="X-API-Key")
+
+def get_api_key(api_key: str = Depends(api_key_header)):
+    if api_key != API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Invalid API Key"
+        )
+    return api_key
+
+app = FastAPI()
+
+
+
+def append_audio(directory_path):
+    """
+    Append all audio files in a directory and save as audio_full.wav
+    
+    Args:
+        directory_path (str): Path to directory containing audio files
+    """
+    print(f"\nProcessing directory: {directory_path}")
+    
+    # Get all wav files matching audio_* pattern
+    audio_files = sorted([f for f in os.listdir(directory_path) 
+                         if f.endswith('.wav') and f.startswith('audio_')])
+    
+    # Sort according to ID number
+    audio_files.sort(key=lambda f: int(re.search(r'audio_(\d+)\.wav', f).group(1)))
+
+    print(f"Found audio files: {audio_files}")
+    
+    if not audio_files:
+        return False, None
+        
+    # Combine audio files
+    combined = AudioSegment.from_wav(os.path.join(directory_path, audio_files[0]))
+    for audio_file in audio_files[1:]:
+        audio_path = os.path.join(directory_path, audio_file)
+        audio = AudioSegment.from_wav(audio_path)
+        combined += audio
+    
+    # Save combined audio in same directory
+    output_path = os.path.join(directory_path, "audio_full.wav")
+    combined.export(output_path, format="wav")
+    print(f"Created: {output_path}")
+    return True, output_path
+        
+
+async def kick_off_processing(session_id):
+    """
+    Kick off the processing pipeline for a session
+    
+    Args:
+        session_id (str): ID of the session to process
+    """
+        
+    try:
+        file_path = f"/data/session_{session_id}"
+        # Append audio file paths and save to same directory.
+
+        success, audio_path = append_audio(file_path)
+
+        if success:
+            text, language, filename = cc.transcription.transcribe_audio(audio_path)
+            chunks = cc.chunking.chunk_text(text=text, chunk_size=1000, chunk_overlap=200)
+            chunk_embeddings = cc.embedding.create_embeddings(chunks)
+            cc.db_api.store_in_database(
+                chunks=chunks,
+                embeddings=chunk_embeddings,
+                language=language,
+                filename=filename,
+            )
+
+            logger.info("Orchestration completed successfully.")
+            return True
+        else:
+            logger.error("Error processing session: No audio files found.")
+            return False
+
+    except Exception as e:
+        logger.error(f"Error processing session: {str(e)}")
+        return False
+
+
+# Route to check if the server is running
+@app.get("/")
+async def read_root():
+    print("Root path accessed. Server is running.")
+    return {"status": "success", "message": "Server is running"}, 200
+
+# Route to upload audio data
+@app.post("/uploadAudio")
+async def upload_audio(request: Request, api_key: str = Depends(get_api_key)):
+    try:
+        # Get the raw body content
+        body = await request.body()
+        print("Audio data received successfully.")
+
+        # Extract filename from headers
+        filename = (
+            request.headers.get("Content-Disposition", "")
+            .split("filename=")[-1]
+            .strip('"')
+        )
+
+        print(f"Filename: {filename}")
+
+        # Parse filename to get recording_session and increment
+        if filename.startswith("audio_"):
+            parts = filename.split("_")
+            if len(parts) == 3:
+                recording_session = int(parts[1])
+                # Extract .wav from increment, which is the last part of the filename
+                increment = int(parts[2].split(".")[0])
+            else:
+                raise ValueError(
+                    "Invalid filename format. Expected format: audio_<recording_session>_<increment>"
+                )
+        else:
+            raise ValueError("Invalid filename. Expected prefix: 'audio_'")
+
+        # Function to generate a timestamp, if needed.
+        timestamp = int(time.time())
+
+        # Check if a folder with the recording_session exists in /data directory, if not create it.
+        if not os.path.exists(f"/data/session_{recording_session}"):
+            os.makedirs(f"/data/session_{recording_session}")
+
+        # Function to save the file to local storage
+        async with aiofiles.open(f"/data/session_{recording_session}/audio_{increment}.wav", "wb") as f:
+            await f.write(body)
+        print(f"Audio {recording_session}_{increment} saved successfully.")
+
+        return JSONResponse(
+            content={"status": "success", "message": ".wav successfully received"},
+            status_code=200,
+        )
+
+        # return {"status": "success", "message": ".wav successfully received"}, 200
+
+    except Exception as e:
+        return JSONResponse(
+            content={"status": "error", "message": str(e)}, status_code=500
+        )
+
+@app.get("/TransferComplete")
+async def test_endpoint(request: Request, api_key: str = Depends(get_api_key)):
+    # Insert code to call the next service as soon as the transfer is complete and confirmed by the ESP32.
+    body = await request.body()
+    # Grab Session ID from the requested body
+    recording_session = body["recording_session"]
+
+    # Call the next service async without waiting for a response
+    kick_off_processing(recording_session)
+
+    # Return Success and kick off the next service
+    return JSONResponse(
+        content={"status": "success", "message": "Transfer Complete"},
+        status_code=200,
+    )
+
+
+    
+# Keep the test endpoint for basic connectivity testing
+@app.get("/test")
+async def test_endpoint(api_key: str = Depends(get_api_key)):
+    return {
+        "status": "success",
+        "message": "Orchestrator service: Test endpoint accessed successfully",
+    }

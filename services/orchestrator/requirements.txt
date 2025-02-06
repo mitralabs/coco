@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+aiofiles
+SQLAlchemy
+python-dotenv
+pydub
