@@ -105,8 +105,8 @@ async def handle_audio_upload(file):
         return f"Error processing file: {str(e)}"
 
 with gr.Blocks(fill_height=True) as demo:
-    gr.Markdown("# CoCo")
     
+    gr.Markdown("# CoCo")
     with gr.Row():
         with gr.Column(scale=2):
             chatbot = gr.Chatbot(height=600)
@@ -197,3 +197,5 @@ with gr.Blocks(fill_height=True) as demo:
 
 if __name__ == "__main__":
     demo.launch()
+    # with docker command docker run -p 7860:7860 frontend
+    #demo.launch(server_name="0.0.0.0")
