@@ -11,12 +11,12 @@ wandb:
 
 coco:
   chunking_base: http://127.0.0.1:8001
-  embedding_base: http://127.0.0.1:8002
   db_api_base: http://127.0.0.1:8003
   transcription_base: http://127.0.0.1:8000
-  # ollama_base: http://127.0.0.1:11434
-  ollama_base: null
-  ionos_base: https://openai.inference.de-txl.ionos.com/v1 # set COCO_IONOS_API_KEY if using this
+  ollama_base: http://127.0.0.1:11434
+  openai_base: https://openai.inference.de-txl.ionos.com/v1 # set OPENAI_API_KEY if using this
+  embedding_api: ollama
+  llm_api: openai
   api_key: test
 
 general:

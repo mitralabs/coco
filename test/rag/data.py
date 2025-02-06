@@ -45,7 +45,7 @@ def unique_texts(ds, verbose=False):
 
 
 def init_dataset(cfg: DictConfig) -> Dataset:
-    ds_data_dir = Path(cfg.general.data_dir) / cfg.data.name
+    ds_data_dir = Path(cfg.general.data_dir) / "hf_datasets" / cfg.data.name
     Path(ds_data_dir).mkdir(parents=True, exist_ok=True)
     ds = load_dataset(cfg.data.hf_name, cache_dir=ds_data_dir)
     train_ds, test_ds = ds["train"], ds["test"]
@@ -76,6 +76,9 @@ def backup_database(cfg: DictConfig):
         wandb.finish()
         exit(1)
     backup_path = Path(cfg.general.services_data_dir) / ("db_before_" + cfg.wandb.name)
+    if backup_path.exists():
+        logger.warning(f"Backup path {backup_path} already exists, skipping backup")
+        return
     shutil.copytree(db_path, backup_path)
     logger.info(f"Backed up database to {backup_path}")
 
@@ -98,17 +101,18 @@ def fill_database(cc: CocoClient, cfg: DictConfig, dataset: Dataset):
         chunks=texts,
         language=cfg.data.language,
         filename=cfg.data.name,
+        model=cfg.data.fill_db.embedding_model,
         batch_size=cfg.data.fill_db.embed_and_store_batch_size,
         limit_parallel=cfg.data.fill_db.embed_and_store_limit_parallel,
         show_progress=True,
     )
-    logger.info(
-        f"Added {cfg.data.fill_db.name} to db: {added} added, {skipped} skipped"
-    )
+    logger.info(f"Added {cfg.data.name} to db: {added} added, {skipped} skipped")
 
 
 def data_stage(cc: CocoClient, cfg: DictConfig) -> Dataset:
     ds = init_dataset(cfg)
+    if cfg.data.limit_samples:
+        ds = ds.select(range(cfg.data.limit_samples))
     backup_database(cfg)
     clear_database(cc, cfg)
     fill_database(cc, cfg, ds)

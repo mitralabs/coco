@@ -1,13 +1,11 @@
 get_answers:
-  # ollama_model: llama3.2:1b
-  ollama_model: null
-  # ionos_model: openGPT-X/Teuken-7B-instruct-commercial
-  ionos_model: meta-llama/Llama-3.3-70B-Instruct
-  # ionos_model: meta-llama/mistralai/Mistral-7B-Instruct-v0.3
+  # model: openGPT-X/Teuken-7B-instruct-commercial
+  model: meta-llama/Llama-3.3-70B-Instruct
+  # model: meta-llama/mistralai/Mistral-7B-Instruct-v0.3
   generate_answers_batch_size: 5
   generate_answers_limit_parallel: 10
   top_k: 5
-  file_name: ${general.data_dir}/generation/${data.name}/${generation.get_answers.top_k}.json
+  file_name: ${general.data_dir}/${data.name}/generation/${generation.get_answers.top_k}.json
   prompt_template: |
     Du bist ein zweites Gehirn für mich, ein Erinnerungsexperte, und deine Aufgabe ist es, basierend auf dem gegebenen Kontext den du aus meinen Erinnerungen in Form von Textausschnitten innerhalb der XML tags die dann folgende Frage so akkurat wie möglich beantwortest. Achte dabei darauf das deine Knowledge Base nur auf dem gegebenen Kontext basiert und du dich streng an das gegebene Format hälst:
 

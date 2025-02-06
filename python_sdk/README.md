@@ -1,6 +1,13 @@
 # Coco Python SDK
 
-The Coco Python SDK provides a unified interface to interact with various Coco services for text processing, embedding generation, database operations, and RAG (Retrieval Augmented Generation) capabilities.
+The Coco Python SDK provides a unified interface for text processing, database operations, and RAG (Retrieval Augmented Generation) with integrated LM capabilities through Ollama and OpenAI-compatible APIs.
+
+## Key Changes
+
+- Removed separate embedding service - embeddings now handled directly by LM module
+- Added dual LM support with `embedding_api`/`llm_api` configuration
+- Integrated batched processing for all RAG operations
+- Simplified service dependencies
 
 ## Installation
 
@@ -16,19 +23,58 @@ pip install -e .
 ```python
 from coco import CocoClient
 
-# Initialize client with service endpoints
+# Initialize with LM API selection
 client = CocoClient(
     chunking_base="http://localhost:8001",
-    embedding_base="http://localhost:8002",
     db_api_base="http://localhost:8003",
     transcription_base="http://localhost:8000",
-    ollama_base="http://localhost:11434",
+    ollama_base="http://localhost:11434",  # For Ollama models
+    openai_base="https://api.openai.com/v1",  # For OpenAI-compatible APIs
+    embedding_api="ollama",  # Choose embedding provider
+    llm_api="openai",        # Choose generation provider
     api_key="your-api-key"
 )
 
-# Verify services are running
+# Health check verifies core services (excluding removed embedding service)
 client.health_check()
 ```
+
+## Updated Configuration
+
+| Parameter     | Environment Variable | Description                         |
+| ------------- | -------------------- | ----------------------------------- |
+| embedding_api | COCO_EMBEDDING_API   | "ollama" or "openai" for embeddings |
+| llm_api       | COCO_LLM_API         | "ollama" or "openai" for generation |
+
+## Integrated LM Operations
+
+```python
+# Generate embeddings using configured provider
+embeddings = client.lm.embed(
+    chunks=["text chunk 1", "text chunk 2"],
+    model="nomic-embed-text"  # Model specific to chosen API
+)
+
+# Generate text with configured provider
+answers, speeds = client.rag.generate_answers(
+    queries=["What is the capital of France?"],
+    context_chunks=[["Paris is the capital..."]],
+    model="llama3.2:1b"  # Model specific to chosen API
+)
+```
+
+## RAG Pipeline Changes
+
+- Embedding generation moved to LM module
+- Added automatic model management:
+
+  ```python
+  # Auto-pull missing Ollama models
+  client.rag.generate_answers(..., pull_model=True)
+
+  # List available models
+  ollama_models = client.lm.list_ollama_models()
+  ```
 
 ## Configuration
 
@@ -37,10 +83,10 @@ The client can be configured either through constructor arguments or environment
 | Parameter          | Environment Variable        | Description                            |
 | ------------------ | --------------------------- | -------------------------------------- |
 | chunking_base      | COCO_CHUNK_URL_BASE         | Base URL for the chunking service      |
-| embedding_base     | COCO_EMBEDDING_URL_BASE     | Base URL for the embedding service     |
 | db_api_base        | COCO_DB_API_URL_BASE        | Base URL for the database API          |
 | transcription_base | COCO_TRANSCRIPTION_URL_BASE | Base URL for the transcription service |
-| ollama_base        | COCO_OLLAMA_URL_BASE        | Base URL for the Ollama service        |
+| ollama_base        | COCO_OLLAMA_URL_BASE        | Base URL for Ollama service            |
+| openai_base        | COCO_OPENAI_URL_BASE        | Base URL for OpenAI-compatible API     |
 | api_key            | COCO_API_KEY                | API key for authentication             |
 
 Constructor arguments take precedence over environment variables.
@@ -67,17 +113,19 @@ chunks = client.chunking.chunk_text(
 )
 ```
 
-### Embeddings
+### Language Models
 
-Generate embeddings for text chunks:
+Generate embeddings and interact directly with Ollama models:
 
 ```python
-embeddings = client.embedding.create_embeddings(
+# Generate embeddings using integrated Ollama
+embeddings = client.lm.create_embeddings(
     chunks=["text chunk 1", "text chunk 2"],
-    batch_size=20,
-    limit_parallel=10,
-    show_progress=True
+    model="nomic-embed-text"
 )
+
+# List available Ollama models
+models = client.lm.list_ollama_models()
 ```
 
 ### Database Operations
@@ -98,14 +146,11 @@ ids, documents, metadatas, distances = client.db_api.get_closest(
     embedding=query_embedding,
     n_results=5
 )
-
-# Clear database
-deleted_count = client.db_api.clear_database()
 ```
 
 ### RAG (Retrieval Augmented Generation)
 
-Perform end-to-end RAG operations:
+End-to-end RAG with direct model access:
 
 ```python
 # Retrieve relevant chunks
@@ -114,14 +159,24 @@ results = client.retrieve_chunks(
     n_results=5
 )
 
-# Generate answers using retrieved context
+# Generate answers using integrated models
 answers, token_speeds = client.rag.generate_answers(
     queries=["What is the capital of France?"],
-    context_chunks=[["Paris is the capital of France.", "Other context..."]],
-    ollama_model="llama3.2:1b",
-    pull_model=True
+    context_chunks=[["Paris is the capital...", "Other context..."]],
+    model="llama3.2:1b",
+    pull_model=True  # Auto-download missing models
 )
 ```
+
+Key changes from previous version:
+
+- Removed separate embedding service configuration
+- Direct Ollama model integration through `LanguageModelClient`
+- Simplified configuration by removing embedding-specific parameters
+- Integrated embedding generation directly into LM module
+- Added model management capabilities (list/pull models)
+
+The rest of the documentation (batched processing, error handling, examples) remains valid with the updated integration.
 
 ## Development Utilities
 

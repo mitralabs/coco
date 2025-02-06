@@ -2,13 +2,16 @@ import os
 from pathlib import Path
 import logging
 import sys
-from coco import CocoClient, rag_query
+from coco import CocoClient
 
 cc = CocoClient(
     chunking_base="http://127.0.0.1:8001",
-    embedding_base="http://127.0.0.1:8002",
     db_api_base="http://127.0.0.1:8003",
     transcription_base="http://127.0.0.1:8000",
+    ollama_base="http://127.0.0.1:11434",
+    openai_base="https://openai.inference.de-txl.ionos.com/v1",
+    embedding_api="ollama",
+    llm_api="openai",
     api_key="test",
 )
 
@@ -42,7 +45,7 @@ def main():
     logger.info(f"Starting orchestration for {audio_file_path}")
     text, language, filename = cc.transcription.transcribe_audio(audio_file_path)
     chunks = cc.chunking.chunk_text(text=text, chunk_size=1000, chunk_overlap=200)
-    chunk_embeddings = cc.embedding.create_embeddings(chunks)
+    chunk_embeddings = cc.lm.create_embeddings(chunks)
     cc.db_api.store_in_database(
         chunks=chunks,
         embeddings=chunk_embeddings,
@@ -55,4 +58,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    print(rag_query("What is rice usually served in?"))

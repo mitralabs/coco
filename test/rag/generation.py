@@ -33,17 +33,8 @@ def get_answers(
         queries=queries,
         context_chunks=context_chunks,
         prompt_template=cfg.generation.get_answers.prompt_template,
-        ollama_model=(
-            cfg.generation.get_answers.ollama_model
-            if cfg.generation.get_answers.ollama_model
-            else None
-        ),
-        ionos_model=(
-            cfg.generation.get_answers.ionos_model
-            if cfg.generation.get_answers.ionos_model
-            else None
-        ),
-        pull_model=True,
+        model=cfg.generation.get_answers.model,
+        pull_model=False,
         batch_size=cfg.generation.get_answers.generate_answers_batch_size,
         limit_parallel=cfg.generation.get_answers.generate_answers_limit_parallel,
         show_progress=True,
@@ -146,9 +137,6 @@ def correctness(ds: Dataset, answers: Dict[str, Dict[str, Any]], wandb_prefix: s
 def generation_stage(
     cc: CocoClient, cfg: DictConfig, top_chunks: Dict[str, Dict[str, List]], ds: Dataset
 ) -> None:
-    top_chunks = {k: v for k, v in list(top_chunks.items())[:100]}  # ! tmp
-    ds = ds.select(range(100))  # ! tmp
-
     answers = get_answers(top_chunks, cc, cfg)
     # eval_llm = OllamaLLM(model="llama3.1:8b", base_url=cfg.generation.ollama_base)
     # k = next(iter(answers.keys()))

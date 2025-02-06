@@ -160,7 +160,6 @@ def batched_parallel(
         def batched_wrapper(*args, **kwargs):
             new_args, new_kwargs, n_batches = _split_args(args, kwargs, batch_size)
 
-            # if there is only one batch, run the function directly
             if n_batches is None or n_batches == 1:
                 return asyncio.run(function(*args, **kwargs))
 
