@@ -1,15 +1,13 @@
 import gradio as gr
-import aiohttp
-import json
 
 from coco import CocoClient
 
 cc = CocoClient(
-    chunking_base="http://127.0.0.1:8001",
-    db_api_base="http://127.0.0.1:8003",
-    transcription_base="http://127.0.0.1:8000",
+    chunking_base="http://chunking:8000",
+    db_api_base="http://db-api:8000",
+    transcription_base="http://transcription:8000",
     # ollama_base="https://jetson-ollama.mitra-labs.ai",
-    ollama_base="http://127.0.0.1:11434",
+    ollama_base="http://host.docker.internal:11434",
     openai_base="https://openai.inference.de-txl.ionos.com/v1",
     embedding_api="ollama",
     llm_api="openai",
@@ -17,11 +15,12 @@ cc = CocoClient(
 )
 
 
+# Start a health check
+cc.health_check()
+
+
 async def call_rag(user_message, history):
     try:
-
-        # Start a health check
-        cc.health_check()
 
         # Get RAG context
         contexts = await cc.rag.async_retrieve_chunks([user_message], 5)
@@ -50,6 +49,7 @@ async def call_rag(user_message, history):
         yield chat, str(rag_context)
     except Exception as e:
         yield history + [(user_message, f"Error: {str(e)}")], "Error in call_rag"
+        raise e
 
     #     # Call Ollama API
     #     url = f"{cc.ollama_base}/api/chat"

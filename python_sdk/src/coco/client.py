@@ -14,7 +14,6 @@ class CocoClient:
     def __init__(
         self,
         chunking_base: str = None,
-        embedding_base: str = None,
         db_api_base: str = None,
         transcription_base: str = None,
         ollama_base: str = None,
@@ -24,7 +23,6 @@ class CocoClient:
         api_key: str = None,
     ):
         self.chunking_base = chunking_base
-        self.embedding_base = embedding_base
         self.db_api_base = db_api_base
         self.transcription_base = transcription_base
         self.ollama_base = ollama_base

@@ -20,11 +20,12 @@ from coco import CocoClient
 
 cc = CocoClient(
     chunking_base="http://127.0.0.1:8001",
-    embedding_base="http://127.0.0.1:8002",
     db_api_base="http://127.0.0.1:8003",
     transcription_base="http://127.0.0.1:8000",
+    ollama_base="http://host.docker.internal:11434",
+    embedding_api="ollama",
+    llm_api="ollama",
     api_key="test",
-    ollama_base="http://host.docker.internal:11434"
 )
 
 # Configure logging
@@ -42,6 +43,7 @@ if not API_KEY:
     raise ValueError("API_KEY environment variable must be set")
 api_key_header = APIKeyHeader(name="X-API-Key")
 
+
 def get_api_key(api_key: str = Depends(api_key_header)):
     if api_key != API_KEY:
         raise HTTPException(
@@ -49,53 +51,58 @@ def get_api_key(api_key: str = Depends(api_key_header)):
         )
     return api_key
 
-app = FastAPI()
 
+app = FastAPI()
 
 
 def append_audio(directory_path):
     """
     Append all audio files in a directory and save as audio_full.wav
-    
+
     Args:
         directory_path (str): Path to directory containing audio files
     """
     print(f"\nProcessing directory: {directory_path}")
-    
+
     # Get all wav files matching audio_* pattern
-    audio_files = sorted([f for f in os.listdir(directory_path) 
-                         if f.endswith('.wav') and f.startswith('audio_')])
-    
+    audio_files = sorted(
+        [
+            f
+            for f in os.listdir(directory_path)
+            if f.endswith(".wav") and f.startswith("audio_")
+        ]
+    )
+
     # Sort according to ID number
-    audio_files.sort(key=lambda f: int(re.search(r'audio_(\d+)\.wav', f).group(1)))
+    audio_files.sort(key=lambda f: int(re.search(r"audio_(\d+)\.wav", f).group(1)))
 
     print(f"Found audio files: {audio_files}")
-    
+
     if not audio_files:
         return False, None
-        
+
     # Combine audio files
     combined = AudioSegment.from_wav(os.path.join(directory_path, audio_files[0]))
     for audio_file in audio_files[1:]:
         audio_path = os.path.join(directory_path, audio_file)
         audio = AudioSegment.from_wav(audio_path)
         combined += audio
-    
+
     # Save combined audio in same directory
     output_path = os.path.join(directory_path, "audio_full.wav")
     combined.export(output_path, format="wav")
     print(f"Created: {output_path}")
     return True, output_path
-        
+
 
 async def kick_off_processing(session_id):
     """
     Kick off the processing pipeline for a session
-    
+
     Args:
         session_id (str): ID of the session to process
     """
-        
+
     try:
         file_path = f"/data/session_{session_id}"
         # Append audio file paths and save to same directory.
@@ -104,7 +111,9 @@ async def kick_off_processing(session_id):
 
         if success:
             text, language, filename = cc.transcription.transcribe_audio(audio_path)
-            chunks = cc.chunking.chunk_text(text=text, chunk_size=1000, chunk_overlap=200)
+            chunks = cc.chunking.chunk_text(
+                text=text, chunk_size=1000, chunk_overlap=200
+            )
             chunk_embeddings = cc.embedding.create_embeddings(chunks)
             cc.db_api.store_in_database(
                 chunks=chunks,
@@ -129,6 +138,7 @@ async def kick_off_processing(session_id):
 async def read_root():
     print("Root path accessed. Server is running.")
     return {"status": "success", "message": "Server is running"}, 200
+
 
 # Route to upload audio data
 @app.post("/uploadAudio")
@@ -169,7 +179,9 @@ async def upload_audio(request: Request, api_key: str = Depends(get_api_key)):
             os.makedirs(f"/data/session_{recording_session}")
 
         # Function to save the file to local storage
-        async with aiofiles.open(f"/data/session_{recording_session}/audio_{increment}.wav", "wb") as f:
+        async with aiofiles.open(
+            f"/data/session_{recording_session}/audio_{increment}.wav", "wb"
+        ) as f:
             await f.write(body)
         print(f"Audio {recording_session}_{increment} saved successfully.")
 
@@ -184,6 +196,7 @@ async def upload_audio(request: Request, api_key: str = Depends(get_api_key)):
         return JSONResponse(
             content={"status": "error", "message": str(e)}, status_code=500
         )
+
 
 @app.get("/TransferComplete")
 async def test_endpoint(request: Request, api_key: str = Depends(get_api_key)):
@@ -202,7 +215,6 @@ async def test_endpoint(request: Request, api_key: str = Depends(get_api_key)):
     )
 
 
-    
 # Keep the test endpoint for basic connectivity testing
 @app.get("/test")
 async def test_endpoint(api_key: str = Depends(get_api_key)):

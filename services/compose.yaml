@@ -82,3 +82,50 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "8002:7860"
+    volumes:
+      - ../python_sdk:/app/python_sdk
+    env_file:
+      - ".env"
+    environment:
+      - GRADIO_SERVER_NAME=0.0.0.0
+    restart: unless-stopped
+    depends_on:
+      transcription:
+        condition: service_healthy
+      chunking:
+        condition: service_healthy
+      db-api:
+        condition: service_healthy
+
+  orchestrator:
+    build:
+      context: ./orchestrator
+      dockerfile: Dockerfile
+    ports:
+      - "3030:8000"
+    volumes:
+      - ../python_sdk:/app/python_sdk
+      - ./_data/audio_files:/data
+    environment:
+      - API_KEY=test
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      transcription:
+        condition: service_healthy
+      chunking:
+        condition: service_healthy
+      db-api:
+        condition: service_healthy

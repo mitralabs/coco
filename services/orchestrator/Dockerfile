@@ -19,3 +19,4 @@ RUN chmod +x ./start.sh
 
 # Definiere das Startskript als ENTRYPOINT
 ENTRYPOINT ["./start.sh"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--log-level", "debug"]
