@@ -38,28 +38,6 @@ services:
       retries: 3
       start_period: 20s
 
-  embedding:
-    build:
-      context: ./embedding
-      dockerfile: Dockerfile
-    ports:
-      - "8002:8000"
-    volumes:
-      - ./embedding/app:/app
-    environment:
-      - API_KEY=test
-      #- BASE_URL=https://jetson-ollama.mitra-labs.ai/api
-      - BASE_URL=http://192.168.178.34:11434/api
-      #- BASE_URL=http://host.docker.internal:11434/api
-      - OLLAMA_MODEL=bge-m3:latest #Alternative: nomic-embed-text
-    restart: unless-stopped
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 20s
-
   db-api:
     build:
       context: ./db_api
@@ -75,7 +53,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_DB=coco
       - POSTGRES_HOST=db
-      - VEKTOR_DIM=1024 # BGE-M3 // Nomic Embedding = 768
+      - VEKTOR_DIM=768 # BGE-M3 // Nomic Embedding = 768
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
@@ -85,8 +63,6 @@ services:
       start_period: 20s
     depends_on:
       db:
-        condition: service_healthy
-      embedding:
         condition: service_healthy
 
   db:

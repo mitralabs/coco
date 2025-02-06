@@ -1,12 +1,13 @@
 import os
 import httpx
-from typing import List, Tuple, Dict
+from typing import List, Literal
 
 from .async_utils import batched_parallel
 from .chunking import ChunkingClient
-from .embeddings import EmbeddingClient
 from .db_api import DbApiClient
+from .rag import RagClient
 from .transcription import TranscriptionClient
+from .lm import LanguageModelClient
 
 
 class CocoClient:
@@ -16,41 +17,59 @@ class CocoClient:
         embedding_base: str = None,
         db_api_base: str = None,
         transcription_base: str = None,
+        ollama_base: str = None,
+        openai_base: str = None,
+        embedding_api: Literal["ollama", "openai"] = "ollama",
+        llm_api: Literal["ollama", "openai"] = "ollama",
         api_key: str = None,
     ):
         self.chunking_base = chunking_base
         self.embedding_base = embedding_base
         self.db_api_base = db_api_base
         self.transcription_base = transcription_base
+        self.ollama_base = ollama_base
+        self.openai_base = openai_base
+        self.embedding_api = embedding_api
+        self.llm_api = llm_api
         self.api_key = api_key
 
         if not self.chunking_base:
             self.chunking_base = os.getenv("COCO_CHUNK_URL_BASE")
-        if not self.embedding_base:
-            self.embedding_base = os.getenv("COCO_EMBEDDING_URL_BASE")
         if not self.db_api_base:
             self.db_api_base = os.getenv("COCO_DB_API_URL_BASE")
         if not self.transcription_base:
             self.transcription_base = os.getenv("COCO_TRANSCRIPTION_URL_BASE")
+        if not self.ollama_base:
+            self.ollama_base = os.getenv("COCO_OLLAMA_URL_BASE")
+        if not self.openai_base:
+            self.openai_base = os.getenv("COCO_OPENAI_URL_BASE")
         if not self.api_key:
             self.api_key = os.getenv("COCO_API_KEY")
 
         assert self.chunking_base, "Chunking base URL is not set"
-        assert self.embedding_base, "Embedding base URL is not set"
         assert self.db_api_base, "DB API base URL is not set"
         assert self.transcription_base, "Transcription base URL is not set"
+        if self.embedding_api == "ollama" or self.llm_api == "ollama":
+            assert self.ollama_base, "Ollama base URL is not set"
+        if self.embedding_api == "openai" or self.llm_api == "openai":
+            assert self.openai_base, "OpenAI base URL is not set"
         assert self.api_key, "API key is not set"
 
         self.chunking = ChunkingClient(self.chunking_base, self.api_key)
-        self.embedding = EmbeddingClient(self.embedding_base, self.api_key)
         self.db_api = DbApiClient(self.db_api_base, self.api_key)
         self.transcription = TranscriptionClient(self.transcription_base, self.api_key)
+        self.lm = LanguageModelClient(
+            self.ollama_base, self.openai_base, self.embedding_api, self.llm_api
+        )
+        self.rag = RagClient(
+            self.db_api,
+            self.lm,
+        )
 
     def health_check(self):
         services = {
             "transcription": self.transcription_base,
             "chunking": self.chunking_base,
-            "embedding": self.embedding_base,
             "database": self.db_api_base,
         }
         for service_name, url in services.items():
@@ -63,8 +82,10 @@ class CocoClient:
             if not test_response.get("status") == "success":
                 raise Exception(f"{service_name} service test failed: {test_response}")
 
-    async def _embed_and_store(self, chunks, language, filename):
-        embeddings = await self.embedding._create_embeddings(chunks)
+    async def _embed_and_store(
+        self, chunks, language, filename, model="nomic-embed-text"
+    ):
+        embeddings = await self.lm._embed(chunks, model)
         ns_added, ns_skipped = await self.db_api._store_in_database(
             chunks, embeddings, language, filename
         )
@@ -75,6 +96,7 @@ class CocoClient:
         chunks: List[str],
         language: str,
         filename: str,
+        model: str = "nomic-embed-text",
         batch_size: int = 20,
         limit_parallel: int = 10,
         show_progress: bool = True,
@@ -100,38 +122,34 @@ class CocoClient:
             show_progress=show_progress,
             description="Embedding and storing",
         )
-        n_added, n_skipped = batched_embed_and_store(chunks, language, filename)
+        n_added, n_skipped = batched_embed_and_store(chunks, language, filename, model)
         return sum(n_added), sum(n_skipped)
 
-    async def _retrieve_chunks(self, query_texts, n_results):
-        embeddings = await self.embedding._create_embeddings(query_texts)
-        return await self.db_api._get_multiple_closest(embeddings, n_results)
-
-    def retrieve_chunks(
+    def transcribe_and_store(
         self,
-        query_texts: List[str],
-        n_results: int = 5,
+        audio_file: str,
         batch_size: int = 20,
         limit_parallel: int = 10,
         show_progress: bool = True,
-    ) -> List[Tuple[List[str], List[str], List[Dict], List[float]]]:
-        """Retrieve chunks from the database.
+    ):
+        """Transcribe, chunk, embed and store.
 
         Args:
-            query_texts (List[str]): The query texts to retrieve chunks for.
-            n_results (int, optional): The number of results to retrieve. Defaults to 5.
+            audio_file (str): The audio file to transcribe.
             batch_size (int, optional): The size of each batch. Defaults to 20.
             limit_parallel (int, optional): The maximum number of parallel tasks / batches. Defaults to 10.
             show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to True.
 
         Returns:
-            List[Tuple[List[str], List[str], List[Dict], List[float]]]: The retrieved chunks.
+            Tuple[int, int]: The number of documents added and skipped.
         """
-        batched_retrieve_chunks = batched_parallel(
-            function=self._retrieve_chunks,
+        text, language, filename = self.transcription.transcribe_audio(audio_file)
+        chunks = self.chunking.chunk_text(text=text)
+        return self.embed_and_store(
+            chunks=chunks,
+            language=language,
+            filename=filename,
             batch_size=batch_size,
             limit_parallel=limit_parallel,
             show_progress=show_progress,
-            description="Retrieving chunks",
         )
-        return batched_retrieve_chunks(query_texts, n_results)
