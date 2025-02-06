@@ -36,15 +36,18 @@ async def call_rag(user_message, history):
             messages.extend([{"role": m[0], "content": m[1]} for m in history])
         messages.append({"role": "user", "content": formatted_prompt})
 
-        response, tok_ss = await cc.lm.async_chat(
+        responses, tok_ss = await cc.lm.async_chat(
             messages_list=[messages],
             model="meta-llama/Llama-3.3-70B-Instruct",
             batch_size=20,
             limit_parallel=10,
             show_progress=True,
         )
-        print("Token per seconds:", tok_ss)
-        yield history + [(user_message, response)], str(rag_context)
+        reponse, tok_s = responses[0], tok_ss[0]
+
+        print("Token per seconds:", tok_s)
+        chat = history + [(user_message, reponse)]
+        yield chat, str(rag_context)
     except Exception as e:
         yield history + [(user_message, f"Error: {str(e)}")], "Error in call_rag"
 
