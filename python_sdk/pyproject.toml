@@ -18,7 +18,7 @@ classifiers = [
 ]
 license = "MPL-2.0"
 license-files = ["LICEN[CS]E*"]
-dependencies = ["httpx", "tqdm", "ollama"]
+dependencies = ["httpx", "tqdm", "ollama", "openai"]
 
 [project.optional-dependencies]
 dev = []

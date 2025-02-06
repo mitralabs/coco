@@ -151,3 +151,85 @@ class LanguageModelClient:
             self.embedding_api == "ollama" or self.llm_api == "ollama"
         ), "Pull model is only supported for ollama"
         self.ollama.pull(model)
+
+    async def _chat(
+        self, messages_list: List[List[dict]], model: str = "llama3.2:1b"
+    ) -> Tuple[List[str], List[float]]:
+        if self.llm_api == "ollama":
+            texts, tok_ss = [], []
+            for messages in messages_list:
+                response = await self.async_ollama.chat(model=model, messages=messages)
+                texts.append(response["message"]["content"])
+                tok_ss.append(
+                    response["eval_count"] / response["eval_duration"] * 10**9
+                )
+        elif self.llm_api == "openai":
+            texts, tok_ss = [], []
+            for messages in messages_list:
+                start = time.time()
+                response = await self.async_openai.chat.completions.create(
+                    model=model, messages=messages
+                )
+                tok_ss.append(response.usage.completion_tokens / (time.time() - start))
+                texts.append(response.choices[0].message.content)
+        return texts, tok_ss
+
+    def chat(
+        self,
+        messages_list: List[List[dict]],
+        model: str = "llama3.2:1b",
+        batch_size: int = 20,
+        limit_parallel: int = 10,
+        show_progress: bool = False,
+    ) -> Tuple[List[str], List[float]]:
+        """Generate text from a list of message dictionaries.
+
+        Args:
+            messages_list (List[List[dict]]): List of message sequences to generate from
+            model (str, optional): The model to use. Defaults to "llama3.2:1b".
+            batch_size (int, optional): Size of each batch. Defaults to 20.
+            limit_parallel (int, optional): Max parallel batches. Defaults to 10.
+            show_progress (bool, optional): Show progress bar. Defaults to False.
+
+        Returns:
+            Tuple[List[str], List[float]]: Generated texts and token speeds
+        """
+        batched_chat = batched_parallel(
+            function=self._chat,
+            batch_size=batch_size,
+            limit_parallel=limit_parallel,
+            show_progress=show_progress,
+        )
+
+        return batched_chat(messages_list, model=model)
+
+    async def async_chat(
+        self,
+        messages_list: List[List[dict]],
+        model: str = "llama3.2:1b",
+        batch_size: int = 20,
+        limit_parallel: int = 10,
+        show_progress: bool = False,
+    ) -> Tuple[List[str], List[float]]:
+        """Generate text from a list of message dictionaries.
+
+        Args:
+            messages_list (List[List[dict]]): List of message sequences to generate from
+            model (str, optional): The model to use. Defaults to "llama3.2:1b".
+            batch_size (int, optional): Size of each batch. Defaults to 20.
+            limit_parallel (int, optional): Max parallel batches. Defaults to 10.
+            show_progress (bool, optional): Show progress bar. Defaults to False.
+
+        Returns:
+            Tuple[List[str], List[float]]: Generated texts and token speeds
+        """
+        batched_chat = batched_parallel(
+            function=self._chat,
+            batch_size=batch_size,
+            limit_parallel=limit_parallel,
+            show_progress=show_progress,
+            description="Generating chat text",
+            return_async_wrapper=True,
+        )
+
+        return await batched_chat(messages_list, model=model)

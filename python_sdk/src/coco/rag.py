@@ -70,6 +70,37 @@ class RagClient:
         )
         return batched_retrieve_chunks(query_texts, n_results, model)
 
+    async def async_retrieve_chunks(
+        self,
+        query_texts: List[str],
+        n_results: int = 5,
+        model: str = "nomic-embed-text",
+        batch_size: int = 20,
+        limit_parallel: int = 10,
+        show_progress: bool = True,
+    ) -> List[Tuple[List[str], List[str], List[Dict], List[float]]]:
+        """Retrieve chunks from the database.
+
+        Args:
+            query_texts (List[str]): The query texts to retrieve chunks for.
+            n_results (int, optional): The number of results to retrieve. Defaults to 5.
+            batch_size (int, optional): The size of each batch. Defaults to 20.
+            limit_parallel (int, optional): The maximum number of parallel tasks / batches. Defaults to 10.
+            show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to True.
+
+        Returns:
+            List[Tuple[List[str], List[str], List[Dict], List[float]]]: The retrieved chunks.
+        """
+        batched_retrieve_chunks = batched_parallel(
+            function=self._retrieve_chunks,
+            batch_size=batch_size,
+            limit_parallel=limit_parallel,
+            show_progress=show_progress,
+            description="Retrieving chunks",
+            return_async_wrapper=True,
+        )
+        return await batched_retrieve_chunks(query_texts, n_results, model)
+
     def format_prompt(
         self, query: str, context_chunks: List[str], prompt_template: str | None = None
     ) -> str:
