@@ -1,33 +1,33 @@
 import gradio as gr
-import aiohttp
-import json
 
 from coco import CocoClient
 
 cc = CocoClient(
-    chunking_base="http://127.0.0.1:8001",
-    embedding_base="http://127.0.0.1:8002",
-    db_api_base="http://127.0.0.1:8003",
-    transcription_base="http://127.0.0.1:8000",
-    ollama_base="https://jetson-ollama.mitra-labs.ai",
+    chunking_base="http://chunking:8000",
+    db_api_base="http://db-api:8000",
+    transcription_base="http://transcription:8000",
+    # ollama_base="https://jetson-ollama.mitra-labs.ai",
+    ollama_base="http://host.docker.internal:11434",
+    openai_base="https://openai.inference.de-txl.ionos.com/v1",
+    embedding_api="ollama",
+    llm_api="openai",
     api_key="test",
 )
 
+
+# Start a health check
+cc.health_check()
+
+
 async def call_rag(user_message, history):
     try:
-        
-        # Start a health check
-        cc.health_check()
 
         # Get RAG context
-        rag_results = await cc.rag.retrieve_chunks([user_message], 5)
-        rag_context = rag_results[0]
-        
-        # Format context chunks
-        context_chunks = [chunk['document'] for chunk in rag_context[0]]
-        
+        contexts = await cc.rag.async_retrieve_chunks([user_message], 5)
+        rag_context = contexts[0][1]
+
         # Format prompt
-        formatted_prompt = cc.rag.format_prompt(user_message, context_chunks)
+        formatted_prompt = cc.rag.format_prompt(user_message, rag_context)
 
         # Prepare messages for Ollama
         messages = []
@@ -35,78 +35,102 @@ async def call_rag(user_message, history):
             messages.extend([{"role": m[0], "content": m[1]} for m in history])
         messages.append({"role": "user", "content": formatted_prompt})
 
-        # Call Ollama API
-        url = f"{cc.ollama_base}/api/chat"
-        payload = {
-            "model": "deepseek-r1:14b",
-            "messages": messages,
-            "stream": True,
-        }
+        responses, tok_ss = await cc.lm.async_chat(
+            messages_list=[messages],
+            model="meta-llama/Llama-3.3-70B-Instruct",
+            batch_size=20,
+            limit_parallel=10,
+            show_progress=True,
+        )
+        reponse, tok_s = responses[0], tok_ss[0]
 
-        response_buffer = ""
-        async with aiohttp.ClientSession() as session:
-            try:
-                async with session.post(url, json=payload) as response:
-                    async for line in response.content:
-                        if line:
-                            try:
-                                data = json.loads(line.decode('utf-8'))
-                                content = data.get("message", {}).get("content", "")
-                                response_buffer += content
-                                
-                                # Update the chat interface
-                                history_update = history + [(user_message, response_buffer)]
-                                yield history_update, str(rag_context)
-                                
-                            except json.JSONDecodeError:
-                                print(f"Failed to parse JSON: {line}")
-                                
-            except Exception as e:
-                print(f"Error: {e}")
-                yield history + [(user_message, f"Error: {str(e)}")], str(rag_context)
+        print("Token per seconds:", tok_s)
+        chat = history + [(user_message, reponse)]
+        yield chat, str(rag_context)
     except Exception as e:
-        print(f"Error in call_rag: {e}")
         yield history + [(user_message, f"Error: {str(e)}")], "Error in call_rag"
+        raise e
+
+    #     # Call Ollama API
+    #     url = f"{cc.ollama_base}/api/chat"
+    #     payload = {
+    #         "model": "deepseek-r1:14b",
+    #         "messages": messages,
+    #         "stream": True,
+    #     }
+
+    #     response_buffer = ""
+    #     async with aiohttp.ClientSession() as session:
+    #         try:
+    #             async with session.post(url, json=payload) as response:
+    #                 async for line in response.content:
+    #                     if line:
+    #                         try:
+    #                             data = json.loads(line.decode("utf-8"))
+    #                             content = data.get("message", {}).get("content", "")
+    #                             response_buffer += content
+
+    #                             # Update the chat interface
+    #                             history_update = history + [
+    #                                 (user_message, response_buffer)
+    #                             ]
+    #                             yield history_update, str(rag_context)
+
+    #                         except json.JSONDecodeError:
+    #                             print(f"Failed to parse JSON: {line}")
+
+    #         except Exception as e:
+    #             print(f"Error: {e}")
+    #             yield history + [(user_message, f"Error: {str(e)}")], str(rag_context)
+    # except Exception as e:
+    #     print(f"Error in call_rag: {e}")
+    #     yield history + [(user_message, f"Error: {str(e)}")], "Error in call_rag"
+
 
 async def handle_audio_upload(file):
     if file is None:
         return "Please upload a WAV file"
-    
-    if not file.name.lower().endswith('.wav'):
+
+    if not file.name.lower().endswith(".wav"):
         return "Only WAV files are supported"
-    
+
     try:
         # Full processing pipeline
         # 1. Transcribe audio to text
         text, language, filename = await cc.transcription.transcribe_audio(file.name)
-        
+
         # 2. Chunk the text
         chunks = await cc.chunking.chunk_text(text)
-        
+
         # 3. Create embeddings
         embeddings = await cc.embedding.create_embeddings(chunks)
-        
+
         # 4. Store in DB
-        documents = [{
-            "text": chunk,
-            "embedding": embedding,
-            "metadata": {
-                "language": language,
-                "filename": filename,
-                "chunk_index": i,
-                "total_chunks": len(chunks)
+        documents = [
+            {
+                "text": chunk,
+                "embedding": embedding,
+                "metadata": {
+                    "language": language,
+                    "filename": filename,
+                    "chunk_index": i,
+                    "total_chunks": len(chunks),
+                },
             }
-        } for i, (chunk, embedding) in enumerate(zip(chunks, embeddings))]
-        
+            for i, (chunk, embedding) in enumerate(zip(chunks, embeddings))
+        ]
+
         await cc.db_api.add(documents)
-        
+
         return f"Processed {len(chunks)} chunks from {filename}"
     except Exception as e:
         return f"Error processing file: {str(e)}"
 
+
 with gr.Blocks(fill_height=True) as demo:
     
     gr.Markdown("# CoCo")
+
     with gr.Row():
         with gr.Column(scale=2):
             chatbot = gr.Chatbot(height=600)
@@ -116,13 +140,13 @@ with gr.Blocks(fill_height=True) as demo:
                     lines=1,
                     label="Input",
                     scale=2,
-                    elem_classes="input-height"
+                    elem_classes="input-height",
                 )
                 submit_btn = gr.Button(
                     "Submit",
                     scale=1,
                     variant="primary",
-                    elem_classes="orange-button small-button"
+                    elem_classes="orange-button small-button",
                 )
                 file_upload = gr.File(
                     label="Upload Audio",
@@ -130,23 +154,19 @@ with gr.Blocks(fill_height=True) as demo:
                     type="filepath",
                     file_count="single",
                     scale=1,
-                    elem_classes="file-upload small-button"
+                    elem_classes="file-upload small-button",
                 )
-            
-            upload_status = gr.Textbox(
-                label="Upload Status",
-                interactive=False
-            )
-            
+
+            upload_status = gr.Textbox(label="Upload Status", interactive=False)
+
         with gr.Column(scale=1):
             gr.Markdown("### RAG Context")
             rag_context_display = gr.Textbox(
-                label="Retrieved Context",
-                lines=10,
-                interactive=False
+                label="Retrieved Context", lines=10, interactive=False
             )
 
-    gr.Markdown("""
+    gr.Markdown(
+        """
         <style>
         .orange-button {
             background-color: #FF8C00 !important;
@@ -169,30 +189,31 @@ with gr.Blocks(fill_height=True) as demo:
             min-height: 46px !important;
         }
         </style>
-    """)
+    """
+    )
 
     # Event handlers
     submit_btn.click(
         fn=call_rag,
         inputs=[input_message, chatbot],
         outputs=[chatbot, rag_context_display],
-        api_name="chat"
+        api_name="chat",
     )
-    
+
     # Also allow Enter key to submit
     input_message.submit(
         fn=call_rag,
         inputs=[input_message, chatbot],
         outputs=[chatbot, rag_context_display],
-        api_name="chat"
+        api_name="chat",
     )
-    
+
     # Add file upload handler
     file_upload.upload(
         fn=handle_audio_upload,
         inputs=[file_upload],
         outputs=[upload_status],
-        api_name="upload_audio"
+        api_name="upload_audio",
     )
 
 if __name__ == "__main__":
