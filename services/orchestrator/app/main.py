@@ -1,16 +1,13 @@
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, Request, Depends, BackgroundTasks
 from fastapi.responses import JSONResponse
 from fastapi.security.api_key import APIKeyHeader
 from fastapi import status, HTTPException
 
 import time
 import aiofiles
-from datetime import datetime
 import logging
 
 import os
-from pathlib import Path
-from dotenv import load_dotenv
 import sys
 
 from pydub import AudioSegment
@@ -19,9 +16,9 @@ import re
 from coco import CocoClient
 
 cc = CocoClient(
-    chunking_base="http://127.0.0.1:8001",
-    db_api_base="http://127.0.0.1:8003",
-    transcription_base="http://127.0.0.1:8000",
+    chunking_base="http://chunking:8000",
+    db_api_base="http://db-api:8000",
+    transcription_base="http://transcription:8000",
     ollama_base="http://host.docker.internal:11434",
     embedding_api="ollama",
     llm_api="ollama",
@@ -69,7 +66,9 @@ def append_audio(directory_path):
         [
             f
             for f in os.listdir(directory_path)
-            if f.endswith(".wav") and f.startswith("audio_")
+            if f.endswith(".wav")
+            and f.startswith("audio_")
+            and not f.startswith("audio_full")
         ]
     )
 
@@ -95,13 +94,14 @@ def append_audio(directory_path):
     return True, output_path
 
 
-async def kick_off_processing(session_id):
+def kick_off_processing(session_id):
     """
     Kick off the processing pipeline for a session
 
     Args:
         session_id (str): ID of the session to process
     """
+    print(f"Kicking off processing for session: {session_id}")
 
     try:
         file_path = f"/data/session_{session_id}"
@@ -109,24 +109,14 @@ async def kick_off_processing(session_id):
 
         success, audio_path = append_audio(file_path)
 
-        if success:
-            text, language, filename = cc.transcription.transcribe_audio(audio_path)
-            chunks = cc.chunking.chunk_text(
-                text=text, chunk_size=1000, chunk_overlap=200
-            )
-            chunk_embeddings = cc.embedding.create_embeddings(chunks)
-            cc.db_api.store_in_database(
-                chunks=chunks,
-                embeddings=chunk_embeddings,
-                language=language,
-                filename=filename,
-            )
-
-            logger.info("Orchestration completed successfully.")
-            return True
-        else:
+        if not success:
             logger.error("Error processing session: No audio files found.")
             return False
+
+        cc.transcribe_and_store(audio_path)
+
+        logger.info("Orchestration completed successfully.")
+        return True
 
     except Exception as e:
         logger.error(f"Error processing session: {str(e)}")
@@ -199,16 +189,19 @@ async def upload_audio(request: Request, api_key: str = Depends(get_api_key)):
 
 
 @app.get("/TransferComplete")
-async def test_endpoint(request: Request, api_key: str = Depends(get_api_key)):
-    # Insert code to call the next service as soon as the transfer is complete and confirmed by the ESP32.
-    body = await request.body()
-    # Grab Session ID from the requested body
-    recording_session = body["recording_session"]
+async def transfer_complete_endpoint(
+    recording_session: int,
+    background_tasks: BackgroundTasks,
+    api_key: str = Depends(get_api_key),
+):
+    # Add logging to track execution
+    logger.info(f"Transfer complete received for session: {recording_session}")
 
     # Call the next service async without waiting for a response
-    kick_off_processing(recording_session)
+    background_tasks.add_task(kick_off_processing, recording_session)
+    logger.info(f"Background task added for session: {recording_session}")
 
-    # Return Success and kick off the next service
+    # Return Success
     return JSONResponse(
         content={"status": "success", "message": "Transfer Complete"},
         status_code=200,

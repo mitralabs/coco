@@ -2,15 +2,16 @@ services:
 
   transcription:
     build:
-      context: ./transcription/whisper_openai
+      context: ./transcription/whisper_cpp
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
     volumes:
-      - ./transcription/whisper_openai/app:/app
+      - ./transcription/whisper_cpp/app:/app
       - ./_data:/data
     environment:
       - API_KEY=test
+      - GGML_MODEL=ggml-large-v3-turbo-german
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]

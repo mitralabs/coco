@@ -15,13 +15,12 @@ app = FastAPI()
 
 # API Key Authentication
 API_KEY = os.getenv("API_KEY")
-API_KEY = "please_smile"
 if not API_KEY:
     raise ValueError("API_KEY environment variable must be set")
 
 # Setting the Model
 GGML_MODEL = os.getenv("GGML_MODEL")
-GGML_MODEL = "ggml-large-v3-turbo" #For testing only, helps since the .env file is included during the build.
+# GGML_MODEL = "ggml-base"  # For testing only, helps since the .env file is included during the build.
 if not GGML_MODEL:
     raise ValueError("Model environment variable must be set")
 
@@ -57,98 +56,68 @@ def process_whisper_output(audio_path):
         raise Exception(f"Error processing JSON: {e}")
 
 
-@app.post("/transcribe/")
-async def transcribe_audio(
-    audio_file: UploadFile = File(...), api_key: str = Depends(get_api_key)
-):
-    try:
-        # Create a temporary file to store the uploaded audio
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_audio:
-            content = await audio_file.read()
-            temp_audio.write(content)
-            temp_audio.flush()
+@app.post("/transcribe")
+async def transcribe(file: UploadFile = File(...), api_key: str = Depends(get_api_key)):
+    # Create a temporary file to store the uploaded audio
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_audio:
+        content = await file.read()
+        temp_audio.write(content)
+        temp_audio.flush()
 
-            # Construct the absolute paths
-            whisper_cpp_dir = Path.cwd().parent / "whisper.cpp"
+        # Construct the absolute paths
+        whisper_cpp_dir = Path.cwd().parent / "whisper.cpp"
 
-            whisper_executable_paths = [
-                whisper_cpp_dir / "main",
-                whisper_cpp_dir / "build/bin/main",
-            ]
+        whisper_executable_paths = [
+            whisper_cpp_dir / "main",
+            whisper_cpp_dir / "build/bin/main",
+        ]
 
-            for path in whisper_executable_paths:
-                if path.exists():
-                    whisper_executable = str(path)
-                    break
-            else:
-                raise FileNotFoundError(
-                    f"whisper.cpp main executable not found in {whisper_executable_paths}"
-                )
+        for path in whisper_executable_paths:
+            if path.exists():
+                whisper_executable = str(path)
+                break
 
-            model_path = whisper_cpp_dir / "models" / f"{GGML_MODEL}.bin"
+        model_path = Path("/data") / "models" / f"{GGML_MODEL}.bin"
+        command = [
+            whisper_executable,
+            "-m",
+            model_path,
+            "-f",
+            temp_audio.name,
+            "-l",
+            "de",
+            "-oj",
+            "true",  # Output in JSON format
+        ]
+        result = subprocess.run(
+            [str(i) for i in command], capture_output=True, text=True, check=True
+        )
+        print("Whisper.cpp output:")
+        print(result.stdout)
 
-            # Prepare the command
-            command = [
-                whisper_executable,
-                "-m",
-                model_path,
-                "-f",
-                temp_audio.name,
-                "-l",
-                "de",
-                "-oj",
-                "true",  # Output in JSON format
-            ]
+        # print(result)
+        # print(result.stdout)
 
-            # Execute the command and capture output
-            try:
-                result = subprocess.run(
-                    command, capture_output=True, text=True, check=True
-                )
+        data = process_whisper_output(temp_audio.name)
+        # Access transcription data
+        transcription = data["transcription"]  # Adjust based on actual JSON structure
 
-                # print(result)
-                # print(result.stdout)
-
-                data = process_whisper_output(temp_audio.name)
-                # Access transcription data
-                transcription = data[
-                    "transcription"
-                ]  # Adjust based on actual JSON structure
-
-                # Format the response to match your previous structure
-                return JSONResponse(
-                    content={
-                        "status": "success",
-                        "document": {
-                            "text": transcription,
-                            "metadata": {
-                                "language": "should be somewhere else in the JSON. Needs to be updated.",
-                                "filename": audio_file.filename,
-                            },
-                        },
-                    }
-                )
-
-            except subprocess.CalledProcessError as e:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"Whisper.cpp execution failed: {e.stderr}",
-                )
-            except json.JSONDecodeError as e:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"Failed to parse whisper.cpp output: {str(e)}",
-                )
-            finally:
-                # Clean up the temporary file
-                os.unlink(temp_audio.name)
-
-    except Exception as e:
+        # Format the response to match your previous structure
+        print(type(transcription), transcription)
+        text = " ".join([i["text"] for i in transcription])
         return JSONResponse(
-            status_code=500, content={"status": "error", "error": str(e)}
+            content={
+                "status": "success",
+                "document": {
+                    "text": text,
+                    "metadata": {
+                        "language": "should be somewhere else in the JSON. Needs to be updated.",
+                    },
+                },
+            }
         )
 
 
-@app.get("/")
-async def read_root():
+@app.get("/test")
+async def test():
     return {"status": "success", "message": "Whisper.cpp Transcription Service"}

@@ -1,5 +1,6 @@
 from typing import Tuple
 import httpx
+from pathlib import Path
 
 
 class TranscriptionClient:
@@ -16,15 +17,25 @@ class TranscriptionClient:
         Returns:
             Tuple[str, str, str]: (text, language, filename)
         """
-        with open(audio_file_path, "rb") as audio_file:
-            with httpx.Client() as client:
-                response = client.post(
-                    f"{self.base_url}/transcribe/",
-                    headers={"X-API-Key": self.api_key},
-                    files={"audio_file": audio_file},
-                )
-                response.raise_for_status()
-                transcription_response = response.json()
+        file = Path(audio_file_path)
+
+        # Open file in binary mode and create files dict with filename
+        files = {
+            "file": (
+                file.name,
+                file.open("rb"),
+                "audio/wav",
+            )  # Include filename and mime type
+        }
+
+        with httpx.Client(timeout=300.0) as client:
+            response = client.post(
+                f"{self.base_url}/transcribe",
+                headers={"X-API-Key": self.api_key},
+                files=files,
+            )
+            response.raise_for_status()
+            transcription_response = response.json()
 
         if not transcription_response["status"] == "success":
             raise Exception(f"Transcription failed: {transcription_response['error']}")
@@ -32,5 +43,4 @@ class TranscriptionClient:
         document = transcription_response["document"]
         text = document["text"]
         language = document["metadata"]["language"]
-        filename = document["metadata"]["filename"]
-        return text, language, filename
+        return text, language, file.name

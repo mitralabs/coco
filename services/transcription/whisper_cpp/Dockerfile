@@ -1,17 +1,12 @@
 # Use Python slim as the base image
 FROM python:3.9-slim-bullseye
 
-# Install necessary apt packages
-RUN apt-get update && apt-get install -y \
-    ffmpeg \
-    build-essential \
-    cmake \
-    curl \
-    git \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install curl for health checks
-RUN apt-get update && apt-get install -y curl
+RUN apt-get update
+RUN apt-get install -y ffmpeg
+RUN apt-get install -y build-essential
+RUN apt-get install -y cmake
+RUN apt-get install -y git
+RUN apt-get install -y curl
 
 # Clone the whisper.cpp repository
 RUN git clone https://github.com/ggerganov/whisper.cpp.git

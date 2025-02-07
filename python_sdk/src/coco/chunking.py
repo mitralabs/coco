@@ -26,7 +26,7 @@ class ChunkingClient:
         Returns:
             List[str]: List of chunks.
         """
-        headers = {"X-API-Key": self.api_key, "Content-Type": "application/json"}
+        headers = {"X-API-Key": self.api_key}
         with httpx.Client() as client:
             response = client.post(
                 f"{self.base_url}/chunk/json",
