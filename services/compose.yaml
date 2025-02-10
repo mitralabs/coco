@@ -2,12 +2,12 @@ services:
 
   transcription:
     build:
-      context: ./transcription/whisper_cpp
+      context: ./transcription
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
     volumes:
-      - ./transcription/whisper_cpp/app:/app
+      - ./transcription/app:/app
       - ./_data:/data
     environment:
       - API_KEY=test
