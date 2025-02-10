@@ -118,7 +118,11 @@ services:
       - API_KEY=test
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
+      test: ["CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test", 
+        "&&", 
+        "curl", "-f", "-X", "GET", "http://host.docker.internal:11434",
+        "&&",
+        "curl", "-f", "-X", "GET", "http://host.docker.internal:8000",]
       interval: 30s
       timeout: 10s
       retries: 3

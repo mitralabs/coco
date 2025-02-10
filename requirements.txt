@@ -1,1 +1,5 @@
 huggingface_hub
+
+fastapi
+uvicorn
+python-multipart
