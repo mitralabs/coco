@@ -1,5 +1,9 @@
 # coco
 
+---
+# This is under active development. The readme will be done by Feb 11th.
+---
+
 This is the coco Repository. 
 Currently developed by a small team, funded by [hessian.ai](https://hessian.ai), for what we are truely grateful!
 
