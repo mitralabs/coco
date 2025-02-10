@@ -10,13 +10,12 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 # Copy application code
-COPY . /app
-
-WORKDIR /app
+COPY start.sh .
 
 # Mache das Skript ausführbar
 RUN chmod +x ./start.sh
 
 # Definiere das Startskript als ENTRYPOINT
 ENTRYPOINT ["./start.sh"]
+
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--log-level", "debug"]
