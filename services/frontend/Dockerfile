@@ -7,9 +7,12 @@ RUN apt-get update && apt-get install -y curl
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
+# Copy application code
+COPY . /app
+
 WORKDIR /app
 
-RUN chmod +x /app/start.sh
+RUN chmod +x ./start.sh
 
-ENTRYPOINT ["/app/start.sh"]
+ENTRYPOINT ["./start.sh"]
 CMD ["python", "main.py"]

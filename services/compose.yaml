@@ -90,7 +90,6 @@ services:
     ports:
       - "8002:7860"
     volumes:
-      - ./frontend/app:/app
       - ../python_sdk:/app/python_sdk
     env_file:
       - ".env"
