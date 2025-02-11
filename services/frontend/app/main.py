@@ -5,7 +5,7 @@ from coco import CocoClient
 cc = CocoClient(
     chunking_base="http://chunking:8000",
     db_api_base="http://db-api:8000",
-    transcription_base="http://transcription:8000",
+    transcription_base="http://host.docker.internal:8000",
     # ollama_base="https://jetson-ollama.mitra-labs.ai",
     ollama_base="http://host.docker.internal:11434",
     openai_base="https://openai.inference.de-txl.ionos.com/v1",
