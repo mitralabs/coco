@@ -142,6 +142,11 @@ class CocoClient:
             Tuple[int, int]: The number of documents added and skipped.
         """
         text, language, filename = self.transcription.transcribe_audio(audio_file)
+        
+        # Store the transcription text next to the audio
+        with open(f"{audio_file[:-4]}.txt", "w") as f:
+            f.write(text)
+
         chunks = self.chunking.chunk_text(text=text)
         return self.embed_and_store(
             chunks=chunks,

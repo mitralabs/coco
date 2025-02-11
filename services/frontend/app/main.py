@@ -10,7 +10,7 @@ cc = CocoClient(
     ollama_base="http://host.docker.internal:11434",
     openai_base="https://openai.inference.de-txl.ionos.com/v1",
     embedding_api="ollama",
-    llm_api="openai",
+    llm_api="ollama",
     api_key="test",
 )
 
