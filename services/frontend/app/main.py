@@ -14,12 +14,16 @@ cc = CocoClient(
     api_key="test",
 )
 
+# Get available models
+available_models = cc.lm.list_ollama_models()
+if not available_models:
+    available_models = ["meta-llama/Llama-3.3-70B-Instruct"]  # Default fallback
 
 # Start a health check
 cc.health_check()
 
 
-async def call_rag(user_message, history):
+async def call_rag(user_message, history, selected_model):
     try:
 
         # Get RAG context
@@ -37,7 +41,7 @@ async def call_rag(user_message, history):
 
         responses, tok_ss = await cc.lm.async_chat(
             messages_list=[messages],
-            model="meta-llama/Llama-3.3-70B-Instruct",
+            model=selected_model,
             batch_size=20,
             limit_parallel=10,
             show_progress=True,
@@ -158,6 +162,14 @@ with gr.Blocks(fill_height=True) as demo:
                 )
 
             upload_status = gr.Textbox(label="Upload Status", interactive=False)
+            
+            # Add model selection dropdown
+            model_dropdown = gr.Dropdown(
+                choices=available_models,
+                value=available_models[0],
+                label="Select Model",
+                interactive=True
+            )
 
         with gr.Column(scale=1):
             gr.Markdown("### RAG Context")
@@ -195,7 +207,7 @@ with gr.Blocks(fill_height=True) as demo:
     # Event handlers
     submit_btn.click(
         fn=call_rag,
-        inputs=[input_message, chatbot],
+        inputs=[input_message, chatbot, model_dropdown],
         outputs=[chatbot, rag_context_display],
         api_name="chat",
     )
@@ -203,7 +215,7 @@ with gr.Blocks(fill_height=True) as demo:
     # Also allow Enter key to submit
     input_message.submit(
         fn=call_rag,
-        inputs=[input_message, chatbot],
+        inputs=[input_message, chatbot, model_dropdown],
         outputs=[chatbot, rag_context_display],
         api_name="chat",
     )
