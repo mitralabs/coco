@@ -15,17 +15,16 @@ cc = CocoClient(
 )
 
 # Get available models
-available_models = cc.lm.list_ollama_models()
+available_models = cc.lm.list_llm_models()
 if not available_models:
     available_models = ["meta-llama/Llama-3.3-70B-Instruct"]  # Default fallback
 
 # Start a health check
-cc.health_check()
+# cc.health_check()
 
 
 async def call_rag(user_message, history, selected_model):
     try:
-
         # Get RAG context
         contexts = await cc.rag.async_retrieve_chunks([user_message], 5)
         rag_context = contexts[0][1]
@@ -33,10 +32,12 @@ async def call_rag(user_message, history, selected_model):
         # Format prompt
         formatted_prompt = cc.rag.format_prompt(user_message, rag_context)
 
-        # Prepare messages for Ollama
+        # Prepare messages with proper role formatting
         messages = []
         if history:
-            messages.extend([{"role": m[0], "content": m[1]} for m in history])
+            for i, (msg_user, msg_assistant) in enumerate(history):
+                messages.append({"role": "user", "content": msg_user})
+                messages.append({"role": "assistant", "content": msg_assistant})
         messages.append({"role": "user", "content": formatted_prompt})
 
         responses, tok_ss = await cc.lm.async_chat(
@@ -132,7 +133,7 @@ async def handle_audio_upload(file):
 
 
 with gr.Blocks(fill_height=True) as demo:
-    
+
     gr.Markdown("# CoCo")
 
     with gr.Row():
@@ -162,13 +163,13 @@ with gr.Blocks(fill_height=True) as demo:
                 )
 
             upload_status = gr.Textbox(label="Upload Status", interactive=False)
-            
+
             # Add model selection dropdown
             model_dropdown = gr.Dropdown(
                 choices=available_models,
                 value=available_models[0],
                 label="Select Model",
-                interactive=True
+                interactive=True,
             )
 
         with gr.Column(scale=1):
@@ -231,4 +232,4 @@ with gr.Blocks(fill_height=True) as demo:
 if __name__ == "__main__":
     demo.launch()
     # with docker command docker run -p 7860:7860 frontend
-    #demo.launch(server_name="0.0.0.0")
+    # demo.launch(server_name="0.0.0.0")
