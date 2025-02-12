@@ -45,9 +45,7 @@ def unique_texts(ds, verbose=False):
 
 
 def init_dataset(cfg: DictConfig) -> Dataset:
-    ds_data_dir = Path(cfg.general.data_dir) / "hf_datasets" / cfg.data.name
-    Path(ds_data_dir).mkdir(parents=True, exist_ok=True)
-    ds = load_dataset(cfg.data.hf_name, cache_dir=ds_data_dir)
+    ds = load_dataset(cfg.data.hf_name)
     train_ds, test_ds = ds["train"], ds["test"]
     datasets = []
     if cfg.data.use_train:
