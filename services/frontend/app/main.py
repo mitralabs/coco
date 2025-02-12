@@ -17,10 +17,13 @@ cc = CocoClient(
 # Get available models
 available_models = cc.lm.list_llm_models()
 if not available_models:
-    available_models = ["meta-llama/Llama-3.3-70B-Instruct"]  # Default fallback model for Ollama
+    available_models = [
+        "meta-llama/Llama-3.3-70B-Instruct"
+    ]  # Default fallback model for Ollama
 
 # Start a health check
 # cc.health_check()
+
 
 async def call_rag(user_message, history, selected_model):
     try:
