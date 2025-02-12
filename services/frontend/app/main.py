@@ -17,11 +17,10 @@ cc = CocoClient(
 # Get available models
 available_models = cc.lm.list_llm_models()
 if not available_models:
-    available_models = ["meta-llama/Llama-3.3-70B-Instruct"]  # Default fallback
+    available_models = ["meta-llama/Llama-3.3-70B-Instruct"]  # Default fallback model for Ollama
 
 # Start a health check
 # cc.health_check()
-
 
 async def call_rag(user_message, history, selected_model):
     try:
@@ -101,16 +100,9 @@ async def handle_audio_upload(file):
 
     try:
         # Full processing pipeline
-        # 1. Transcribe audio to text
         text, language, filename = await cc.transcription.transcribe_audio(file.name)
-
-        # 2. Chunk the text
         chunks = await cc.chunking.chunk_text(text)
-
-        # 3. Create embeddings
         embeddings = await cc.embedding.create_embeddings(chunks)
-
-        # 4. Store in DB
         documents = [
             {
                 "text": chunk,
@@ -231,5 +223,3 @@ with gr.Blocks(fill_height=True) as demo:
 
 if __name__ == "__main__":
     demo.launch()
-    # with docker command docker run -p 7860:7860 frontend
-    # demo.launch(server_name="0.0.0.0")
