@@ -1,1 +1,0 @@
-We currently use OpenWebUI as Frontend. To connect OpenWebui to the coco backend you need to ask the administrator of openwebui (probably you) to import the `coco_pipe.py`function. You can do this in the Admin Panel -> Functions -> Import Function. You can name and describe it as you want. Then, you'll find coco/ models in the model dropdown for every chat.

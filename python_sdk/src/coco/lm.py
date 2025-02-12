@@ -35,6 +35,9 @@ class LanguageModelClient:
             self.async_openai = openai.AsyncOpenAI(
                 base_url=openai_base_url, api_key=os.environ.get("OPENAI_API_KEY")
             )
+            self.openai = openai.OpenAI(
+                base_url=openai_base_url, api_key=os.environ.get("OPENAI_API_KEY")
+            )
 
     async def _embed(
         self, chunks: List[str], model: str = "nomic-embed-text"
@@ -139,12 +142,35 @@ class LanguageModelClient:
 
         return batched_generate(prompts, model=model)
 
-    def list_ollama_models(self) -> List[str]:
-        assert (
-            self.embedding_api == "ollama" or self.llm_api == "ollama"
-        ), "List models is only supported for ollama"
+    def list_llm_models(self) -> List[str]:
+        """List available LLM models. For now just list all models.
+
+        Returns:
+            List[str]: List of model names
+        """
+        if self.llm_api == "ollama":
+            return self._list_ollama_models()
+        elif self.llm_api == "openai":
+            return self._list_openai_models()
+
+    def list_embedding_models(self) -> List[str]:
+        """List available embedding models. For now just list all models.
+
+        Returns:
+            List[str]: List of model names
+        """
+        if self.embedding_api == "ollama":
+            return self._list_ollama_models()
+        elif self.embedding_api == "openai":
+            return self._list_openai_models()
+
+    def _list_ollama_models(self) -> List[str]:
         list_response = self.ollama.list()
         return [i["model"] for i in list_response.models]
+
+    def _list_openai_models(self) -> List[str]:
+        list_response = self.openai.models.list()
+        return [i.id for i in list_response.data]
 
     def pull_ollama_model(self, model: str):
         assert (
