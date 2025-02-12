@@ -1,6 +1,7 @@
 import os
 import httpx
 from typing import List, Literal
+import logging
 
 from .async_utils import batched_parallel
 from .chunking import ChunkingClient
@@ -8,6 +9,9 @@ from .db_api import DbApiClient
 from .rag import RagClient
 from .transcription import TranscriptionClient
 from .lm import LanguageModelClient
+
+
+logger = logging.getLogger(__name__)
 
 
 class CocoClient:
@@ -79,6 +83,22 @@ class CocoClient:
                 test_response = response.json()
             if not test_response.get("status") == "success":
                 raise Exception(f"{service_name} service test failed: {test_response}")
+            logger.info(f"Health check: {service_name} service healthy and reachable")
+        if self.embedding_api == "ollama" or self.llm_api == "ollama":
+            with httpx.Client() as client:
+                response = client.get(f"{self.ollama_base}")
+                response.raise_for_status()
+            logger.info("Health check: Ollama service healthy and reachable")
+        if self.embedding_api == "openai" or self.llm_api == "openai":
+            with httpx.Client() as client:
+                response = client.get(
+                    url=f"{self.openai_base}/models",
+                    headers={
+                        "Authorization": f"Bearer {os.environ.get("OPENAI_API_KEY", "")}"
+                    },
+                )
+                response.raise_for_status()
+            logger.info("Health check: OpenAI service healthy and reachable")
 
     async def _embed_and_store(
         self, chunks, language, filename, model="nomic-embed-text"
