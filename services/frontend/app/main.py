@@ -1,6 +1,15 @@
 import gradio as gr
+import pandas as pd
+import numpy as np
 
 from coco import CocoClient
+
+theme = gr.themes.Ocean(
+    primary_hue="sky",
+    neutral_hue="neutral",
+    spacing_size="sm",
+)
+
 
 cc = CocoClient(
     chunking_base="http://chunking:8000",
@@ -10,17 +19,30 @@ cc = CocoClient(
     ollama_base="http://host.docker.internal:11434",
     openai_base="https://openai.inference.de-txl.ionos.com/v1",
     embedding_api="ollama",
-    llm_api="openai",
+    llm_api="ollama",
     api_key="test",
 )
 
 # Get available models
 available_models = cc.lm.list_llm_models()
 if not available_models:
-    available_models = ["meta-llama/Llama-3.3-70B-Instruct"]  # Default fallback model for Ollama
+    available_models = [
+        "meta-llama/Llama-3.3-70B-Instruct"
+    ]  # Default fallback model for Ollama
 
-# Start a health check
-# cc.health_check()
+
+def user(user_message, history):
+    print(user_message)
+    if history is None:
+        history = []
+    history.append({"role": "user", "content": user_message})
+    print(history)
+    return "", history
+
+
+def clear(input_message):
+    return ""
+
 
 async def call_rag(user_message, history, selected_model):
     try:
@@ -31,13 +53,11 @@ async def call_rag(user_message, history, selected_model):
         # Format prompt
         formatted_prompt = cc.rag.format_prompt(user_message, rag_context)
 
-        # Prepare messages with proper role formatting
+        history.append({"role": "user", "content": user_message})
+
         messages = []
-        if history:
-            for i, (msg_user, msg_assistant) in enumerate(history):
-                messages.append({"role": "user", "content": msg_user})
-                messages.append({"role": "assistant", "content": msg_assistant})
-        messages.append({"role": "user", "content": formatted_prompt})
+        for element in history:
+            messages.append({"role": element["role"], "content": element["content"]})
 
         responses, tok_ss = await cc.lm.async_chat(
             messages_list=[messages],
@@ -49,46 +69,22 @@ async def call_rag(user_message, history, selected_model):
         reponse, tok_s = responses[0], tok_ss[0]
 
         print("Token per seconds:", tok_s)
-        chat = history + [(user_message, reponse)]
-        yield chat, str(rag_context)
+
+        history.extend(
+            [
+                gr.ChatMessage(
+                    role="assistant",
+                    content=str(rag_context),
+                    metadata={"title": "RAG Context", "status": "done"},
+                ),
+                gr.ChatMessage(role="assistant", content=reponse),
+            ]
+        )
+        yield history
     except Exception as e:
-        yield history + [(user_message, f"Error: {str(e)}")], "Error in call_rag"
+        history.append({"role": "assistant", "content": f"Error: {str(e)}"})
+        yield history
         raise e
-
-    #     # Call Ollama API
-    #     url = f"{cc.ollama_base}/api/chat"
-    #     payload = {
-    #         "model": "deepseek-r1:14b",
-    #         "messages": messages,
-    #         "stream": True,
-    #     }
-
-    #     response_buffer = ""
-    #     async with aiohttp.ClientSession() as session:
-    #         try:
-    #             async with session.post(url, json=payload) as response:
-    #                 async for line in response.content:
-    #                     if line:
-    #                         try:
-    #                             data = json.loads(line.decode("utf-8"))
-    #                             content = data.get("message", {}).get("content", "")
-    #                             response_buffer += content
-
-    #                             # Update the chat interface
-    #                             history_update = history + [
-    #                                 (user_message, response_buffer)
-    #                             ]
-    #                             yield history_update, str(rag_context)
-
-    #                         except json.JSONDecodeError:
-    #                             print(f"Failed to parse JSON: {line}")
-
-    #         except Exception as e:
-    #             print(f"Error: {e}")
-    #             yield history + [(user_message, f"Error: {str(e)}")], str(rag_context)
-    # except Exception as e:
-    #     print(f"Error in call_rag: {e}")
-    #     yield history + [(user_message, f"Error: {str(e)}")], "Error in call_rag"
 
 
 async def handle_audio_upload(file):
@@ -99,127 +95,122 @@ async def handle_audio_upload(file):
         return "Only WAV files are supported"
 
     try:
-        # Full processing pipeline
-        text, language, filename = await cc.transcription.transcribe_audio(file.name)
-        chunks = await cc.chunking.chunk_text(text)
-        embeddings = await cc.embedding.create_embeddings(chunks)
-        documents = [
-            {
-                "text": chunk,
-                "embedding": embedding,
-                "metadata": {
-                    "language": language,
-                    "filename": filename,
-                    "chunk_index": i,
-                    "total_chunks": len(chunks),
-                },
-            }
-            for i, (chunk, embedding) in enumerate(zip(chunks, embeddings))
-        ]
-
-        await cc.db_api.add(documents)
-
-        return f"Processed {len(chunks)} chunks from {filename}"
+        await cc.transcribe_and_store(file.name)
+        return f"Audio stored in DB."
     except Exception as e:
         return f"Error processing file: {str(e)}"
 
 
-with gr.Blocks(fill_height=True) as demo:
+def create_dataframe(query=None):
+    ids, documents, metadata = cc.db_api.get_full_database()
+    # print(documents[0])
+    df = pd.DataFrame(
+        {
+            "ids": ids,
+            "documents": documents,
+            "filename": [e["filename"] for e in metadata],
+        }
+    )
+    print(f"query: {query}")
 
-    gr.Markdown("# CoCo")
+    if query:
+        query_answers = cc.rag.retrieve_chunks(query_texts=[query])
+        ids, documents, metadata, distances = query_answers[0]
+        df = df[df["ids"].isin(ids)]
+        return df
+    else:
+        return df
+
+
+with gr.Blocks(
+    fill_height=True,
+    fill_width=True,
+    theme=theme,
+    css="#input_message {} footer {visibility: hidden} ",
+) as demo:
+    with gr.Sidebar(open=False):
+        gr.Markdown("# ")
+        gr.Markdown("# Set some options")
+        # Add model selection dropdown
+        model_dropdown = gr.Dropdown(
+            choices=available_models,
+            value=available_models[0],
+            label="Select Model",
+            interactive=True,
+        )
+        system_message = gr.Textbox(
+            label="System Message",
+            lines=10,
+            placeholder="You are coco.\n\nYou provide insights into data collected by the user.",
+        )
+
+    with gr.Group():
+        chatbot = gr.Chatbot(
+            label="coco",
+            type="messages",
+            height="80vh",
+        )
+        input_message = gr.Textbox(
+            placeholder="Type your message here...",
+            show_label=False,
+            autofocus=True,
+            submit_btn=True,
+            elem_id="input_message",
+        )
+
+        # Also allow Enter key to submit
+        input_message.submit(
+            user, [input_message, chatbot], [input_message, chatbot], queue=False
+        ).then(
+            fn=call_rag,
+            inputs=[
+                input_message,
+                chatbot,
+                model_dropdown,
+            ],
+            outputs=[chatbot],
+        )
+
+with demo.route("Memory") as incrementer_demo:
+    with gr.Sidebar(open=False):
+        gr.Markdown("# ")
+        gr.Markdown("# Upload additional data")
+        file_upload = gr.File(
+            label="Upload Audio",
+            file_types=[".wav"],
+            type="filepath",
+            file_count="single",
+        )
+        upload_status = gr.Textbox(label="Upload Status", interactive=False)
+        # Add file upload handler
+        file_upload.upload(
+            fn=handle_audio_upload,
+            inputs=[file_upload],
+            outputs=[upload_status],
+        )
+
+    query = gr.Textbox(
+        label="Query",
+        lines=1,
+        placeholder="Insert some query you want to search for...",
+    )
+
+    data_view = gr.DataFrame(create_dataframe, wrap=True)
+
+    query.submit(
+        fn=create_dataframe,
+        inputs=[query],
+        outputs=[data_view],
+        queue=False,
+    ).then(clear, [query], [query])
+
+    # test if change detected. again.
 
     with gr.Row():
-        with gr.Column(scale=2):
-            chatbot = gr.Chatbot(height=600)
-            with gr.Row():
-                input_message = gr.Textbox(
-                    placeholder="Type your message here...",
-                    lines=1,
-                    label="Input",
-                    scale=2,
-                    elem_classes="input-height",
-                )
-                submit_btn = gr.Button(
-                    "Submit",
-                    scale=1,
-                    variant="primary",
-                    elem_classes="orange-button small-button",
-                )
-                file_upload = gr.File(
-                    label="Upload Audio",
-                    file_types=[".wav"],
-                    type="filepath",
-                    file_count="single",
-                    scale=1,
-                    elem_classes="file-upload small-button",
-                )
+        btn_show_all = gr.Button("Show All")
+        btn_show_all.click(create_dataframe, outputs=[data_view])
+        gr.Button("Clear Database (Not yet implemented)")
 
-            upload_status = gr.Textbox(label="Upload Status", interactive=False)
-
-            # Add model selection dropdown
-            model_dropdown = gr.Dropdown(
-                choices=available_models,
-                value=available_models[0],
-                label="Select Model",
-                interactive=True,
-            )
-
-        with gr.Column(scale=1):
-            gr.Markdown("### RAG Context")
-            rag_context_display = gr.Textbox(
-                label="Retrieved Context", lines=10, interactive=False
-            )
-
-    gr.Markdown(
-        """
-        <style>
-        .orange-button {
-            background-color: #FF8C00 !important;
-            border-color: #FF8C00 !important;
-        }
-        .orange-button:hover {
-            background-color: #FFA500 !important;
-            border-color: #FFA500 !important;
-        }
-        .file-upload {
-            margin-left: 8px;
-        }
-        .small-button {
-            height: 46px !important;
-            min-height: 46px !important;
-            line-height: 1 !important;
-        }
-        .input-height textarea {
-            height: 46px !important;
-            min-height: 46px !important;
-        }
-        </style>
-    """
-    )
-
-    # Event handlers
-    submit_btn.click(
-        fn=call_rag,
-        inputs=[input_message, chatbot, model_dropdown],
-        outputs=[chatbot, rag_context_display],
-        api_name="chat",
-    )
-
-    # Also allow Enter key to submit
-    input_message.submit(
-        fn=call_rag,
-        inputs=[input_message, chatbot, model_dropdown],
-        outputs=[chatbot, rag_context_display],
-        api_name="chat",
-    )
-
-    # Add file upload handler
-    file_upload.upload(
-        fn=handle_audio_upload,
-        inputs=[file_upload],
-        outputs=[upload_status],
-        api_name="upload_audio",
-    )
 
 if __name__ == "__main__":
     demo.launch()
