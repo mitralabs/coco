@@ -10,7 +10,7 @@ RUN pip install -r requirements.txt
 # Copy application code
 COPY start.sh .
 
-# Mache das Skript ausführbar
+# Make the script runnable
 RUN chmod +x ./start.sh
 
 ENTRYPOINT ["./start.sh"]
