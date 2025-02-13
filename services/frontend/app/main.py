@@ -87,7 +87,7 @@ async def call_rag(user_message, history, selected_model):
         raise e
 
 
-async def handle_audio_upload(file):
+def handle_audio_upload(file):
     if file is None:
         return "Please upload a WAV file"
 
@@ -95,7 +95,7 @@ async def handle_audio_upload(file):
         return "Only WAV files are supported"
 
     try:
-        await cc.transcribe_and_store(file.name)
+        cc.transcribe_and_store(file.name)
         return f"Audio stored in DB."
     except Exception as e:
         return f"Error processing file: {str(e)}"
