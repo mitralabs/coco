@@ -1,6 +1,6 @@
 get_top_chunks:
   load_from_file: false
-  load_file_name: ${general.data_dir}/test-new-caching-2/retrieved_chunks.json
+  load_file_name: ${general.data_dir}/test-gt-qa-2/retrieved_chunks.json
   top_k: 100
   output_file_name: ${general.data_dir}/${wandb.name}/retrieved_chunks.json
 metric_ks: [1, 5, 10, 20, 50, 100]

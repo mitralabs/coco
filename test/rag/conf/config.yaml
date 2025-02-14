@@ -22,3 +22,4 @@ coco:
 general:
   services_data_dir: ../../services/_data
   data_dir: ./data
+  random_seed: 42
