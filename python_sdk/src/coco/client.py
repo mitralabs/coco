@@ -109,7 +109,7 @@ class CocoClient:
                     response = client.get(
                         url=f"{self.openai_base}/models",
                         headers={
-                            "Authorization": f"Bearer {os.environ.get("OPENAI_API_KEY", "")}"
+                            "Authorization": f"Bearer {os.environ.get('OPENAI_API_KEY', '')}"
                         },
                     )
                     response.raise_for_status()
