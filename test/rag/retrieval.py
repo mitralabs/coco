@@ -92,7 +92,9 @@ def rank_first_relevant(
 
 
 def mean_reciprocal_rank(ranks: List[int]):
-    return np.nanmean(1 / np.array(ranks))
+    inv = 1 / np.array(ranks)
+    inv[np.isnan(inv)] = 0
+    return np.mean(inv)
 
 
 def average_precision(retrieved_chunks: List[str], gt_chunks: List[str]):

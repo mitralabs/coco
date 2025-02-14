@@ -4,10 +4,10 @@ language: de
 limit_samples: 100
 use_train: true
 use_test: false
-backup_db: true
+backup_db: false
 clear_db: false
 fill_db:
-  skip: false
+  skip: true
   embedding_model: nomic-embed-text
   embed_and_store_batch_size: 25
   embed_and_store_limit_parallel: 10
