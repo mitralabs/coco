@@ -1,13 +1,13 @@
 get_answers:
   load_from_file: false
-  load_file_name_ret: ${general.data_dir}/test-gt-qa-2/generated_answers_ret.json
-  load_file_name_gt: ${general.data_dir}/test-gt-qa-2/generated_answers_gt.json
+  load_file_name_ret: ${general.data_dir}/runs/test-gt-qa-2/generated_answers_ret.json
+  load_file_name_gt: ${general.data_dir}/runs/test-gt-qa-2/generated_answers_gt.json
   model: meta-llama/Llama-3.3-70B-Instruct
   generate_answers_batch_size: 5
   generate_answers_limit_parallel: 10
   top_k: 5
-  output_file_name_ret: ${general.data_dir}/${wandb.name}/generated_answers_ret.json
-  output_file_name_gt: ${general.data_dir}/${wandb.name}/generated_answers_gt.json
+  output_file_name_ret: ${general.data_dir}/runs/${wandb.name}/generated_answers_ret.json
+  output_file_name_gt: ${general.data_dir}/runs/${wandb.name}/generated_answers_gt.json
   prompt_template: |
     Du bist ein zweites Gehirn für mich, ein Erinnerungsexperte, und deine Aufgabe ist es, basierend auf dem gegebenen Kontext den du aus meinen Erinnerungen in Form von Textausschnitten innerhalb der XML tags die dann folgende Frage so akkurat wie möglich beantwortest. Achte dabei darauf das deine Knowledge Base nur auf dem gegebenen Kontext basiert und du dich streng an das gegebene Format hälst:
 
