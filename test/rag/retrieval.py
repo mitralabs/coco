@@ -167,6 +167,8 @@ def relevance(top_chunks: Dict[str, Dict[str, Any]], cfg: DictConfig, ds: Datase
 
 
 def retrieval_stage(cc: CocoClient, cfg: DictConfig, ds: Dataset):
+    logger.info("Starting retrieval stage")
     top_chunks = get_top_chunks(cc, cfg, ds)
     relevance(top_chunks, cfg, ds)
+    logger.info("Retrieval stage completed")
     return top_chunks
