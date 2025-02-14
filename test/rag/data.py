@@ -45,7 +45,7 @@ def unique_texts(ds, verbose=False):
 
 
 def init_dataset(cfg: DictConfig) -> Dataset:
-    ds = load_dataset(cfg.data.hf_name)
+    ds = load_dataset(cfg.data.hf_name, trust_remote_code=True)
     train_ds, test_ds = ds["train"], ds["test"]
     datasets = []
     if cfg.data.use_train:

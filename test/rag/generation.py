@@ -101,7 +101,7 @@ def groundedness(
                 base_url=cfg.generation.ragas.openai_base_url,
             )
         )
-    ragas_faithfulness_metric = Faithfulness(llm=ragas_llm)
+        ragas_faithfulness_metric = Faithfulness(llm=ragas_llm)
     faithfulnesses = []
     for sample in tqdm(ds, desc="Computing groundedness metrics"):
         query = sample["question"]
