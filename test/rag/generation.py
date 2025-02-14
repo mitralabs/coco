@@ -20,42 +20,47 @@ logger = logging.getLogger(__name__)
 
 
 def get_answers(
-    top_chunks: Dict[str, Dict[str, List]], cc: CocoClient, cfg: DictConfig
+    top_chunks: Dict[str, Dict[str, List]],
+    cc: CocoClient,
+    cfg: DictConfig,
+    wandb_prefix: str,
 ) -> Dict[str, Dict[str, Any]]:
-    # load from file if present
-    if Path(cfg.generation.get_answers.file_name).exists():
-        with open(cfg.generation.get_answers.file_name, "r") as f:
+    if cfg.generation.get_answers.load_from_file:
+        # load from file if specified
+        answers_file = Path(cfg.generation.get_answers.load_file_name)
+        with answers_file.open("r") as f:
             answers = json.load(f)
-        logger.info(f"Loaded answers from {cfg.generation.get_answers.file_name}")
-        return answers
+        logger.info(f"Loaded answers from {answers_file}")
+    else:
+        # generate using lm
+        queries, context_chunks = [], []
+        for query, chunks in top_chunks.items():
+            queries.append(query)
+            context_chunks.append(
+                chunks["documents"][: cfg.generation.get_answers.top_k]
+            )
 
-    # obtain from db
-    queries, context_chunks = [], []
-    for query, chunks in top_chunks.items():
-        queries.append(query)
-        context_chunks.append(chunks["documents"][: cfg.generation.get_answers.top_k])
-
-    generated_answers, tok_ss = cc.rag.generate_answers(
-        queries=queries,
-        context_chunks=context_chunks,
-        prompt_template=cfg.generation.get_answers.prompt_template,
-        model=cfg.generation.get_answers.model,
-        pull_model=False,
-        batch_size=cfg.generation.get_answers.generate_answers_batch_size,
-        limit_parallel=cfg.generation.get_answers.generate_answers_limit_parallel,
-        show_progress=True,
-    )
-    wandb.log({"generation/m_tok_s": np.nanmean(np.array(tok_ss))})
-    logger.info(
-        f"Generated {len(generated_answers)} answers with mean tok_s {np.nanmean(np.array(tok_ss))}"
-    )
+        generated_answers, tok_ss = cc.rag.generate_answers(
+            queries=queries,
+            context_chunks=context_chunks,
+            prompt_template=cfg.generation.get_answers.prompt_template,
+            model=cfg.generation.get_answers.model,
+            pull_model=False,
+            batch_size=cfg.generation.get_answers.generate_answers_batch_size,
+            limit_parallel=cfg.generation.get_answers.generate_answers_limit_parallel,
+            show_progress=True,
+        )
+        m_tok_s = np.nanmean(np.array(tok_ss))
+        answers = {q: a for q, a in zip(queries, generated_answers)}
+        wandb.log({f"{wandb_prefix}/m_tok_s": m_tok_s})
+        logger.info(f"Generated answers with mean tok_s {m_tok_s}")
 
     # save to file
-    Path(cfg.generation.get_answers.file_name).parent.mkdir(parents=True, exist_ok=True)
-    answers = {q: a for q, a in zip(queries, generated_answers)}
-    with open(cfg.generation.get_answers.file_name, "w") as f:
+    output_file = Path(cfg.generation.get_answers.output_file_name)
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    with output_file.open("w") as f:
         json.dump(answers, f)
-    logger.info(f"Saved answers to {cfg.generation.get_answers.file_name}")
+    logger.info(f"Saved answers to {output_file}")
 
     return answers
 
@@ -78,8 +83,12 @@ class SemScore:
         self.aggr_predictions = aggr_predictions
 
     def __call__(self, predictions: List[str], references: List[str]) -> float:
-        pred_embeddings = self.model.encode(predictions)  # (n, dim)
-        ref_embeddings = self.model.encode(references)
+        pred_embeddings = self.model.encode(
+            predictions, show_progress_bar=False
+        )  # (n, dim)
+        ref_embeddings = self.model.encode(
+            references, show_progress_bar=False
+        )  # (n, dim)
         all_scores = pred_embeddings @ ref_embeddings.T
         pred_scores = self.aggr_references(all_scores, axis=1)
         score = self.aggr_predictions(pred_scores)
@@ -199,10 +208,9 @@ def correctness(ds: Dataset, answers: Dict[str, Dict[str, Any]], wandb_prefix: s
 def generation_stage(
     cc: CocoClient, cfg: DictConfig, top_chunks: Dict[str, Dict[str, List]], ds: Dataset
 ) -> None:
-    answers = get_answers(top_chunks, cc, cfg)
-    # eval_llm = OllamaLLM(model="llama3.1:8b", base_url=cfg.generation.ollama_base)
-    # k = next(iter(answers.keys()))
-    # print(k, answers[k])
+    answers = get_answers(
+        top_chunks=top_chunks, cc=cc, cfg=cfg, wandb_prefix="generation_ret"
+    )
     groundedness(
         ds=ds,
         answers=answers,

@@ -1,11 +1,11 @@
 get_answers:
-  # model: openGPT-X/Teuken-7B-instruct-commercial
+  load_from_file: false
+  load_file_name: ${general.data_dir}/test-new-caching-2/generated_answers.json
   model: meta-llama/Llama-3.3-70B-Instruct
-  # model: meta-llama/mistralai/Mistral-7B-Instruct-v0.3
   generate_answers_batch_size: 5
   generate_answers_limit_parallel: 10
   top_k: 5
-  file_name: ${general.data_dir}/${data.name}/generation/${generation.get_answers.top_k}.json
+  output_file_name: ${general.data_dir}/${wandb.name}/generated_answers.json
   prompt_template: |
     Du bist ein zweites Gehirn für mich, ein Erinnerungsexperte, und deine Aufgabe ist es, basierend auf dem gegebenen Kontext den du aus meinen Erinnerungen in Form von Textausschnitten innerhalb der XML tags die dann folgende Frage so akkurat wie möglich beantwortest. Achte dabei darauf das deine Knowledge Base nur auf dem gegebenen Kontext basiert und du dich streng an das gegebene Format hälst:
 

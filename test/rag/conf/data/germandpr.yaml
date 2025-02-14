@@ -1,13 +1,13 @@
 name: germandpr
 hf_name: deepset/germandpr
 language: de
-limit_samples: 100
+limit_samples: 50
 use_train: true
 use_test: false
-backup_db: false
-clear_db: false
+backup_db: true
+clear_db: true
 fill_db:
-  skip: true
+  skip: false
   embedding_model: nomic-embed-text
   embed_and_store_batch_size: 25
   embed_and_store_limit_parallel: 10

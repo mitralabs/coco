@@ -1,5 +1,7 @@
 get_top_chunks:
-  top_k: 10
-  file_name: ${general.data_dir}/${data.name}/retrieval/${retrieval.get_top_chunks.top_k}.json
+  load_from_file: false
+  load_file_name: ${general.data_dir}/test-new-caching-2/retrieved_chunks.json
+  top_k: 100
+  output_file_name: ${general.data_dir}/${wandb.name}/retrieved_chunks.json
 metric_ks: [1, 5, 10, 20, 50, 100]
 rank_first_relevant_punishment: 101 # if gt chunk was not retrieved at all, then this value is its the rank
