@@ -4,6 +4,8 @@ import numpy as np
 
 from coco import CocoClient
 
+# See Gradio Docs for reference: https://www.gradio.app/docs
+
 theme = gr.themes.Ocean(
     primary_hue="sky",
     neutral_hue="neutral",
