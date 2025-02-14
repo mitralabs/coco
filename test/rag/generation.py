@@ -147,7 +147,7 @@ def correctness(ds: Dataset, answers: Dict[str, Dict[str, Any]], wandb_prefix: s
     for sample in tqdm(ds, desc="Computing answer correctness metrics"):
         assert len(sample["answers"]) == 1
         gt_answer = sample["answers"][0]
-        generated_answer = [answers[sample["question"]]]
+        generated_answer = answers[sample["question"]]
         bertscore = bertscore_metric.compute(
             predictions=[generated_answer],
             references=[gt_answer],
