@@ -68,37 +68,56 @@ class CocoClient:
             self.lm,
         )
 
-    def health_check(self):
+    def health_check(self, raise_on_error: bool = False):
         services = {
             "transcription": self.transcription_base,
             "chunking": self.chunking_base,
             "database": self.db_api_base,
         }
         for service_name, url in services.items():
-            with httpx.Client() as client:
-                response = client.get(
-                    f"{url}/test", headers={"X-API-Key": self.api_key}, timeout=10
+            try:
+                with httpx.Client() as client:
+                    response = client.get(
+                        f"{url}/test", headers={"X-API-Key": self.api_key}, timeout=10
+                    )
+                    response.raise_for_status()
+                    test_response = response.json()
+                if not test_response.get("status") == "success":
+                    raise Exception(
+                        f"{service_name} service test failed: {test_response}"
+                    )
+                logger.info(
+                    f"Health check: {service_name} service healthy and reachable"
                 )
-                response.raise_for_status()
-                test_response = response.json()
-            if not test_response.get("status") == "success":
-                raise Exception(f"{service_name} service test failed: {test_response}")
-            logger.info(f"Health check: {service_name} service healthy and reachable")
+            except Exception as e:
+                logger.warning(f"Health check: {service_name} service failed")
+                if raise_on_error:
+                    raise e
         if self.embedding_api == "ollama" or self.llm_api == "ollama":
-            with httpx.Client() as client:
-                response = client.get(f"{self.ollama_base}")
-                response.raise_for_status()
-            logger.info("Health check: Ollama service healthy and reachable")
+            try:
+                with httpx.Client() as client:
+                    response = client.get(f"{self.ollama_base}")
+                    response.raise_for_status()
+                logger.info("Health check: Ollama service healthy and reachable")
+            except Exception as e:
+                logger.warning("Health check: Ollama service failed")
+                if raise_on_error:
+                    raise e
         if self.embedding_api == "openai" or self.llm_api == "openai":
-            with httpx.Client() as client:
-                response = client.get(
-                    url=f"{self.openai_base}/models",
-                    headers={
-                        "Authorization": f"Bearer {os.environ.get("OPENAI_API_KEY", "")}"
-                    },
-                )
-                response.raise_for_status()
-            logger.info("Health check: OpenAI service healthy and reachable")
+            try:
+                with httpx.Client() as client:
+                    response = client.get(
+                        url=f"{self.openai_base}/models",
+                        headers={
+                            "Authorization": f"Bearer {os.environ.get("OPENAI_API_KEY", "")}"
+                        },
+                    )
+                    response.raise_for_status()
+                logger.info("Health check: OpenAI service healthy and reachable")
+            except Exception as e:
+                logger.warning("Health check: OpenAI service failed")
+                if raise_on_error:
+                    raise e
 
     async def _embed_and_store(
         self, chunks, language, filename, model="nomic-embed-text"
@@ -162,7 +181,7 @@ class CocoClient:
             Tuple[int, int]: The number of documents added and skipped.
         """
         text, language, filename = self.transcription.transcribe_audio(audio_file)
-        
+
         # Store the transcription text next to the audio
         with open(f"{audio_file[:-4]}.txt", "w") as f:
             f.write(text)
