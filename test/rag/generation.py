@@ -149,8 +149,8 @@ def correctness(ds: Dataset, answers: Dict[str, Dict[str, Any]], wandb_prefix: s
         gt_answer = sample["answers"][0]
         generated_answer = [answers[sample["question"]]]
         bertscore = bertscore_metric.compute(
-            predictions=generated_answer,
-            references=gt_answer,
+            predictions=[generated_answer],
+            references=[gt_answer],
             lang="de",
         )
         bertscore_precisions.append(bertscore["precision"])
