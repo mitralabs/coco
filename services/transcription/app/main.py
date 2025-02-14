@@ -4,6 +4,7 @@ from fastapi.security.api_key import APIKeyHeader
 import tempfile
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 import json
 import subprocess
 import logging
@@ -11,21 +12,30 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+# Get the directory of the script
+BASE_DIR = Path() #.resolve().parent.parent.parent  # Adjust based on depth
 
-# API Key Authentication
-API_KEY = os.getenv("API_KEY")
+# Load .env file from the directory where Uvicorn is executed
+load_dotenv(BASE_DIR / ".env")
+
+# API Key Authentication and Model Settings
+API_KEY = os.getenv("API_KEY") 
 if not API_KEY:
     raise ValueError("API_KEY environment variable must be set")
 
-# Setting the Model
-GGML_MODEL = os.getenv("GGML_MODEL")
-# GGML_MODEL = "ggml-base"  # For testing only, helps since the .env file is included during the build.
-if not GGML_MODEL:
+PATH_TO_MODEL = os.getenv("PATH_TO_MODEL")
+if not PATH_TO_MODEL:
     raise ValueError("Model environment variable must be set")
 
-api_key_header = APIKeyHeader(name="X-API-Key")
+PATH_TO_EXECUTABLE = os.getenv("PATH_TO_EXECUTABLE")
+if not PATH_TO_EXECUTABLE:
+    raise ValueError("Executable environment variable must be set")
 
+
+
+app = FastAPI()
+
+api_key_header = APIKeyHeader(name="X-API-Key")
 
 def get_api_key(api_key: str = Depends(api_key_header)):
     if api_key != API_KEY:
@@ -64,20 +74,9 @@ async def transcribe(file: UploadFile = File(...), api_key: str = Depends(get_ap
         temp_audio.write(content)
         temp_audio.flush()
 
-        # Construct the absolute paths
-        whisper_cpp_dir = Path.cwd().parent / "whisper.cpp"
+        whisper_executable = str(Path(PATH_TO_EXECUTABLE))
+        model_path = Path(PATH_TO_MODEL)
 
-        whisper_executable_paths = [
-            whisper_cpp_dir / "main",
-            whisper_cpp_dir / "build/bin/main",
-        ]
-
-        for path in whisper_executable_paths:
-            if path.exists():
-                whisper_executable = str(path)
-                break
-
-        model_path = Path("/data") / "models" / f"{GGML_MODEL}.bin"
         command = [
             whisper_executable,
             "-m",

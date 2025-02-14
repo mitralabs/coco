@@ -5,23 +5,28 @@ from coco import CocoClient
 cc = CocoClient(
     chunking_base="http://chunking:8000",
     db_api_base="http://db-api:8000",
-    transcription_base="http://transcription:8000",
+    transcription_base="http://host.docker.internal:8000",
     # ollama_base="https://jetson-ollama.mitra-labs.ai",
     ollama_base="http://host.docker.internal:11434",
     openai_base="https://openai.inference.de-txl.ionos.com/v1",
     embedding_api="ollama",
-    llm_api="openai",
+    llm_api="ollama",
     api_key="test",
 )
 
+# Get available models
+available_models = cc.lm.list_llm_models()
+if not available_models:
+    available_models = [
+        "meta-llama/Llama-3.3-70B-Instruct"
+    ]  # Default fallback model for Ollama
 
 # Start a health check
-cc.health_check()
+# cc.health_check()
 
 
-async def call_rag(user_message, history):
+async def call_rag(user_message, history, selected_model):
     try:
-
         # Get RAG context
         contexts = await cc.rag.async_retrieve_chunks([user_message], 5)
         rag_context = contexts[0][1]
@@ -29,15 +34,17 @@ async def call_rag(user_message, history):
         # Format prompt
         formatted_prompt = cc.rag.format_prompt(user_message, rag_context)
 
-        # Prepare messages for Ollama
+        # Prepare messages with proper role formatting
         messages = []
         if history:
-            messages.extend([{"role": m[0], "content": m[1]} for m in history])
+            for i, (msg_user, msg_assistant) in enumerate(history):
+                messages.append({"role": "user", "content": msg_user})
+                messages.append({"role": "assistant", "content": msg_assistant})
         messages.append({"role": "user", "content": formatted_prompt})
 
         responses, tok_ss = await cc.lm.async_chat(
             messages_list=[messages],
-            model="meta-llama/Llama-3.3-70B-Instruct",
+            model=selected_model,
             batch_size=20,
             limit_parallel=10,
             show_progress=True,
@@ -96,16 +103,9 @@ async def handle_audio_upload(file):
 
     try:
         # Full processing pipeline
-        # 1. Transcribe audio to text
         text, language, filename = await cc.transcription.transcribe_audio(file.name)
-
-        # 2. Chunk the text
         chunks = await cc.chunking.chunk_text(text)
-
-        # 3. Create embeddings
         embeddings = await cc.embedding.create_embeddings(chunks)
-
-        # 4. Store in DB
         documents = [
             {
                 "text": chunk,
@@ -128,6 +128,7 @@ async def handle_audio_upload(file):
 
 
 with gr.Blocks(fill_height=True) as demo:
+
     gr.Markdown("# CoCo")
 
     with gr.Row():
@@ -157,6 +158,14 @@ with gr.Blocks(fill_height=True) as demo:
                 )
 
             upload_status = gr.Textbox(label="Upload Status", interactive=False)
+
+            # Add model selection dropdown
+            model_dropdown = gr.Dropdown(
+                choices=available_models,
+                value=available_models[0],
+                label="Select Model",
+                interactive=True,
+            )
 
         with gr.Column(scale=1):
             gr.Markdown("### RAG Context")
@@ -194,7 +203,7 @@ with gr.Blocks(fill_height=True) as demo:
     # Event handlers
     submit_btn.click(
         fn=call_rag,
-        inputs=[input_message, chatbot],
+        inputs=[input_message, chatbot, model_dropdown],
         outputs=[chatbot, rag_context_display],
         api_name="chat",
     )
@@ -202,7 +211,7 @@ with gr.Blocks(fill_height=True) as demo:
     # Also allow Enter key to submit
     input_message.submit(
         fn=call_rag,
-        inputs=[input_message, chatbot],
+        inputs=[input_message, chatbot, model_dropdown],
         outputs=[chatbot, rag_context_display],
         api_name="chat",
     )

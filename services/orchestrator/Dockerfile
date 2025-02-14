@@ -1,22 +1,16 @@
 FROM python:3.10-slim
 
-# Install curl for health checks
 RUN apt-get update && apt-get install -y \
     curl \
     ffmpeg
 
-# Install dependencies
-COPY requirements.txt .
+COPY orchestrator/requirements.txt .
 RUN pip install -r requirements.txt
 
-# Copy application code
-COPY . /app
+COPY python_sdk_entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 WORKDIR /app
 
-# Mache das Skript ausführbar
-RUN chmod +x ./start.sh
-
-# Definiere das Startskript als ENTRYPOINT
-ENTRYPOINT ["./start.sh"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--log-level", "debug"]

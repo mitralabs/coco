@@ -18,7 +18,7 @@ from coco import CocoClient
 cc = CocoClient(
     chunking_base="http://chunking:8000",
     db_api_base="http://db-api:8000",
-    transcription_base="http://transcription:8000",
+    transcription_base="http://host.docker.internal:8000",
     ollama_base="http://host.docker.internal:11434",
     embedding_api="ollama",
     llm_api="ollama",
@@ -52,14 +52,16 @@ def get_api_key(api_key: str = Depends(api_key_header)):
 app = FastAPI()
 
 
-def append_audio(directory_path):
+def append_audio(session: str):
     """
     Append all audio files in a directory and save as audio_full.wav
 
     Args:
         directory_path (str): Path to directory containing audio files
     """
-    print(f"\nProcessing directory: {directory_path}")
+    print(f"\nProcessing directory: {session}")
+
+    directory_path = f"/data/{session}"
 
     # Get all wav files matching audio_* pattern
     audio_files = sorted(
@@ -75,7 +77,7 @@ def append_audio(directory_path):
     # Sort according to ID number
     audio_files.sort(key=lambda f: int(re.search(r"audio_(\d+)\.wav", f).group(1)))
 
-    print(f"Found audio files: {audio_files}")
+    logger.info(f"Found audio files: {audio_files}")
 
     if not audio_files:
         return False, None
@@ -88,35 +90,33 @@ def append_audio(directory_path):
         combined += audio
 
     # Save combined audio in same directory
-    output_path = os.path.join(directory_path, "audio_full.wav")
+    output_path = os.path.join(directory_path, f"{session}.wav")
     combined.export(output_path, format="wav")
-    print(f"Created: {output_path}")
     return True, output_path
 
 
-def kick_off_processing(session_id):
+def kick_off_processing(audio_path: str, store_in_db: bool = True):
     """
     Kick off the processing pipeline for a session
 
     Args:
         session_id (str): ID of the session to process
     """
-    print(f"Kicking off processing for session: {session_id}")
+    logger.info(f"Processing audio file: {audio_path}")
 
     try:
-        file_path = f"/data/session_{session_id}"
-        # Append audio file paths and save to same directory.
+        if store_in_db:
+            cc.transcribe_and_store(audio_path)
 
-        success, audio_path = append_audio(file_path)
-
-        if not success:
-            logger.error("Error processing session: No audio files found.")
-            return False
-
-        cc.transcribe_and_store(audio_path)
-
-        logger.info("Orchestration completed successfully.")
-        return True
+            logger.info("Full Orchestration completed successfully.")
+            return True
+        else:
+            text, language, filename = cc.transcription.transcribe_audio(audio_path)
+            # Store the transcription in the folder
+            with open(f"{audio_path[:-4]}.txt", "w") as f:
+                f.write(text)
+            logger.info("Transcription completed successfully.")
+            return True
 
     except Exception as e:
         logger.error(f"Error processing session: {str(e)}")
@@ -132,7 +132,11 @@ async def read_root():
 
 # Route to upload audio data
 @app.post("/uploadAudio")
-async def upload_audio(request: Request, api_key: str = Depends(get_api_key)):
+async def upload_audio(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    api_key: str = Depends(get_api_key),
+):
     try:
         # Get the raw body content
         body = await request.body()
@@ -168,19 +172,20 @@ async def upload_audio(request: Request, api_key: str = Depends(get_api_key)):
         if not os.path.exists(f"/data/session_{recording_session}"):
             os.makedirs(f"/data/session_{recording_session}")
 
+        audio_path = f"/data/session_{recording_session}/audio_{increment}.wav"
+
         # Function to save the file to local storage
-        async with aiofiles.open(
-            f"/data/session_{recording_session}/audio_{increment}.wav", "wb"
-        ) as f:
+        async with aiofiles.open(audio_path, "wb") as f:
             await f.write(body)
         print(f"Audio {recording_session}_{increment} saved successfully.")
+
+        background_tasks.add_task(kick_off_processing, audio_path, store_in_db=False)
+        logger.info(f"Background task added for file: {audio_path}")
 
         return JSONResponse(
             content={"status": "success", "message": ".wav successfully received"},
             status_code=200,
         )
-
-        # return {"status": "success", "message": ".wav successfully received"}, 200
 
     except Exception as e:
         return JSONResponse(
@@ -197,9 +202,16 @@ async def transfer_complete_endpoint(
     # Add logging to track execution
     logger.info(f"Transfer complete received for session: {recording_session}")
 
-    # Call the next service async without waiting for a response
-    background_tasks.add_task(kick_off_processing, recording_session)
-    logger.info(f"Background task added for session: {recording_session}")
+    # Append audio file paths and save to same directory.
+    success, audio_path = append_audio(f"session_{recording_session}")
+
+    if not success:
+        logger.error("Error processing session: No audio files found.")
+    else:
+        logger.info("Audio files appended successfully.")
+        # Call the next service async without waiting for a response
+        background_tasks.add_task(kick_off_processing, audio_path)
+        logger.info(f"Background task added for {audio_path}")
 
     # Return Success
     return JSONResponse(

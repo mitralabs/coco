@@ -1,29 +1,9 @@
 services:
 
-  transcription:
-    build:
-      context: ./transcription/whisper_cpp
-      dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./transcription/whisper_cpp/app:/app
-      - ./_data:/data
-    environment:
-      - API_KEY=test
-      - GGML_MODEL=ggml-large-v3-turbo-german
-    restart: unless-stopped
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 20s
-
   chunking:
     build:
-      context: ./chunking
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: chunking/Dockerfile
     ports:
       - "8001:8000"
     volumes:
@@ -41,8 +21,8 @@ services:
 
   db-api:
     build:
-      context: ./db_api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: db_api/Dockerfile
     ports:
       - "8003:8000"
     volumes:
@@ -86,20 +66,19 @@ services:
 
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: frontend/Dockerfile
     ports:
       - "8002:7860"
     volumes:
-      - ../python_sdk:/app/python_sdk
+      - ../python_sdk:/python_sdk
+      - ./frontend/app:/app
     env_file:
       - ".env"
     environment:
       - GRADIO_SERVER_NAME=0.0.0.0
     restart: unless-stopped
     depends_on:
-      transcription:
-        condition: service_healthy
       chunking:
         condition: service_healthy
       db-api:
@@ -107,25 +86,24 @@ services:
 
   orchestrator:
     build:
-      context: ./orchestrator
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: orchestrator/Dockerfile
     ports:
       - "3030:8000"
     volumes:
-      - ../python_sdk:/app/python_sdk
+      - ../python_sdk:/python_sdk
+      - ./orchestrator/app:/app
       - ./_data/audio_files:/data
     environment:
       - API_KEY=test
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
+      test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test", "&&", "curl", "-f", "-X", "GET", "http://host.docker.internal:11434", "&&", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://host.docker.internal:8000/test" ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 20s
     depends_on:
-      transcription:
-        condition: service_healthy
       chunking:
         condition: service_healthy
       db-api:
