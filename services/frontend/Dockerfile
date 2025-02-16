@@ -5,14 +5,14 @@ RUN apt-get install -y curl
 
 # Install dependencies
 RUN pip install --upgrade pip
-COPY requirements.txt .
+COPY frontend/requirements.txt .
 RUN pip install -r requirements.txt
+
 
 COPY python_sdk_entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Make the script runnable
-RUN chmod +x ./start.sh
+WORKDIR /app
 
-ENTRYPOINT ["./start.sh"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["gradio", "main.py"]

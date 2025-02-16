@@ -22,6 +22,7 @@ You will need to have some/basic knowledge in the latter domains, to get this Re
 3. Install [Docker Desktop](https://docs.docker.com/desktop/) (Note: The Docker Engine without Desktop Client might work fine as well.) Installing means opening and running through the wizard after downloading!
 4. Install ffmpeg (audio library), git, and cmake via the commandline `brew install ffmpeg git cmake`
 5. Install pip via `python3 -m pip install --upgrade pip`
+6. Install [VS Code](https://code.visualstudio.com). It makes most easier, and is needed for the coco firmware. (For convenience, add it to path by using the `>shell command` within vs code)
 
 ### Middleware Setup:
 (Note: **Do not clone whisper.cpp and coco into each other.**)
