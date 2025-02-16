@@ -12,6 +12,7 @@ from generation import generation_stage
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("absl").setLevel(logging.WARNING)
+logging.getLogger("sentence_transformers.SentenceTransformer").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
@@ -28,6 +29,7 @@ def main(cfg: DictConfig) -> None:
 
     cc = CocoClient(**cfg.coco)
     cc.health_check()
+
     ds = data_stage(cc, cfg)
     top_chunks = retrieval_stage(cc, cfg, ds)
     generation_stage(cc, cfg, top_chunks, ds)

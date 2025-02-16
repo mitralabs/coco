@@ -105,12 +105,21 @@ class LanguageModelClient:
         elif self.llm_api == "openai":
             texts, tok_ss = [], []
             for prompt in prompts:
-                start = time.time()
-                response = await self.async_openai.chat.completions.create(
-                    model=model, messages=[{"role": "user", "content": prompt}]
-                )
-                tok_ss.append(response.usage.completion_tokens / (time.time() - start))
-                texts.append(response.choices[0].message.content)
+                for attempt in range(3):
+                    try:
+                        start = time.time()
+                        response = await self.async_openai.chat.completions.create(
+                            model=model, messages=[{"role": "user", "content": prompt}]
+                        )
+                        tok_ss.append(
+                            response.usage.completion_tokens / (time.time() - start)
+                        )
+                        texts.append(response.choices[0].message.content)
+                        break
+                    except openai.NotFoundError as e:
+                        if attempt == 2:  # Last attempt failed
+                            raise e
+                        continue
         return texts, tok_ss
 
     def generate(

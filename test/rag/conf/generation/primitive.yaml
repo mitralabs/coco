@@ -1,11 +1,13 @@
 get_answers:
-  # model: openGPT-X/Teuken-7B-instruct-commercial
+  load_from_file: false
+  load_file_name_ret: ${general.data_dir}/runs/test-gt-qa-2/generated_answers_ret.json
+  load_file_name_gt: ${general.data_dir}/runs/test-gt-qa-2/generated_answers_gt.json
   model: meta-llama/Llama-3.3-70B-Instruct
-  # model: meta-llama/mistralai/Mistral-7B-Instruct-v0.3
   generate_answers_batch_size: 5
   generate_answers_limit_parallel: 10
   top_k: 5
-  file_name: ${general.data_dir}/${data.name}/generation/${generation.get_answers.top_k}.json
+  output_file_name_ret: ${general.data_dir}/runs/${wandb.name}/generated_answers_ret.json
+  output_file_name_gt: ${general.data_dir}/runs/${wandb.name}/generated_answers_gt.json
   prompt_template: |
     Du bist ein zweites Gehirn für mich, ein Erinnerungsexperte, und deine Aufgabe ist es, basierend auf dem gegebenen Kontext den du aus meinen Erinnerungen in Form von Textausschnitten innerhalb der XML tags die dann folgende Frage so akkurat wie möglich beantwortest. Achte dabei darauf das deine Knowledge Base nur auf dem gegebenen Kontext basiert und du dich streng an das gegebene Format hälst:
 
@@ -23,5 +25,6 @@ get_answers:
     {query}
     </Frage>
 ragas:
-  ollama_model: ragas-llama3.1:8b
-  ollama_base_url: https://jetson-ollama.mitra-labs.ai
+  skip: true
+  openai_base_url: ${coco.openai_base}
+  openai_llm_model: meta-llama/Llama-3.3-70B-Instruct
