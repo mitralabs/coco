@@ -47,11 +47,6 @@ if not available_models:
     ]  # Default fallback model for Ollama
 
 
-prompt_template = """ 
-
-{context} 
-"""
-
 system_message_default = "Du bist coco.\n\nDu hilfst dem User bestmöglich.\n\nDu antwortest präzise und kommunizierst auf Deutsch."
 
 CONTEXT_FORMAT = """
