@@ -120,6 +120,13 @@ class LanguageModelClient:
                         if attempt == 2:  # Last attempt failed
                             raise e
                         continue
+                    except openai.RateLimitError as e:
+                        if attempt == 2:
+                            raise e
+                        time.sleep(
+                            seconds=61
+                        )  # ionos api wants 60 seconds before retry
+                        continue
         return texts, tok_ss
 
     def generate(
