@@ -43,4 +43,4 @@ You will need to have some/basic knowledge in the latter domains, to get this Re
 Well done. Your basics are setup. Now we need to setup the backend, and potentially the coco device.
 
 1. Follow [this ReadMe](/services/README.md) to install the additional services.
-2. Set Up your Coco Device, by following [this ReadMe](/coco/README.md)
+2. Set Up your Coco Device, by following [this ReadMe](/coco/firmware/README.md)
