@@ -20,31 +20,9 @@ cc = CocoClient(
     ollama_base="http://host.docker.internal:11434",
     openai_base="https://openai.inference.de-txl.ionos.com/v1",
     embedding_api="ollama",
-    llm_api="ollama",
+    llm_api="openai",
     api_key="test",
 )
-
-# Get available models
-available_models = cc.lm.list_llm_models()
-embedding_models = [
-    "nomic-embed-text:latest",
-    "mxbai-embed-large:latest",
-    "snowflake-arctic-embed:latest",
-    "bge-m3:latest",
-    "all-minilm:latest",
-    "bge-large:latest",
-    "snowflake-arctic-embed2:latest",
-    "paraphrase-multilingual:latest",
-    "granite-embedding:latest",
-]
-available_models = [
-    model for model in available_models if model not in embedding_models
-]
-
-if not available_models:
-    available_models = [
-        "meta-llama/Llama-3.3-70B-Instruct"
-    ]  # Default fallback model for Ollama
 
 
 system_message_default = "Du bist coco.\n\nDu hilfst dem User bestmöglich.\n\nDu antwortest präzise und kommunizierst auf Deutsch."
@@ -69,6 +47,62 @@ def user(user_message, history):
 
 def clear(input_message):
     return ""
+
+
+def update_available_models(llmapi: str):
+    cc.lm.llm_api = llmapi
+    available_models = get_available_models()
+
+    if llmapi == "openai":
+        try:
+            available_models = [
+                (model.split("/")[-1], model) for model in available_models
+            ]
+        except:
+            pass
+
+    return gr.Dropdown(
+        choices=available_models,
+        value=available_models[0] if available_models else None,
+        interactive=True,
+    )
+
+
+def get_available_models():
+    available_models = cc.lm.list_llm_models()
+    embedding_models_ollama = [
+        "nomic-embed-text:latest",
+        "mxbai-embed-large:latest",
+        "snowflake-arctic-embed:latest",
+        "bge-m3:latest",
+        "all-minilm:latest",
+        "bge-large:latest",
+        "snowflake-arctic-embed2:latest",
+        "paraphrase-multilingual:latest",
+        "granite-embedding:latest",
+    ]
+    non_llms_ionos = [
+        "meta-llama/CodeLlama-13b-Instruct-hf",
+        "black-forest-labs/FLUX.1-schnell",
+        "BAAI/bge-large-en-v1.5",
+        "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+        "BAAI/bge-m3",
+        "stabilityai/stable-diffusion-xl-base-1.0",
+    ]
+
+    # combine embedding models and non-llms
+    blacklisted_models = embedding_models_ollama + non_llms_ionos
+
+    available_models = [
+        model for model in available_models if model not in blacklisted_models
+    ]
+
+    if not available_models:
+        available_models = [
+            "meta-llama/Llama-3.3-70B-Instruct"
+        ]  # Default fallback model for Ollama
+
+    return available_models
 
 
 async def call_rag(user_message, history, selected_model, system_message):
@@ -179,10 +213,14 @@ with gr.Blocks(
     with gr.Sidebar(open=False):
         gr.Markdown("# ")
         gr.Markdown("# Set some options")
+        provider_dropdown = gr.Dropdown(
+            choices=["ollama", "openai"],
+            label="Select Provider",
+            interactive=True,
+        )
         # Add model selection dropdown
         model_dropdown = gr.Dropdown(
-            choices=available_models,
-            value=available_models[0],
+            choices=get_available_models(),
             label="Select Model",
             interactive=True,
         )
@@ -190,6 +228,10 @@ with gr.Blocks(
             label="System Message",
             lines=10,
             placeholder=system_message_default,
+        )
+
+        provider_dropdown.change(
+            update_available_models, [provider_dropdown], [model_dropdown]
         )
 
     with gr.Group():
