@@ -59,6 +59,12 @@ def user(user_message, history):
     return "", history
 
 
+def retry(history):
+    # print(user_message)
+    history.pop()
+    return history
+
+
 def clear(input_message):
     return ""
 
@@ -141,7 +147,11 @@ async def add_context(user_message: str = "", history: list = [], messages: list
 
 
 async def call_rag(
-    user_message, history, selected_model, system_message, include_context
+    user_message,
+    history,
+    selected_model,
+    system_message,
+    include_context,
 ):
     try:
         messages = []
@@ -177,7 +187,11 @@ async def call_rag(
 
 
 async def call_rag_stream(
-    user_message, history, selected_model, system_message, include_context
+    user_message,
+    history,
+    selected_model,
+    system_message,
+    include_context,
 ):
 
     messages = []
@@ -335,6 +349,18 @@ with gr.Blocks(
         input_message.submit(
             user, [input_message, chatbot], [input_message, chatbot], queue=False
         ).then(
+            fn=call_rag_stream,
+            inputs=[
+                input_message,
+                chatbot,
+                model_dropdown,
+                system_message,
+                include_context,
+            ],
+            outputs=[chatbot],
+        )
+
+        chatbot.retry(retry, [chatbot], [chatbot], queue=False).then(
             fn=call_rag_stream,
             inputs=[
                 input_message,
