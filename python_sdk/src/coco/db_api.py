@@ -13,6 +13,30 @@ class DbApiClient:
         self.base_url = base_url
         self.api_key = api_key
 
+    def get_max_embedding_dim(self):
+        """Returns the maximum supported vector dimension.
+
+        Raises:
+            Exception: If the database service returns an error.
+
+        Returns:
+            int: The maximum supported vector dimension.
+        """
+        with httpx.Client() as client:
+            response = client.get(
+                f"{self.base_url}/max_embedding_dim",
+                headers={"X-API-Key": self.api_key},
+            )
+            response.raise_for_status()
+            max_embedding_dim_response = response.json()
+
+        if not max_embedding_dim_response.get("status") == "success":
+            raise Exception(
+                f"Database max embedding dim failed: {max_embedding_dim_response['error']}"
+            )
+
+        return max_embedding_dim_response["max_embedding_dim"]
+
     def get_closest(self, embedding: List[float], n_results: int = 5):
         """Retrieve the closest results from the database service.
 
