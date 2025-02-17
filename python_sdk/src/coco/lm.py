@@ -1,4 +1,5 @@
 from typing import List, Literal, Tuple
+import json
 import time
 import logging
 import ollama
@@ -95,11 +96,15 @@ class LanguageModelClient:
         )
         return batched_create_embeddings(chunks, model=model)
 
-    async def _generate(self, prompts: List[str], model: str = "llama3.2:1b") -> str:
+    async def _generate(
+        self, prompts: List[str], model: str = "llama3.2:1b", temperature: float = 0.0
+    ) -> str:
         if self.llm_api == "ollama":
             texts, tok_ss = [], []
             for prompt in prompts:
-                response = await self.async_ollama.generate(model=model, prompt=prompt)
+                response = await self.async_ollama.generate(
+                    model=model, prompt=prompt, options={"temperature": temperature}
+                )
                 texts.append(response.response)
                 tok_ss.append(response.eval_count / response.eval_duration * 10**9)
         elif self.llm_api == "openai":
@@ -109,7 +114,9 @@ class LanguageModelClient:
                     try:
                         start = time.time()
                         response = await self.async_openai.chat.completions.create(
-                            model=model, messages=[{"role": "user", "content": prompt}]
+                            model=model,
+                            messages=[{"role": "user", "content": prompt}],
+                            temperature=temperature,
                         )
                         tok_ss.append(
                             response.usage.completion_tokens / (time.time() - start)
@@ -119,13 +126,26 @@ class LanguageModelClient:
                     except openai.NotFoundError as e:
                         if attempt == 2:  # Last attempt failed
                             raise e
+                        logger.warning(
+                            f"OpenAI api gave not found error. Retrying ({attempt + 1}/3)"
+                        )
                         continue
                     except openai.RateLimitError as e:
                         if attempt == 2:
                             raise e
+                        logger.warning(
+                            f"OpenAI api gave rate limit error. Retrying in 60 seconds ({attempt + 1}/3)"
+                        )
                         time.sleep(
                             seconds=61
                         )  # ionos api wants 60 seconds before retry
+                        continue
+                    except json.JSONDecodeError as e:
+                        if attempt == 2:
+                            raise e
+                        logger.warning(
+                            f"OpenAI api gave json decode error. Retrying ({attempt + 1}/3)"
+                        )
                         continue
         return texts, tok_ss
 

@@ -96,6 +96,7 @@ def get_answers(
             context_chunks=context_chunks,
             prompt_template=cfg.generation.get_answers.prompt_template,
             model=cfg.generation.get_answers.model,
+            temperature=0.0,
             pull_model=False,
             batch_size=cfg.generation.get_answers.generate_answers_batch_size,
             limit_parallel=cfg.generation.get_answers.generate_answers_limit_parallel,
