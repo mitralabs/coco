@@ -40,6 +40,33 @@ class LanguageModelClient:
                 base_url=openai_base_url, api_key=os.environ.get("OPENAI_API_KEY")
             )
 
+    def get_embedding_dim(self, model: str) -> int:
+        """Get the dimension of the embedding for a given model.
+
+        Args:
+            model (str): The model to get the embedding dimension for.
+
+        Raises:
+            ValueError: If the embedding dimension is not found in the modelinfo.
+
+        Returns:
+            int: The dimension of the embedding for the given model.
+        """
+        if self.embedding_api == "ollama":
+            show_response = self.ollama.show(model)
+            length_key = None
+            for k in show_response.modelinfo:
+                if "embedding_length" in k:
+                    length_key = k
+                    break
+            if length_key is None:
+                raise ValueError("embedding_length key not found in modelinfo")
+            return show_response.modelinfo[length_key]
+        elif self.embedding_api == "openai":
+            res = self.openai.embeddings.create(model=model, input=["Some mock text."])
+            dim = len(res.data[0].embedding)
+            return dim
+
     async def _embed(
         self, chunks: List[str], model: str = "nomic-embed-text"
     ) -> List[List[float]]:

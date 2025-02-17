@@ -177,3 +177,4 @@ venv*/
 # Ignore the file with the name "ollama_api.md"
 ollama_api.md
 test/llm/napkin_export.json
+dev.ipynb
