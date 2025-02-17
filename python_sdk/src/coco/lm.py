@@ -136,9 +136,7 @@ class LanguageModelClient:
                         logger.warning(
                             f"OpenAI api gave rate limit error. Retrying in 60 seconds ({attempt + 1}/3)"
                         )
-                        time.sleep(
-                            seconds=61
-                        )  # ionos api wants 60 seconds before retry
+                        time.sleep(61)  # ionos api wants 60 seconds before retry
                         continue
                     except json.JSONDecodeError as e:
                         if attempt == 2:
