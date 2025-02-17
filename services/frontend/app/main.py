@@ -140,7 +140,9 @@ async def add_context(user_message: str = "", history: list = [], messages: list
     return messages, history
 
 
-async def call_rag(user_message, history, selected_model, system_message):
+async def call_rag(
+    user_message, history, selected_model, system_message, include_context
+):
     try:
         messages = []
         # Add system message
@@ -152,7 +154,10 @@ async def call_rag(user_message, history, selected_model, system_message):
         for element in history:
             messages.append({"role": element["role"], "content": element["content"]})
 
-        messages, history = await add_context(user_message, history, messages)
+        if include_context == "Yes":
+            messages, history = await add_context(user_message, history, messages)
+        else:
+            messages.append({"role": "user", "content": user_message})
 
         responses, tok_ss = await cc.lm.async_chat(
             messages_list=[messages],
@@ -171,7 +176,9 @@ async def call_rag(user_message, history, selected_model, system_message):
         raise e
 
 
-async def call_rag_stream(user_message, history, selected_model, system_message):
+async def call_rag_stream(
+    user_message, history, selected_model, system_message, include_context
+):
 
     messages = []
     # Add system message
@@ -183,7 +190,10 @@ async def call_rag_stream(user_message, history, selected_model, system_message)
     for element in history:
         messages.append({"role": element["role"], "content": element["content"]})
 
-    messages, history = await add_context(user_message, history, messages)
+    if include_context == "Yes":
+        messages, history = await add_context(user_message, history, messages)
+    else:
+        messages.append({"role": "user", "content": user_message})
 
     if cc.lm.llm_api == "openai":
         # Stream response from OpenAI
@@ -196,14 +206,12 @@ async def call_rag_stream(user_message, history, selected_model, system_message)
             async for chunk in response:
                 delta_content = chunk.choices[0].delta.content
                 if delta_content:
-                    # response_buffer += delta_content
-                    # If last element in history list has the role value "assistant" then append the response to the last element, otherwise create a new element
-                    if history[-1].role == "assistant":  # and not history[-1].metadata:
-                        history[-1].content += delta_content
-                    else:
+                    if type(history[-1]) == dict:
                         history.append(
                             gr.ChatMessage(role="assistant", content=delta_content)
                         )
+                    else:
+                        history[-1].content += delta_content
                     yield history
 
     elif cc.lm.llm_api == "ollama":
@@ -213,12 +221,12 @@ async def call_rag_stream(user_message, history, selected_model, system_message)
         ):
             delta_content = part["message"]["content"]
             if delta_content:
-                if history[-1].role == "assistant":  # and not history[-1].metadata:
-                    history[-1].content += delta_content
-                else:
+                if type(history[-1]) == dict:
                     history.append(
                         gr.ChatMessage(role="assistant", content=delta_content)
                     )
+                else:
+                    history[-1].content += delta_content
                 yield history
 
     else:
@@ -297,6 +305,11 @@ with gr.Blocks(
             lines=10,
             placeholder=system_message_default,
         )
+        include_context = gr.Radio(
+            choices=["Yes", "No"],
+            value="Yes",
+            label="Include Context?",
+        )
 
         provider_dropdown.input(
             update_available_models, [provider_dropdown], [model_dropdown]
@@ -328,6 +341,7 @@ with gr.Blocks(
                 chatbot,
                 model_dropdown,
                 system_message,
+                include_context,
             ],
             outputs=[chatbot],
         )
