@@ -1,13 +1,13 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security.api_key import APIKeyHeader
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError, field_validator
 import os
 from typing import List
 import logging
 from sqlalchemy.orm import Session
 from sqlalchemy import select, delete
 
-from db import get_db
+from db import get_db, EMBEDDING_DIM
 from db import Document as DbDocument
 
 
@@ -42,6 +42,17 @@ class Document(BaseModel):
     embedding: List[float]
     metadata: DocumentMetadata
 
+    @field_validator("embedding", mode="before")
+    @classmethod
+    def pad_embedding(cls, v: List[float]) -> List[float]:
+        if len(v) > EMBEDDING_DIM:
+            raise ValueError(
+                f"Embedding dimension cannot be larger than {EMBEDDING_DIM}"
+            )
+        if len(v) < EMBEDDING_DIM:
+            v += [0.0] * (EMBEDDING_DIM - len(v))
+        return v
+
 
 class AddRequest(BaseModel):
     documents: List[Document]
@@ -51,10 +62,33 @@ class GetClosestRequest(BaseModel):
     embedding: List[float]
     n_results: int = 5
 
+    @field_validator("embedding", mode="before")
+    @classmethod
+    def pad_embedding(cls, v: List[float]) -> List[float]:
+        if len(v) > EMBEDDING_DIM:
+            raise ValueError(
+                f"Embedding dimension cannot be larger than {EMBEDDING_DIM}"
+            )
+        if len(v) < EMBEDDING_DIM:
+            v += [0.0] * (EMBEDDING_DIM - len(v))
+        return v
+
 
 class GetMultipleClosestRequest(BaseModel):
     embeddings: List[List[float]]
     n_results: int = 5
+
+    @field_validator("embeddings", mode="before")
+    @classmethod
+    def pad_embeddings(cls, v: List[List[float]]) -> List[List[float]]:
+        for i, embedding in enumerate(v):
+            if len(embedding) > EMBEDDING_DIM:
+                raise ValueError(
+                    f"Embedding dimension cannot be larger than {EMBEDDING_DIM}"
+                )
+            if len(embedding) < EMBEDDING_DIM:
+                v[i] += [0.0] * (EMBEDDING_DIM - len(embedding))
+        return v
 
 
 def nearest_neighbor_query(db: Session, query_embedding: List[float], n_results: int):
@@ -196,6 +230,14 @@ async def delete_all(
     return {
         "status": "success",
         "count": result.rowcount,
+    }
+
+
+@app.get("/max_embedding_dim")
+async def max_embedding_dim(api_key: str = Depends(get_api_key)):
+    return {
+        "status": "success",
+        "max_embedding_dim": EMBEDDING_DIM,
     }
 
 
