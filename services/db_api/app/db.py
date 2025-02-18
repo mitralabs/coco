@@ -1,10 +1,12 @@
 import os
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import Column, Integer, String, text
+import logging
 
+logger = logging.getLogger(__name__)
 
 POSTGRES_USER = os.getenv("POSTGRES_USER")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
@@ -30,9 +32,41 @@ class Document(Base):
     total_chunks = Column(Integer, nullable=False)
 
 
+def get_vector_dim_from_db(session):
+    """Get the vector dimension from the existing documents table"""
+    # Check if the table exists
+    inspector = inspect(engine)
+    if "documents" not in inspector.get_table_names():
+        return None
+
+    try:
+        result = session.execute(
+            text(
+                """
+            SELECT atttypmod - 4 as dimension
+            FROM pg_attribute
+            WHERE attrelid = 'documents'::regclass
+            AND attname = 'embedding';
+        """
+            )
+        )
+        dim = result.scalar()
+        return dim
+    except Exception as e:
+        logging.error(f"Error getting vector dimension: {e}")
+        return None
+
+
 with SessionLocal() as session:
     session.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
     session.commit()
+
+    table_emb_dim = get_vector_dim_from_db(session)
+    if table_emb_dim is not None and table_emb_dim != EMBEDDING_DIM:
+        logger.info(
+            f"Dropping documents table: existing embedding dimension {table_emb_dim} != new {EMBEDDING_DIM}"
+        )
+        Base.metadata.drop_all(bind=engine, tables=[Document.__table__])
     Base.metadata.create_all(bind=engine)
 
 
