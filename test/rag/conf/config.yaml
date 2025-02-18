@@ -15,9 +15,9 @@ coco:
   transcription_base: http://127.0.0.1:8000
   ollama_base: http://127.0.0.1:11434
   openai_base: https://openai.inference.de-txl.ionos.com/v1 # set OPENAI_API_KEY if using this
-  embedding_api: ollama
-  llm_api: openai
   api_key: test
+  # embedding and llm api are set as tuples with model names
+  # to make them sweepable
 
 general:
   services_data_dir: ../../services/_data
