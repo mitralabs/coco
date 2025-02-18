@@ -27,133 +27,48 @@ The application uses [Hydra](https://hydra.cc/) for configuration management. Th
 - `retrieval/*.yaml`: Retrieval configurations
 - `generation/*.yaml`: Generation configurations
 
-To override any config parameter when running:
+### Running individual tests
+
+Setup the all hydra config values as you want and start the script. Make sure to set a wandb run name:
 
 ```bash
-python main.py data=your_data retrieval=your_retrieval generation=your_generation
+python main.py wandb.name=<my name>
 ```
 
-### Data Configuration
+(You can overwrite arbitrary config values similarly to wandb.name from the commandline!)
 
-The data configuration (`conf/data/*.yaml`) specifies dataset parameters and database operations. Example configuration from `germandpr.yaml`:
+## Sweeps (Parameter Searches)
 
-```yaml
-name: germandpr # Dataset name
-hf_name: deepset/germandpr # HuggingFace dataset name
-language: de # Dataset language
-use_train: true # Use training split
-use_test: false # Use test split
-backup_db: false # Backup database before operations
-clear_db: false # Clear database before filling
-fill_db:
-  skip: true # Skip database filling
-  embed_and_store_batch_size: 25 # Batch size for embedding
-  embed_and_store_limit_parallel: 10 # Parallel processing limit
-```
+This pipeline supports hyperparameter sweeps via Weights & Biases to automatically find pipeline settings that optimize some metric.
+To run a sweep:
 
-## Components
+1. **Configure the Sweep:**  
+   Edit a sweep configuration file or create a new one. For instance `./sweeps/primitive_embedding_lm.yaml` includes a config that runs a grid search (just trying all combinations of parameters) with two different embedding models and two different LLMs. Just **make sure the sweep paramter names match the hydra names**. Also make sure the wandb entity and project match the one set in the hydra config.
 
-### 1. Data
+2. **Start the Sweep:**  
+   Run the following command from the terminal (replace config name):
 
-The data component handles dataset loading, preprocessing, and database operations. Configuration in `conf/data/*.yaml`:
-
-Parameters:
-
-- `name`: Dataset identifier used throughout the pipeline
-- `hf_name`: HuggingFace dataset source (if applicable)
-- `language`: Dataset language code
-- `use_train/use_test`: Control which dataset splits to use
-- Database operations:
-  - `backup_db`: Create database backup before operations
-  - `clear_db`: Clear existing database entries
-  - `fill_db`: Database population settings
-    - `skip`: Skip database filling step
-    - `embed_and_store_batch_size`: Number of items to process in each batch
-    - `embed_and_store_limit_parallel`: Maximum parallel processing tasks
-
-### 2. Retrieval
-
-The retrieval component evaluates the system's ability to fetch relevant chunks of information. Configuration in `conf/retrieval/primitive.yaml`:
-
-Parameters:
-
-- `get_top_chunks.top_k`: Number of top chunks to retrieve (default: 100)
-- `metric_ks`: List of k values for evaluation metrics [1, 5, 10, 20, 50, 100]
-- `rank_first_relevant_punishment`: Penalty score when ground truth chunk isn't retrieved (default: 101)
-
-Output files are stored in:
-
-```
-${general.data_dir}/retrieval/${data.name}/${retrieval.get_top_chunks.top_k}.json
-```
-
-### 3. Generation
-
-The generation component evaluates the quality of generated responses based on retrieved context. Configuration in `conf/generation/primitive.yaml`.
-
-## General Configuration
-
-The application requires several service endpoints configured in `conf/config.yaml`:
-
-```yaml
-coco:
-  chunking_base: http://127.0.0.1:8001
-  embedding_base: http://127.0.0.1:8002
-  db_api_base: http://127.0.0.1:8003
-  transcription_base: http://127.0.0.1:8000
-  ollama_base: http://127.0.0.1:11434
-  openai_base: https://openai.example.com
-  embedding_api: ollama # Embedding provider
-  llm_api: ollama # Generation provider
-  api_key: test
-```
-
-Data directories:
-
-- Services data: `services_data_dir: ../../services/_data`
-- Application data: `data_dir: ./data`
-
-## Configuration Changes
-
-Update your `conf/config.yaml` with LM API selection:
-
-```yaml
-coco:
-  ollama_base: http://127.0.0.1:11434
-  openai_base: https://openai.example.com
-  embedding_api: ollama # Embedding provider
-  llm_api: ollama # Generation provider
-  api_key: test
-```
-
-## Key Pipeline Updates
-
-1. **Embedding Integration**
-
-   - Embeddings now generated through LM module
-   - Removed separate embedding service dependency
-
-2. **Dual-Model Support**
-
-   ```python
-   # Example using different providers for embedding/generation
-   client = CocoClient(
-       embedding_api="openai",
-       llm_api="ollama",
-       # ... other params
-   )
+   ```
+   wandb sweep sweeps/primitive_embedding_lm.yaml
    ```
 
-3. **Batch Processing**
+   This command will output a sweep ID.
 
-   - All RAG operations use batched_parallel
-   - Improved memory management for large datasets
+3. **Launch Sweep Agents:**  
+   With the obtained sweep ID, run one or more agents to start the experiments:
 
-4. **Model Management**
-   ```python
-   # Auto-download missing Ollama models
-   answers = generation_stage(
-       cc, cfg, top_chunks, ds,
-       pull_model=True
-   )
    ```
+   wandb agent <sweep-id>
+   ```
+
+   Multiple agents can be launched in parallel to expedite the sweep.
+
+### Common Pitfalls
+
+1. Make sure the db-api service runs with an embedding dimensionality >= the highest required by all embedding models.
+
+2. Make sure ollama has all used models pulled.
+
+3. You very likely want the data stage to clear and refill the database when experimenting with different embedding models.
+
+4. Make sure you only load cached retrieval results or generation results if you are sure they are valid for all runs of the sweep.
