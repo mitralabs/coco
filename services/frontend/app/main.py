@@ -6,6 +6,20 @@ from coco import CocoClient
 
 # See Gradio Docs for reference: https://www.gradio.app/docs
 
+# Can be removed, only until functions are in SDK
+from ollama import AsyncClient
+from openai import AsyncOpenAI
+
+openai = AsyncOpenAI(
+    base_url="https://openai.inference.de-txl.ionos.com/v1",
+)
+ollama = AsyncClient(
+    host="http://host.docker.internal:11434",
+)
+
+# ---
+
+
 theme = gr.themes.Ocean(
     primary_hue="sky",
     neutral_hue="neutral",
@@ -28,8 +42,8 @@ cc = CocoClient(
 system_message_default = "Du bist coco.\n\nDu hilfst dem User bestmöglich.\n\nDu antwortest präzise und kommunizierst auf Deutsch."
 
 CONTEXT_FORMAT = """
-    Eine Recherche in der Datenbank hat folgende Inhalte ergeben:
-
+    Der nachfolgende Inhalt könnte hilfreich sein, um die Frage zu beantworten:
+    
     -----
     {context}
     -----
@@ -53,17 +67,8 @@ def update_available_models(llmapi: str):
     cc.lm.llm_api = llmapi
     available_models = get_available_models()
 
-    if llmapi == "openai":
-        try:
-            available_models = [
-                (model.split("/")[-1], model) for model in available_models
-            ]
-        except:
-            pass
-
     return gr.Dropdown(
         choices=available_models,
-        value=available_models[0] if available_models else None,
         interactive=True,
     )
 
@@ -89,7 +94,6 @@ def get_available_models():
         "BAAI/bge-m3",
         "stabilityai/stable-diffusion-xl-base-1.0",
     ]
-
     # combine embedding models and non-llms
     blacklisted_models = embedding_models_ollama + non_llms_ionos
 
@@ -100,18 +104,46 @@ def get_available_models():
     if not available_models:
         available_models = [
             "meta-llama/Llama-3.3-70B-Instruct"
-        ]  # Default fallback model for Ollama
+        ]  # Default fallback model for Openai
 
+    if cc.lm.llm_api == "openai":
+        try:
+            available_models = [
+                (model.split("/")[-1], model) for model in available_models
+            ]
+        except:
+            pass
+
+    # print(available_models)
     return available_models
 
 
-async def call_rag(user_message, history, selected_model, system_message):
-    try:
-        # Get RAG context
-        contexts = await cc.rag.async_retrieve_chunks([user_message], 5)
-        context_chunks = contexts[0][1]
-        rag_context = CONTEXT_FORMAT.format(context="\n-----\n".join(context_chunks))
+async def add_context(user_message: str = "", history: list = [], messages: list = []):
+    # Get RAG context
+    contexts = await cc.rag.async_retrieve_chunks([user_message], 5)
+    context_chunks = contexts[0][1]
+    rag_context = CONTEXT_FORMAT.format(context="\n-----\n".join(context_chunks))
+    # Add RAG context -> Note the "tool" role is ollama specific and will be useful in the future. See: https://github.com/ollama/ollama/blob/main/docs/api.md#generate-a-chat-completion
+    messages.append(
+        {
+            "role": "user",
+            "content": rag_context,
+        }
+    )
+    history.append(
+        gr.ChatMessage(
+            role="user",
+            content=f"```{rag_context}```",  # Markdown code block, to prevent the context from being displayed formatted
+            metadata={"title": "RAG Context", "status": "done"},
+        )
+    )
+    return messages, history
 
+
+async def call_rag(
+    user_message, history, selected_model, system_message, include_context
+):
+    try:
         messages = []
         # Add system message
         if system_message == "":
@@ -122,14 +154,10 @@ async def call_rag(user_message, history, selected_model, system_message):
         for element in history:
             messages.append({"role": element["role"], "content": element["content"]})
 
-        # Add RAG context -> Note the "tool" role is ollama specific. See: https://github.com/ollama/ollama/blob/main/docs/api.md#generate-a-chat-completion
-        messages.append(
-            {
-                "role": "tool",
-                "content": rag_context,
-            }
-        )
-        print(messages)
+        if include_context == "Yes":
+            messages, history = await add_context(user_message, history, messages)
+        else:
+            messages.append({"role": "user", "content": user_message})
 
         responses, tok_ss = await cc.lm.async_chat(
             messages_list=[messages],
@@ -140,23 +168,69 @@ async def call_rag(user_message, history, selected_model, system_message):
         )
         reponse, tok_s = responses[0], tok_ss[0]
 
-        print("Token per seconds:", tok_s)
+        yield history.append(gr.ChatMessage(role="assistant", content=reponse))
 
-        history.extend(
-            [
-                gr.ChatMessage(
-                    role="assistant",
-                    content=rag_context,
-                    metadata={"title": "RAG Context", "status": "done"},
-                ),
-                gr.ChatMessage(role="assistant", content=reponse),
-            ]
-        )
-        yield history
     except Exception as e:
         history.append({"role": "assistant", "content": f"Error: {str(e)}"})
         yield history
         raise e
+
+
+async def call_rag_stream(
+    user_message, history, selected_model, system_message, include_context
+):
+
+    messages = []
+    # Add system message
+    if system_message == "":
+        system_message = system_message_default
+    messages.append({"role": "system", "content": system_message})
+
+    # Add previous messages
+    for element in history:
+        messages.append({"role": element["role"], "content": element["content"]})
+
+    if include_context == "Yes":
+        messages, history = await add_context(user_message, history, messages)
+    else:
+        messages.append({"role": "user", "content": user_message})
+
+    if cc.lm.llm_api == "openai":
+        # Stream response from OpenAI
+        async with await openai.chat.completions.create(
+            model=selected_model,
+            messages=messages,
+            temperature=0,
+            stream=True,
+        ) as response:
+            async for chunk in response:
+                delta_content = chunk.choices[0].delta.content
+                if delta_content:
+                    if type(history[-1]) == dict:
+                        history.append(
+                            gr.ChatMessage(role="assistant", content=delta_content)
+                        )
+                    else:
+                        history[-1].content += delta_content
+                    yield history
+
+    elif cc.lm.llm_api == "ollama":
+        # Stream response from Ollama
+        async for part in await ollama.chat(
+            model=selected_model, messages=messages, stream=True
+        ):
+            delta_content = part["message"]["content"]
+            if delta_content:
+                if type(history[-1]) == dict:
+                    history.append(
+                        gr.ChatMessage(role="assistant", content=delta_content)
+                    )
+                else:
+                    history[-1].content += delta_content
+                yield history
+
+    else:
+        raise ValueError("Invalid LLM API")
 
 
 def handle_audio_upload(file):
@@ -213,8 +287,10 @@ with gr.Blocks(
     with gr.Sidebar(open=False):
         gr.Markdown("# ")
         gr.Markdown("# Set some options")
+        initial_provider = cc.lm.llm_api
         provider_dropdown = gr.Dropdown(
             choices=["ollama", "openai"],
+            value=initial_provider,
             label="Select Provider",
             interactive=True,
         )
@@ -229,8 +305,13 @@ with gr.Blocks(
             lines=10,
             placeholder=system_message_default,
         )
+        include_context = gr.Radio(
+            choices=["Yes", "No"],
+            value="Yes",
+            label="Include Context?",
+        )
 
-        provider_dropdown.change(
+        provider_dropdown.input(
             update_available_models, [provider_dropdown], [model_dropdown]
         )
 
@@ -240,7 +321,7 @@ with gr.Blocks(
             type="messages",
             height="80vh",
             # editable="user",
-            render_markdown=False,
+            render_markdown=True,  # If Rag Context is messed up, this is where to look.
         )
         input_message = gr.Textbox(
             placeholder="Type your message here...",
@@ -254,12 +335,13 @@ with gr.Blocks(
         input_message.submit(
             user, [input_message, chatbot], [input_message, chatbot], queue=False
         ).then(
-            fn=call_rag,
+            fn=call_rag_stream,
             inputs=[
                 input_message,
                 chatbot,
                 model_dropdown,
                 system_message,
+                include_context,
             ],
             outputs=[chatbot],
         )
