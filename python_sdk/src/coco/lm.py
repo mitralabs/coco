@@ -243,6 +243,7 @@ class LanguageModelClient:
         self, messages_list: List[List[dict]], model: str = "llama3.2:1b"
     ) -> Tuple[List[str], List[float]]:
         if self.llm_api == "ollama":
+            # TODO handle messages larger than ollama max context window
             texts, tok_ss = [], []
             for messages in messages_list:
                 response = await self.async_ollama.chat(model=model, messages=messages)

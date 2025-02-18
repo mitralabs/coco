@@ -34,7 +34,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_DB=coco
       - POSTGRES_HOST=db
-      - EMBEDDING_DIM=768
+      - EMBEDDING_DIM=1024
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]

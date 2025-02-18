@@ -52,9 +52,9 @@ def app(cfg: DictConfig):
 
         if run_name:
             st.markdown("**Model:**")
-            st.text(cfg.generation.get_answers.model)
+            st.text(cfg.generation.llm_model[0])
             st.markdown("**Embedding Model:**")
-            st.text(cfg.data.fill_db.embedding_model)
+            st.text(cfg.retrieval.embedding_model[0])
             st.markdown("**Retrieved Chunks:**")
             st.text(f"Top-k: {cfg.retrieval.get_top_chunks.top_k}")
 
