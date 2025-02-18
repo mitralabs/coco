@@ -133,7 +133,6 @@ class SemScore:
         model_name_multilingual = (
             "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
         )
-        # TODO check if this runs on gpu
         self.model_paper = SentenceTransformer(model_name_paper)
         self.model_multilingual = SentenceTransformer(model_name_multilingual)
         self.aggr_references = aggr_references
