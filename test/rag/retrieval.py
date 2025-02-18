@@ -32,7 +32,7 @@ def get_top_chunks(cc: CocoClient, cfg: DictConfig, ds: Dataset):
         results = cc.rag.retrieve_chunks(
             query_texts=queries,
             n_results=cfg.retrieval.get_top_chunks.top_k,
-            model=cfg.data.fill_db.embedding_model,
+            model=cfg.retrieval.embedding_model[0],
             show_progress=True,
         )
         for query, (ids, documents, metadatas, distances) in zip(queries, results):
