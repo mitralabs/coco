@@ -117,6 +117,7 @@ def get_answers(
     return answers
 
 
+# TODO implement this with german sentence similarity model as well (adapt optimization target)
 class SemScore:
     def __init__(
         self,
@@ -130,6 +131,7 @@ class SemScore:
             aggr_predictions (Callable, optional): _description_. Defaults to np.mean.
         """
         model_name = "sentence-transformers/all-mpnet-base-v2"
+        # TODO check if this runs on gpu
         self.model = SentenceTransformer(model_name)
         self.aggr_references = aggr_references
         self.aggr_predictions = aggr_predictions

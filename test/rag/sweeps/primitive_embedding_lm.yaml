@@ -1,0 +1,24 @@
+name: primitive-embedding-lm
+entity: nicostellwag-academic
+project: mitra-rag
+
+program: main.py
+method: grid
+metric:
+  goal: maximize
+  name: optimization_target
+parameters:
+  retrieval.embedding_model:
+    values: [["nomic-embed-text", "ollama"], ["BAAI/bge-m3", "openai"]]
+  generation.llm_model:
+    values:
+      [
+        ["meta-llama/Llama-3.3-70B-Instruct", "openai"],
+        ["llama3.2:1b", "ollama"],
+      ]
+
+command:
+  - ${env}
+  - python
+  - ${program}
+  - ${args_no_hyphens}
