@@ -4,6 +4,11 @@ This application provides a testing framework the Coco RAG system.
 
 ## Setup and Configuration
 
+### Transformers and Sentence-Transformers
+
+Some metrics use HF transformers and sentence-transformers. When installing
+dependencies, make sure to install a version with gpu support if possible.
+
 ### Weights & Biases Integration
 
 The application uses [Weights & Biases (wandb)](https://wandb.ai) for experiment tracking. To initialize wandb:
