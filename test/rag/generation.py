@@ -95,7 +95,7 @@ def get_answers(
             queries=queries,
             context_chunks=context_chunks,
             prompt_template=cfg.generation.get_answers.prompt_template,
-            model=cfg.generation.get_answers.model,
+            model=cfg.generation.llm_model[0],
             temperature=0.0,
             pull_model=False,
             batch_size=cfg.generation.get_answers.generate_answers_batch_size,
@@ -183,6 +183,7 @@ def groundedness(
     if not cfg.generation.ragas.skip:
         metrics["ragas_faithfulness"] = np.mean(faithfulnesses)
     wandb.log({f"{wandb_prefix}/groundedness/{k}": v for k, v in metrics.items()})
+    return metrics
 
 
 def relevance(ds: Dataset, answers: Dict[str, Dict[str, Any]]):
@@ -255,6 +256,7 @@ def correctness(ds: Dataset, answers: Dict[str, Dict[str, Any]], wandb_prefix: s
         "semscore": np.mean(semscores),
     }
     wandb.log({f"{wandb_prefix}/answer_correctness/{k}": v for k, v in metrics.items()})
+    return metrics
 
 
 def generation_stage(
@@ -278,12 +280,18 @@ def generation_stage(
         wandb_prefix="generation_ret",
     )
     relevance(ds=ds, answers=answers_ret)
-    correctness(
+    ret_corr_metrics = correctness(
         ds=ds,
         answers=answers_ret,
         wandb_prefix="generation_ret",
     )
     logger.info("Generation stage for retrieved chunks completed")
+
+    # optimization target for wandb sweeps
+    optimization_target = (
+        0.5 * ret_corr_metrics["bertscore_f1"] + 0.5 * ret_corr_metrics["semscore"]
+    )
+    wandb.log({"optimization_target": optimization_target})
 
     logger.info("Starting generation stage for ground truth chunks")
     mocked_top_chunks = mock_top_chunks(ds=ds, cfg=cfg)
