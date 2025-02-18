@@ -9,16 +9,20 @@
 #include <freertos/semphr.h>
 
 #define LED_PIN 2
-#define GPIO_INPUT_PIN 44      // Button input pin
-#define PRESS_TIME_MS   2000   // 2 seconds (threshold time)
 
-// ...existing defines...
 #define RECORD_TIME 30       // seconds
-#define SAMPLING_RATE 16000  // 16kHz
-#define BASE_DELAY 2000
+#define SAMPLING_RATE \
+  16000  // 16kHz is currently the best possible Sampling Rate. Optimizing
+         // Battery and Quality.
+#define BASE_DELAY 2000  // Delay between http Requests, if one failed.
 
-#define RECORDINGS_DIR "/recordings"
-#define SD_SPEED 20000000  // 20 MHz
+#define RECORDINGS_DIR "/recordings"  // Directory constant
+#define SD_SPEED \
+  20000000  // Set frequency to 20 MHz, Maximum is probably around 25MHz default
+            // is 4MHz, the rational is that a higher speed translates to a
+            // shorter SD Card operation, which in turn translates to a lower
+            // power consumption. Note: Higher is with current SD card not
+            // possible.
 
 Preferences preferences;
 I2SClass i2s;
@@ -37,9 +41,6 @@ struct AudioBuffer {
 
 QueueHandle_t audioQueue; // For multiple buffers
 
-// New global flag to control recording
-volatile bool recordingActive = false;
-
 void initSD();
 void initRecordingMode();
 void recordLoop(void *parameter);
@@ -48,10 +49,10 @@ void log(const String &message);
 void ensureRecordingDirectory();
 void ensureLogFile();
 void blinkLED(int interval);
-void GPIOMonitorTask(void *pvParameters);
 
 void setup() {
   Serial.begin(115200);
+
   pinMode(LED_PIN, OUTPUT);
 
   initSD();
@@ -62,35 +63,27 @@ void setup() {
   // Create a queue with space for 4 AudioBuffer items.
   audioQueue = xQueueCreate(4, sizeof(AudioBuffer));
 
-  // Create tasks:
-  xTaskCreatePinnedToCore(recordLoop, "Record Loop", 4096, NULL, 1, NULL, 1);
+  xTaskCreatePinnedToCore(recordLoop, "Record Loop", 4096, NULL, 1, NULL, 1); // Name, Stack size, Priority, Task handle, Core
   xTaskCreatePinnedToCore(saveToSD, "Save to SD", 4096, NULL, 1, NULL, 0);
-
-  // Create the GPIO Monitoring Task on core 0.
-  xTaskCreatePinnedToCore(GPIOMonitorTask, "GPIO Monitor", 2048, NULL, 1, NULL, 0);
 }
 
 void loop() {
-  // Empty loop as tasks run on different cores
+  // Empty loop as tasks are running on different cores
 }
 
 void recordLoop(void *parameter) {
   while (true) {
-    if (recordingActive) {
-      AudioBuffer audio;
-      // Record into a local buffer.
-      audio.buffer = i2s.recordWAV(RECORD_TIME, &audio.size);
-      
-      // Enqueue the audio buffer, waiting if needed.
-      if (xQueueSend(audioQueue, &audio, portMAX_DELAY) != pdPASS) {
-        log("Failed to enqueue audio buffer!");
-        free(audio.buffer);
-      }
-    } else {
-      // When not recording, yield.
-      vTaskDelay(pdMS_TO_TICKS(100));
+    AudioBuffer audio;
+    // Record into a local buffer.
+    audio.buffer = i2s.recordWAV(RECORD_TIME, &audio.size);
+    
+    // Enqueue the audio buffer, waiting if needed.
+    if (xQueueSend(audioQueue, &audio, portMAX_DELAY) != pdPASS) {
+      log("Failed to enqueue audio buffer!");
+      free(audio.buffer);
     }
-    // Yield to the scheduler.
+    
+    // Delay to yield to other tasks.
     vTaskDelay(pdMS_TO_TICKS(1));
   }
 }
@@ -98,6 +91,7 @@ void recordLoop(void *parameter) {
 void saveToSD(void *parameter) {
   AudioBuffer audio;
   while (true) {
+    // Try to receive audio buffer from the queue.
     if (xQueueReceive(audioQueue, &audio, portMAX_DELAY) == pdTRUE) {
       String fileName = String(RECORDINGS_DIR) + "/audio_" +
                         String(recordingSession) + "_" + String(fileIndex) + ".wav";
@@ -119,15 +113,19 @@ void saveToSD(void *parameter) {
       free(audio.buffer);
       fileIndex++;
     }
+    // Yield to the scheduler.
     vTaskDelay(pdMS_TO_TICKS(1));
   }
 }
 
 void log(const String &message) {
   Serial.println(message);
+
+  // Add timestamp to log message
   String timestamp = String(millis());
   String logMessage = timestamp + ": " + message;
 
+  // Append the new log message
   logFile = SD.open("/device.log", FILE_APPEND);
   if (logFile) {
     logFile.println(logMessage);
@@ -178,17 +176,21 @@ void blinkLED(int interval) {
       led_state = !led_state;
       digitalWrite(LED_PIN, led_state);
     }
+    // Yield to ensure the watchdog is reset.
     vTaskDelay(pdMS_TO_TICKS(1));
   }
 }
 
 void initRecordingMode() {
-    log("Adjusting CPU Frequency");
-    setCpuFrequencyMhz(80);
+  
+    log("ADjusting CPU Frequency");
+    setCpuFrequencyMhz(80);  // 80 is lowest stable frequency for recording.
   
     log("Initializing PDM Microphone...");
     i2s.setPinsPdmRx(42, 41);
   
+    // The transmission mode is PDM_MONO_MODE, which means that PDM (pulse
+    // density modulation) mono mode is used for transmission
     if (!i2s.begin(I2S_MODE_PDM_RX, SAMPLING_RATE, I2S_DATA_BIT_WIDTH_16BIT,
                    I2S_SLOT_MODE_MONO)) {
       log("Failed to initialize I2S!");
@@ -199,45 +201,8 @@ void initRecordingMode() {
     preferences.begin("audio", false);
     recordingSession = preferences.getInt("session", 0);
     log("Recording Session: " + String(recordingSession));
-    fileIndex = 1;
+    fileIndex = 1;  // Set the Fileindex to 1. Will be increased within the
+                    // recording loop.
     preferences.putInt("session", recordingSession + 1);
     preferences.end();
-}
-
-// New task that monitors a button press to toggle recording mode.
-void GPIOMonitorTask(void *pvParameters) {
-  pinMode(GPIO_INPUT_PIN, INPUT_PULLUP);
-  Serial.println("GPIO Monitoring Task running on Core 0");
-  TickType_t pressStartTime = 0;
-  bool buttonPressed = false;
-
-  while (true) {
-    if (digitalRead(GPIO_INPUT_PIN) == HIGH) {  // Button is pressed.
-      if (!buttonPressed) {
-        pressStartTime = xTaskGetTickCount();
-        buttonPressed = true;
-        Serial.println("Button pressed... monitoring duration.");
-      } else {
-        TickType_t elapsedTime = xTaskGetTickCount() - pressStartTime;
-        if (elapsedTime >= pdMS_TO_TICKS(PRESS_TIME_MS)) {
-          // Toggle recording state.
-          if (!recordingActive) {
-            recordingActive = true;
-            log("Recording started");
-          } else {
-            recordingActive = false;
-            log("Recording stopped");
-          }
-          buttonPressed = false;
-          vTaskDelay(pdMS_TO_TICKS(500));  // Prevent retriggering immediately.
-        }
-      }
-    } else {
-      if (buttonPressed) {
-        Serial.println("Button released before 2 seconds.");
-      }
-      buttonPressed = false;
-    }
-    vTaskDelay(pdMS_TO_TICKS(10));
   }
-}
