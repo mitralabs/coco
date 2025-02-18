@@ -6,6 +6,8 @@ from pgvector.sqlalchemy import Vector
 from sqlalchemy import Column, Integer, String, text
 import logging
 
+# Ensure a basic configuration is set here (or do this in the main entry before importing modules)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 POSTGRES_USER = os.getenv("POSTGRES_USER")
@@ -43,7 +45,7 @@ def get_vector_dim_from_db(session):
         result = session.execute(
             text(
                 """
-            SELECT atttypmod - 4 as dimension
+            SELECT atttypmod as dimension
             FROM pg_attribute
             WHERE attrelid = 'documents'::regclass
             AND attname = 'embedding';
@@ -68,6 +70,7 @@ with SessionLocal() as session:
         )
         Base.metadata.drop_all(bind=engine, tables=[Document.__table__])
     Base.metadata.create_all(bind=engine)
+    logger.info(f"Document embedding dimension: {get_vector_dim_from_db(session)}")
 
 
 def get_db():
