@@ -14,7 +14,7 @@ parameters:
     values:
       [
         ["meta-llama/Llama-3.3-70B-Instruct", "openai"],
-        ["llama3.2:1b", "ollama"],
+        ["openGPT-X/Teuken-7B-instruct-commercial", "openai"],
       ]
 
 command:
