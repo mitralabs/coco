@@ -1,3 +1,5 @@
+// Last version with one file management task.
+
 /**********************************
  *           INCLUDES             *
  **********************************/
@@ -35,8 +37,7 @@
 #define SLEEP_TIMEOUT_SEC 60        // Deep sleep period is 60s
 
 #define DEFAULT_TIME 1740049200     // Default time:  20. Februar 2025 12:00:00 GMT+01:00 // https://www.epochconverter.com
-#define TIMEZONE "GMT" // "CEST-1CET,M3.2.0/2:00:00,M11.1.0/2:00:00" // "CET-1CEST,M3.5.0/2,M10.5.0/3" // Timezone for Central Europe with some additions. Read it online to change it.
-
+#define TIMEZONE "CET-1CEST,M3.5.0/2,M10.5.0/3" // Timezone for Central Europe with some additions. Read it online to change it.
 
 #define BATTERY_MONITOR_INTERVAL 60000  // Interval in milliseconds to monitor the battery // 60000 = 1 minute
 #define TIME_PERSIST_INTERVAL 60000  // Interval in milliseconds to persist the time // 60000 = 60s
@@ -51,22 +52,16 @@ File curr_file;
 File recordings_root_dir;
 File logFile;
 
-int bootSession = 0;
-int logFileIndex = 0;
-int audioFileIndex = 0;
-
+int fileIndex = 0;
+int recordingSession = 0;
 time_t storedTime = 0;
 
 /**********************************
  *        DATA STRUCTURES         *
  **********************************/
-enum AudioChunkType { START, MIDDLE, END };
-
 struct AudioBuffer {
   uint8_t *buffer;
   size_t size;
-  char timestamp[21];
-  AudioChunkType type;
 };
 
 volatile bool isRecording = false;  // Flag to indicate recording state
@@ -77,8 +72,6 @@ volatile bool externalWakeTriggered = false;
 volatile int externalWakeValid = -1;  // -1: not determined, 0: invalid (accidental), 1: valid wake
 
 SemaphoreHandle_t ledMutex; // Global mutex for the LED
-SemaphoreHandle_t sdMutex; // Add a global SD card access mutex
-
 QueueHandle_t audioQueue;    // For multiple audio buffers
 QueueHandle_t logQueue;      // For log messages
 
@@ -92,9 +85,7 @@ void setup_from_external();
 void setup_from_boot();
 
 void recordAudio(void *parameter);
-void audioFileTask(void *parameter);
-void logFlushTask(void *parameter);
-
+void fileManagement(void *parameter);
 void batteryMonitorTask(void *parameter);
 void persistTimeTask(void *parameter);
 void updateTimeTask(void *parameter);
@@ -105,7 +96,6 @@ void ensureRecordingDirectory();
 void ensureLogFile();
 void ErrorBlinkLED(int interval);
 void storeCurrentTime();
-String getTimestamp();
 
 void initSD();
 void initRecordingMode();
@@ -163,8 +153,6 @@ void setup() {
   pinMode(BUTTON_PIN, INPUT_PULLUP);  // Set up the button pin
 
   ledMutex = xSemaphoreCreateMutex(); // Create the mutex
-  sdMutex = xSemaphoreCreateMutex();   // Global mutex for SD card access
-
   logQueue = xQueueCreate(LOG_QUEUE_SIZE, sizeof(char*)); // Create a queue with space for log messages.
 
   buttonTimer = xTimerCreate("ButtonTimer", pdMS_TO_TICKS(BUTTON_PRESS_TIME), pdFALSE, NULL, buttonTimerCallback); // Create a one-shot timer which triggers after the specified time
@@ -207,33 +195,14 @@ void setup_from_external() {
       log("Valid external wake, proceeding with boot.");
       setup_from_boot();
     } else {
-      // Write to log and enter deep sleep again.
-      logFile = SD.open("/device.log", FILE_APPEND);
-      if (logFile) {
-        logFile.println("Invalid external wake, entering deep sleep again.");
-        logFile.flush();
-        logFile.close();
-      }
+      log("Invalid external wake, entering deep sleep again.");
       initDeepSleep();
     }
   }
 }
 
 void setup_from_boot() {
-  setCpuFrequencyMhz(80);  // 80 is lowest stable frequency for recording.
-
-  // Initialize recording session (stored in preferences)
-  preferences.begin("boot", false);
-  bootSession = preferences.getInt("bootSession", 0);
-  bootSession++;  // increment for a new boot
-  preferences.putInt("bootSession", bootSession);
-  preferences.end();
-
-  log("======= Boot session: " + String(bootSession) + "=======");
-
-  audioFileIndex = 0;  // Reset audio file index on boot
-  logFileIndex = 0;    // Reset log file index on boot
-
+  setCpuFrequencyMhz(240);  // 80 is lowest stable frequency for recording.
   
   initTime();
   
@@ -242,18 +211,15 @@ void setup_from_boot() {
   audioQueue = xQueueCreate(AUDIO_QUEUE_SIZE , sizeof(AudioBuffer)); // Create a queue with space for AudioBuffer items.
 
   initRecordingMode();
-  xTaskCreatePinnedToCore(recordAudio, "Record Loop", 8192, NULL, 1, NULL, 1); // Name, Stack size, Priority, Task handle, Core
+  xTaskCreatePinnedToCore(recordAudio, "Record Loop", 4096, NULL, 1, NULL, 1); // Name, Stack size, Priority, Task handle, Core
 
   initSD();
   ensureRecordingDirectory();
   ensureLogFile();
 
   xTaskCreatePinnedToCore(persistTimeTask, "Persist Time", 2048, NULL, 1, NULL, 0);
-  // xTaskCreatePinnedToCore(updateTimeTask, "Update NTP", 4096, NULL, 1, NULL, 0);
-  
-  xTaskCreatePinnedToCore(audioFileTask, "Audio File Save", 8192, NULL, 2, NULL, 0);  
-  xTaskCreatePinnedToCore(logFlushTask, "Log Flush", 4096, NULL, 1, NULL, 0);  
-
+  xTaskCreatePinnedToCore(updateTimeTask, "Update NTP", 2048, NULL, 1, NULL, 0);
+  xTaskCreatePinnedToCore(fileManagement, "Saving Logs, Handling Audio & Cleaning Up", 4096, NULL, 2, NULL, 0);
   xTaskCreatePinnedToCore(wifiConnectionTask, "WiFi Connection", 4096, NULL, 1, NULL, 0);
   xTaskCreatePinnedToCore(batteryMonitorTask, "Battery Monitor", 2048, NULL, 1, NULL, 0);
 
@@ -267,113 +233,72 @@ void loop() {
  *         TASK FUNCTIONS         *
  **********************************/
 void recordAudio(void *parameter) {
-  static bool wasRecording = false;
   while (true) {
     if (recordingRequested) {
       isRecording = true;
-      AudioBuffer audio;
 
-      String ts = getTimestamp();
-      snprintf(audio.timestamp, sizeof(audio.timestamp), "%s", ts.c_str());
-      
-      // Use "start" marker for the first chunk, then MIDDLE afterwards.
-      if (!wasRecording) {
-        wasRecording = true;
-        audio.type = START;
-      } else {
-        audio.type = MIDDLE;
-      }
-      
+      AudioBuffer audio;
+      // Record into a local buffer.
       audio.buffer = i2s.recordWAV(RECORD_TIME, &audio.size);
-      if (xQueueSend(audioQueue, &audio, pdMS_TO_TICKS(1000)) != pdPASS) {
+      
+      // Enqueue the audio buffer, waiting if needed.
+      if (xQueueSend(audioQueue, &audio, portMAX_DELAY) != pdPASS) {
         log("Failed to enqueue audio buffer!");
         free(audio.buffer);
       }
-    } else {
-      // If we were recording but recording is now off, record a final chunk with "end" marker.
-      if (wasRecording) {
-        AudioBuffer audio;
-        String ts = getTimestamp();
-        snprintf(audio.timestamp, sizeof(audio.timestamp), "%s", ts.c_str());
-        audio.type = END;
-        audio.buffer = i2s.recordWAV(RECORD_TIME, &audio.size);
-        if (xQueueSend(audioQueue, &audio, pdMS_TO_TICKS(1000)) != pdPASS) {
-          log("Failed to enqueue final audio buffer!");
-          free(audio.buffer);
-        }
-        wasRecording = false;
-      }
-      isRecording = false;
     }
+    isRecording = false;
+    // Delay to yield to other tasks.
     vTaskDelay(pdMS_TO_TICKS(1));
   }
 }
 
-
-void audioFileTask(void *parameter) {
+void fileManagement(void *parameter) {
   AudioBuffer audio;
   while (true) {
-    while (xQueueReceive(audioQueue, &audio, pdMS_TO_TICKS(10)) == pdTRUE) {
-      String prefix = "_";
-      if (audio.type == START)
-        prefix += "start";
-      else if (audio.type == END)
-        prefix += "end";
-      else if (audio.type == MIDDLE)
-        prefix += "middle";
-        
-      String fileName = String(RECORDINGS_DIR) + "/" +
-                        String(bootSession) + "_" +
-                        String(audioFileIndex) + "_" +
-                        String(audio.timestamp) +
-                        prefix + ".wav";
-      audioFileIndex++;
+    
+    // Process audio buffers.
+    // Note: Past implementations used this `if (xQueueReceive(audioQueue, &audio, portMAX_DELAY) == pdTRUE)`which processed a single file and moved on, while also waiting for a file, when the buffer was empty.
+    while (xQueueReceive(audioQueue, &audio, 0) == pdTRUE) { 
+      String fileName = String(RECORDINGS_DIR) + "/audio_" +
+                        String(recordingSession) + "_" + String(fileIndex) + ".wav";
 
-      log("Constructed file name: " + fileName);  // Debug log for file name
-
-      if (xSemaphoreTake(sdMutex, portMAX_DELAY) == pdPASS) {
-        File curr_file = SD.open(fileName, FILE_WRITE);
-        if (!curr_file) {
-          log("Failed to open file for writing: " + fileName);
-          xSemaphoreGive(sdMutex);
-          free(audio.buffer);
-          continue;
-        }
-        if (curr_file.write(audio.buffer, audio.size) != audio.size) {
-          log("Failed to write audio data to file: " + fileName);
-        } else {
-          log("Audio recorded and saved: " + fileName);
-        }
-        curr_file.close();
-        xSemaphoreGive(sdMutex);
+      File curr_file = SD.open(fileName, FILE_WRITE);
+      if (!curr_file) {
+        log("Failed to open file for writing: " + fileName);
+        free(audio.buffer);
+        continue;
       }
-      free(audio.buffer);
-    }
-    vTaskDelay(pdMS_TO_TICKS(10));
-  }
-}
 
-void logFlushTask(void *parameter) {
-  while (true) {
+      if (curr_file.write(audio.buffer, audio.size) != audio.size) {
+        log("Failed to write audio data to file: " + fileName);
+      } else {
+        log("Audio recorded and saved: " + fileName);
+      }
+
+      curr_file.close();
+      free(audio.buffer);
+      fileIndex++;
+    }
+
+    // Flush all pending log messages as a batch.
     if (uxQueueMessagesWaiting(logQueue) > 0) {
-      if (xSemaphoreTake(sdMutex, portMAX_DELAY) == pdPASS) {
-        File logFile = SD.open("/device.log", FILE_APPEND);
-        if (logFile) {
-          char *pendingLog;
-          while (xQueueReceive(logQueue, &pendingLog, 0) == pdTRUE) {
-            logFile.println(pendingLog);
-            free(pendingLog);
-          }
-          logFile.flush();
-          logFile.close();
-        } else {
-          Serial.println("Failed to open log file for batch flush!");
-          char *pendingLog;
-          while (xQueueReceive(logQueue, &pendingLog, 0) == pdTRUE) {
-            free(pendingLog);
-          }
+      File logFile = SD.open("/device.log", FILE_APPEND);
+      if (logFile) {
+        char *pendingLog;
+        while (xQueueReceive(logQueue, &pendingLog, 0) == pdTRUE) {
+          logFile.println(pendingLog);
+          free(pendingLog);
         }
-        xSemaphoreGive(sdMutex);
+        logFile.flush();
+        logFile.close();
+      } else {
+        Serial.println("Failed to open log file for batch log flush!");
+        // Free any remaining messages.
+        char *pendingLog;
+        while (xQueueReceive(logQueue, &pendingLog, 0) == pdTRUE) {
+          free(pendingLog);
+        }
       }
     }
 
@@ -392,10 +317,10 @@ void logFlushTask(void *parameter) {
       Serial.println("This will never be printed");
     }
 
+    // Delay to yield to the scheduler.
     vTaskDelay(pdMS_TO_TICKS(10));
   }
 }
-
 
 void batteryMonitorTask(void *parameter) {
   // (Board-specific ADC setup might be required before using analogRead.)
@@ -440,7 +365,9 @@ void updateTimeTask(void *parameter) {
   bool timeUpdated = false;
   while (true) {
       if (WiFi.status() == WL_CONNECTED) {
-          configTime(0, 0, "pool.ntp.org", "time.google.com", "time.nist.gov");
+          configTime(0, 0, "pool.ntp.org");
+          setenv("TZ", TIMEZONE, 1);
+          tzset();
           struct tm timeinfo;
           if (getLocalTime(&timeinfo)) {
               storedTime = mktime(&timeinfo);
@@ -458,8 +385,13 @@ void updateTimeTask(void *parameter) {
           log("Failed to connect to WiFi.");
       }
 
-    // On success update every 60 minutes, otherwise retry sooner.
-    vTaskDelay(pdMS_TO_TICKS(timeUpdated ? 3600000 : 10000));
+      if (timeUpdated) {
+          // Wait 60 minutes (3600000 ms) before the next update.
+          vTaskDelay(pdMS_TO_TICKS(3600000));
+      } else {
+        // current setup is for testing purposes. (Every 10 seconds)
+        vTaskDelay(pdMS_TO_TICKS(10000));
+      }
   }
 }
 
@@ -475,16 +407,12 @@ void wifiConnectionTask(void *parameter) {
           }
           if (WiFi.status() == WL_CONNECTED) {
               log("WiFi connected: " + WiFi.localIP().toString());
-              // Update time from NTP servers.
-              configTime(0, 0, "pool.ntp.org", "time.google.com", "time.nist.gov");
-              //WIFIconnected = true;
           } else {
-              log("WiFi connection timed out.");
+              log("WiFi connection timed out. Retrying...");
               WiFi.disconnect();
           }
       }
       vTaskDelay(pdMS_TO_TICKS(10000));  // Check every 10 seconds.
-      // vTaskDelay(pdMS_TO_TICKS(WIFIconnected ? 3600000 : 10000));
   }
 }
 
@@ -492,8 +420,9 @@ void wifiConnectionTask(void *parameter) {
  *       UTILITY FUNCTIONS        *
  **********************************/
 void log(const String &message) {
-  String timestamp = getTimestamp();
-  String logMessage = String(bootSession) + "_" + String(logFileIndex) + "_" + timestamp + ": " + message;
+  // Generate a timestamp and create the log message.
+  String timestamp = String(millis());
+  String logMessage = timestamp + ": " + message;
   Serial.println(logMessage);
 
   // Allocate a copy on the heap.
@@ -549,18 +478,6 @@ void storeCurrentTime() {
   log("Stored current time: " + String(current));
 }
 
-// Add a helper function to return a formatted timestamp:
-String getTimestamp() {
-  struct tm timeinfo;
-  if(getLocalTime(&timeinfo)) {
-    char buffer[20];
-    strftime(buffer, sizeof(buffer), "%y-%m-%d_%H-%M-%S", &timeinfo);
-    // Serial.println("Timestamp from getTimeStamp(): " + String(buffer));
-    return String(buffer);
-  }
-  return "unknown";
-}
-
 /**********************************
  *         INITIALIZATION         *
  **********************************/
@@ -569,7 +486,7 @@ void initSD() {
     Serial.println("Failed to mount SD Card!");
     ErrorBlinkLED(100);
   }
-  log("SD card initialized.");
+  Serial.println("SD card initialized.");
 }
 
 void initRecordingMode() {
@@ -585,6 +502,14 @@ void initRecordingMode() {
       ErrorBlinkLED(100);
     }
     log("Mic initialized.");
+  
+    preferences.begin("audio", false);
+    recordingSession = preferences.getInt("session", 0);
+    log("Recording Session: " + String(recordingSession));
+    fileIndex = 1;  // Set the Fileindex to 1. Will be increased within the
+                    // recording loop.
+    preferences.putInt("session", recordingSession + 1);
+    preferences.end();
   }
 
 void initDeepSleep() {
@@ -593,6 +518,11 @@ void initDeepSleep() {
   esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(BUTTON_PIN), 0);
   // Timer wakeup after SLEEP_TIMEOUT_SEC seconds
   esp_sleep_enable_timer_wakeup(SLEEP_TIMEOUT_SEC * 1000000ULL);
+
+  // This can be deleted after testing
+  Serial.println("Entering deep sleep now.");
+  delay(1000);
+  Serial.flush();
 
   // Persist current time before sleep.
   storeCurrentTime();

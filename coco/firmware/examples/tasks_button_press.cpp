@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-#define GPIO_INPUT_PIN 44  // GPIO pin to monitor
+#define GPIO_INPUT_PIN 7  // GPIO pin to monitor
 #define PRESS_TIME_MS   2000  // 2 seconds (threshold time in milliseconds)
 
 TaskHandle_t micTaskHandle = NULL;

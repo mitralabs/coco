@@ -18,8 +18,48 @@
 - During recording, the LED will be solid on. 
 
 ## ToDo
-- [ ] Solve this: "[ 99300][E] [esp32-hal-gpio.c:166] _digitalWrite(): 10 42 is not set as GPIO."
-- [ ] Enable device for Timestamping
-- [ ] Integrate Powermonitoring in the Firmware through a hardware voltage devider.
-- [ ] Integrate File Transfer into Main Loop, as possible fix for transfer freeze.
+- [ ] Integrate Timezone into some .env file. E.g. secrets.h or so.
 - [ ] Check if webrtc is available as c++ implementation to run on coco. [Link1](https://github.com/congjiye/vad), [Link2](https://chromium.googlesource.com/external/webrtc/+/branch-heads/43/webrtc/common_audio/vad/include/vad.h)
+
+### Misc
+- [Further Information](https://wiki.seeedstudio.com/xiao_esp32s3_getting_started/)
+
+
+---
+```
+// Audio recording task on Core 1 (away from system tasks)
+xTaskCreatePinnedToCore(
+    i2s_adc,
+    "i2s_adc",
+    1024 * 8,
+    NULL,
+    1,             // Higher than idle task priority
+    NULL,
+    1             // Application core
+);
+
+// WiFi task on Core 0 (with system network stack)
+xTaskCreatePinnedToCore(
+    wifiConnect,
+    "wifi_Connect",
+    4096,
+    NULL,
+    3,            // Higher priority for network stability
+    NULL,
+    0            // Protocol core
+);
+```
+
+### Task Priority Guidelines
+IDLE Task: Priority 0
+Your Background Tasks: 1-3
+Your Time-Critical Tasks: 4-5
+System Critical Tasks: 18-24
+Never use priority 25 (reserved for system tasks)
+
+---
+
+## Next Steps:
+5. Integrate File Transfer. Check if it's a blocking operation or not.
+6. Überarbeite Setup and Init
+7. Clean Up Task Frequency. Especially WiFi Connection and Time Grabbing.
