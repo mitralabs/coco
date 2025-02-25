@@ -1,6 +1,8 @@
 import gradio as gr
 import pandas as pd
 import numpy as np
+import datetime
+from datetime import date
 
 from coco import CocoClient
 
@@ -76,10 +78,15 @@ def clear(input_message):
     return ""
 
 
-async def call_rag(user_message, history, selected_model, system_message):
+async def call_rag(user_message, history, selected_model, system_message, start_date=None, end_date=None):
     try:
-        # Get RAG context
-        contexts = await cc.rag.async_retrieve_chunks([user_message], 5)
+        # Get RAG context with date filters
+        contexts = await cc.rag.async_retrieve_chunks(
+            [user_message], 
+            5, 
+            start_date=start_date, 
+            end_date=end_date
+        )
         context_chunks = contexts[0][1]
         rag_context = CONTEXT_FORMAT.format(context="\n-----\n".join(context_chunks))
 
@@ -144,26 +151,25 @@ def handle_audio_upload(file):
         return f"Error processing file: {str(e)}"
 
 
-def create_dataframe(query=None):
-    ids, documents, metadata = cc.db_api.get_full_database()
-    # print(documents[0])
-    df = pd.DataFrame(
-        {
-            "ids": ids,
-            "documents": documents,
-            "filename": [e["filename"] for e in metadata],
-        }
-    )
-    print(f"query: {query}")
-
+def create_dataframe(query=None, start_date=None, end_date=None):
+    if start_date and isinstance(start_date, str):
+        start_date = date.fromisoformat(start_date)
+    if end_date and isinstance(end_date, str):
+        end_date = date.fromisoformat(end_date)
+        
     if query:
-        query_answers = cc.rag.retrieve_chunks(query_texts=[query])
+        query_answers = cc.rag.retrieve_chunks(
+            query_texts=[query], 
+            start_date=start_date, 
+            end_date=end_date
+        )
         ids, documents, metadata, distances = query_answers[0]
         df = pd.DataFrame(
             {
                 "ids": ids,
                 "documents": documents,
                 "filename": [e["filename"] for e in metadata],
+                "date": [e.get("date", "N/A") for e in metadata],  # Include date in dataframe
                 "distances": [round(e, 2) for e in distances],
             }
         )
@@ -171,6 +177,16 @@ def create_dataframe(query=None):
         df = df.sort_values(by="distances", ascending=False)
         return df
     else:
+        # Get all documents, possibly filtered by date
+        ids, documents, metadata = cc.db_api.get_full_database(start_date, end_date)
+        df = pd.DataFrame(
+            {
+                "ids": ids,
+                "documents": documents,
+                "filename": [e["filename"] for e in metadata],
+                "date": [e.get("date", "N/A") for e in metadata],  # Include date in dataframe
+            }
+        )
         return df
 
 
@@ -198,11 +214,14 @@ with gr.Blocks(
         )
 
     with gr.Group():
+        with gr.Row():
+            chat_start_date = gr.Date(label="Filter documents from", value=None)
+            chat_end_date = gr.Date(label="Filter documents to", value=None)
+        
         chatbot = gr.Chatbot(
             label="coco",
             type="messages",
             height="80vh",
-            # editable="user",
             render_markdown=False,
         )
         input_message = gr.Textbox(
@@ -223,6 +242,8 @@ with gr.Blocks(
                 chatbot,
                 model_dropdown,
                 system_message,
+                chat_start_date,
+                chat_end_date,
             ],
             outputs=[chatbot],
         )
@@ -240,16 +261,22 @@ with demo.route("Memory") as incrementer_demo:
         )
         upload_status = gr.Textbox(label="Upload Status", interactive=False)
 
-    query = gr.Textbox(
-        label="Query",
-        lines=1,
-        placeholder="Insert some query you want to search for...",
-    )
-
+    with gr.Row():
+        query = gr.Textbox(
+            label="Query",
+            lines=1,
+            placeholder="Insert some query you want to search for...",
+        )
+        
+    with gr.Row():
+        start_date = gr.Date(label="Start Date", value=None)
+        end_date = gr.Date(label="End Date", value=None)
+        
     data_view = gr.DataFrame(create_dataframe, wrap=True)
     with gr.Row():
         btn_show_all = gr.Button("Show All")
-        btn_show_all.click(create_dataframe, outputs=[data_view])
+        btn_filter_by_date = gr.Button("Filter by Date")
+        btn_clear_dates = gr.Button("Clear Date Filters")
         gr.Button("Clear Database (Not yet implemented)")
 
     # Add file upload handler
@@ -261,12 +288,18 @@ with demo.route("Memory") as incrementer_demo:
 
     query.submit(
         fn=create_dataframe,
-        inputs=[query],
+        inputs=[query, start_date, end_date],
         outputs=[data_view],
         queue=False,
     ).then(clear, [query], [query])
-
-    # test if change detected. again.
+    
+    # Date filter buttons
+    btn_show_all.click(create_dataframe, outputs=[data_view])
+    btn_filter_by_date.click(create_dataframe, inputs=[None, start_date, end_date], outputs=[data_view])
+    btn_clear_dates.click(
+        lambda: (None, None), 
+        outputs=[start_date, end_date]
+    ).then(create_dataframe, [], [data_view])
 
 if __name__ == "__main__":
     demo.launch(favicon_path="favicon.png")

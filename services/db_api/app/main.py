@@ -51,11 +51,15 @@ class AddRequest(BaseModel):
 class GetClosestRequest(BaseModel):
     embedding: List[float]
     n_results: int = 5
+    start_date: date = None
+    end_date: date = None
 
 
 class GetMultipleClosestRequest(BaseModel):
     embeddings: List[List[float]]
     n_results: int = 5
+    start_date: date = None
+    end_date: date = None
 
 
 def nearest_neighbor_query(db: Session, query_embedding: List[float], n_results: int):
@@ -72,12 +76,26 @@ def nearest_neighbor_query(db: Session, query_embedding: List[float], n_results:
 
 
 def get_closest_from_embeddings(
-    db: Session, embeddings: List[List[float]], n_results: int
+    db: Session, embeddings: List[List[float]], n_results: int, start_date=None, end_date=None
 ):
     all_formatted_results = []
     for embedding in embeddings:
         formatted_results = []
-        results = nearest_neighbor_query(db, embedding, n_results)
+        query = (
+            select(
+                DbDocument,
+                DbDocument.embedding.cosine_distance(embedding).label("distance"),
+            )
+        )
+        
+        if start_date:
+            query = query.where(DbDocument.date >= start_date)
+        if end_date:
+            query = query.where(DbDocument.date <= end_date)
+            
+        query = query.order_by(DbDocument.embedding.cosine_distance(embedding)).limit(n_results)
+        
+        results = db.execute(query)
         formatted_results = []
         for doc, distance in results:
             formatted_results.append(
@@ -89,6 +107,7 @@ def get_closest_from_embeddings(
                         "filename": doc.filename,
                         "chunk_index": doc.chunk_index,
                         "total_chunks": doc.total_chunks,
+                        "date": doc.date.isoformat() if doc.date else None,
                     },
                     "distance": distance,
                 }
@@ -137,7 +156,11 @@ async def get_closest(
     api_key: str = Depends(get_api_key),
 ):
     formatted_results = get_closest_from_embeddings(
-        db=db, embeddings=[request.embedding], n_results=request.n_results
+        db=db, 
+        embeddings=[request.embedding], 
+        n_results=request.n_results,
+        start_date=request.start_date,
+        end_date=request.end_date
     )[0]
     return {
         "status": "success",
@@ -153,7 +176,11 @@ async def get_multiple_closest(
     api_key: str = Depends(get_api_key),
 ):
     all_formatted_results = get_closest_from_embeddings(
-        db=db, embeddings=request.embeddings, n_results=request.n_results
+        db=db, 
+        embeddings=request.embeddings, 
+        n_results=request.n_results,
+        start_date=request.start_date,
+        end_date=request.end_date
     )
     assert len(all_formatted_results) > 0
     return {
@@ -165,8 +192,19 @@ async def get_multiple_closest(
 
 
 @app.get("/get_all")
-async def get_all(db: Session = Depends(get_db), api_key: str = Depends(get_api_key)):
-    results = db.execute(select(DbDocument)).scalars().all()
+async def get_all(
+    start_date: date = None, 
+    end_date: date = None, 
+    db: Session = Depends(get_db), 
+    api_key: str = Depends(get_api_key)
+):
+    query = select(DbDocument)
+    if start_date:
+        query = query.where(DbDocument.date >= start_date)
+    if end_date:
+        query = query.where(DbDocument.date <= end_date)
+        
+    results = db.execute(query).scalars().all()
     formatted_results = []
     for result in results:
         formatted_results.append(
@@ -178,6 +216,7 @@ async def get_all(db: Session = Depends(get_db), api_key: str = Depends(get_api_
                     "filename": result.filename,
                     "chunk_index": result.chunk_index,
                     "total_chunks": result.total_chunks,
+                    "date": result.date.isoformat() if result.date else None,
                 },
             }
         )

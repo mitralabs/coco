@@ -1,4 +1,5 @@
 from typing import Tuple, List, Dict, Any
+from datetime import date
 import logging
 
 from .async_utils import batched_parallel
@@ -36,9 +37,9 @@ class RagClient:
         self.db_api = db_api
         self.lm = lm
 
-    async def _retrieve_chunks(self, query_texts, n_results, model="nomic-embed-text"):
+    async def _retrieve_chunks(self, query_texts, n_results, model="nomic-embed-text", start_date=None, end_date=None):
         embeddings = await self.lm._embed(query_texts, model)
-        return await self.db_api._get_multiple_closest(embeddings, n_results)
+        return await self.db_api._get_multiple_closest(embeddings, n_results, start_date, end_date)
 
     def retrieve_chunks(
         self,
@@ -48,6 +49,8 @@ class RagClient:
         batch_size: int = 20,
         limit_parallel: int = 10,
         show_progress: bool = True,
+        start_date: date = None,
+        end_date: date = None,
     ) -> List[Tuple[List[str], List[str], List[Dict], List[float]]]:
         """Retrieve chunks from the database.
 
@@ -57,6 +60,8 @@ class RagClient:
             batch_size (int, optional): The size of each batch. Defaults to 20.
             limit_parallel (int, optional): The maximum number of parallel tasks / batches. Defaults to 10.
             show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to True.
+            start_date (date, optional): Start date for filtering documents. Defaults to None.
+            end_date (date, optional): End date for filtering documents. Defaults to None.
 
         Returns:
             List[Tuple[List[str], List[str], List[Dict], List[float]]]: The retrieved chunks.
@@ -68,7 +73,7 @@ class RagClient:
             show_progress=show_progress,
             description="Retrieving chunks",
         )
-        return batched_retrieve_chunks(query_texts, n_results, model)
+        return batched_retrieve_chunks(query_texts, n_results, model, start_date, end_date)
 
     async def async_retrieve_chunks(
         self,
@@ -78,6 +83,8 @@ class RagClient:
         batch_size: int = 20,
         limit_parallel: int = 10,
         show_progress: bool = True,
+        start_date: date = None,
+        end_date: date = None,
     ) -> List[Tuple[List[str], List[str], List[Dict], List[float]]]:
         """Retrieve chunks from the database.
 
@@ -87,6 +94,8 @@ class RagClient:
             batch_size (int, optional): The size of each batch. Defaults to 20.
             limit_parallel (int, optional): The maximum number of parallel tasks / batches. Defaults to 10.
             show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to True.
+            start_date (date, optional): Start date for filtering documents. Defaults to None.
+            end_date (date, optional): End date for filtering documents. Defaults to None.
 
         Returns:
             List[Tuple[List[str], List[str], List[Dict], List[float]]]: The retrieved chunks.
@@ -99,7 +108,7 @@ class RagClient:
             description="Retrieving chunks",
             return_async_wrapper=True,
         )
-        return await batched_retrieve_chunks(query_texts, n_results, model)
+        return await batched_retrieve_chunks(query_texts, n_results, model, start_date, end_date)
 
     def format_prompt(
         self, query: str, context_chunks: List[str], prompt_template: str | None = None
