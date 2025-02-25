@@ -151,35 +151,21 @@ async def upload_audio(
 
         print(f"Filename: {filename}")
 
-        # Parse filename to get recording_session and increment
-        if filename.startswith("audio_"):
-            parts = filename.split("_")
-            if len(parts) == 3:
-                recording_session = int(parts[1])
-                # Extract .wav from increment, which is the last part of the filename
-                increment = int(parts[2].split(".")[0])
-            else:
-                raise ValueError(
-                    "Invalid filename format. Expected format: audio_<recording_session>_<increment>"
-                )
-        else:
-            raise ValueError("Invalid filename. Expected prefix: 'audio_'")
+        # session_index_y_m_d_h_m_s_suffix.wav
+        # Example: 284_0_25-02-25_14-46-02_start.wav
 
-        # Function to generate a timestamp, if needed.
-        timestamp = int(time.time())
+        audio_folder = f"/data/audio_files"
+        if not os.path.exists(audio_folder):
+            os.makedirs(audio_folder)
 
-        # Check if a folder with the recording_session exists in /data directory, if not create it.
-        if not os.path.exists(f"/data/session_{recording_session}"):
-            os.makedirs(f"/data/session_{recording_session}")
-
-        audio_path = f"/data/session_{recording_session}/audio_{increment}.wav"
+        audio_path = f"{audio_folder}/{filename}"
 
         # Function to save the file to local storage
         async with aiofiles.open(audio_path, "wb") as f:
             await f.write(body)
-        print(f"Audio {recording_session}_{increment} saved successfully.")
+        print(f"Audio {filename} saved successfully.")
 
-        background_tasks.add_task(kick_off_processing, audio_path, store_in_db=False)
+        background_tasks.add_task(kick_off_processing, audio_path, store_in_db=True)
         logger.info(f"Background task added for file: {audio_path}")
 
         return JSONResponse(

@@ -37,7 +37,8 @@
 #define SLEEP_TIMEOUT_SEC 60        // Deep sleep period is 60s
 
 #define DEFAULT_TIME 1740049200     // Default time:  20. Februar 2025 12:00:00 GMT+01:00 // https://www.epochconverter.com
-#define TIMEZONE "CET-1CEST,M3.5.0/2,M10.5.0/3" // Timezone for Central Europe with some additions. Read it online to change it.
+#define TIMEZONE "GMT" // "CEST-1CET,M3.2.0/2:00:00,M11.1.0/2:00:00" // "CET-1CEST,M3.5.0/2,M10.5.0/3" // Timezone for Central Europe with some additions. Read it online to change it.
+
 
 #define BATTERY_MONITOR_INTERVAL 60000  // Interval in milliseconds to monitor the battery // 60000 = 1 minute
 #define TIME_PERSIST_INTERVAL 60000  // Interval in milliseconds to persist the time // 60000 = 60s
@@ -250,7 +251,7 @@ void setup_from_boot() {
   ensureLogFile();
 
   xTaskCreatePinnedToCore(persistTimeTask, "Persist Time", 2048, NULL, 1, NULL, 0);
-  xTaskCreatePinnedToCore(updateTimeTask, "Update NTP", 4096, NULL, 1, NULL, 0);
+  // xTaskCreatePinnedToCore(updateTimeTask, "Update NTP", 4096, NULL, 1, NULL, 0);
   
   xTaskCreatePinnedToCore(audioFileTask, "Audio File Save", 8192, NULL, 2, NULL, 0);  
   xTaskCreatePinnedToCore(logFlushTask, "Log Flush", 4096, NULL, 1, NULL, 0);  
@@ -322,11 +323,7 @@ void audioFileTask(void *parameter) {
         prefix += "end";
       else if (audio.type == MIDDLE)
         prefix += "middle";
-    
-      // Debug logs to verify values
-      log("Audio timestamp: " + String(audio.timestamp));
-      log("Prefix: " + prefix);
-
+        
       String fileName = String(RECORDINGS_DIR) + "/" +
                         String(bootSession) + "_" +
                         String(audioFileIndex) + "_" +
@@ -445,9 +442,7 @@ void updateTimeTask(void *parameter) {
   bool timeUpdated = false;
   while (true) {
       if (WiFi.status() == WL_CONNECTED) {
-          setenv("TZ", TIMEZONE, 1);
-          tzset();
-          configTime(0, 0, "pool.ntp.org");
+          configTime(0, 0, "pool.ntp.org", "time.google.com", "time.nist.gov");
           struct tm timeinfo;
           if (getLocalTime(&timeinfo)) {
               storedTime = mktime(&timeinfo);
@@ -482,12 +477,16 @@ void wifiConnectionTask(void *parameter) {
           }
           if (WiFi.status() == WL_CONNECTED) {
               log("WiFi connected: " + WiFi.localIP().toString());
+              // Update time from NTP servers.
+              configTime(0, 0, "pool.ntp.org", "time.google.com", "time.nist.gov");
+              //WIFIconnected = true;
           } else {
-              log("WiFi connection timed out. Retrying...");
+              log("WiFi connection timed out.");
               WiFi.disconnect();
           }
       }
       vTaskDelay(pdMS_TO_TICKS(10000));  // Check every 10 seconds.
+      // vTaskDelay(pdMS_TO_TICKS(WIFIconnected ? 3600000 : 10000));
   }
 }
 

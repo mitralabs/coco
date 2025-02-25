@@ -18,8 +18,11 @@
 - During recording, the LED will be solid on. 
 
 ## ToDo
-- [ ] Integrate Timezone into some .env file. E.g. secrets.h or so.
+- [ ] Find a handle for SD Card Error to reset device utilizing the button. Factory Reset Button will mostlikely not be reachable, since inside of case.
+- [ ] Integrate Routine which brings device to deepsleep, when Voltage below a certain threshold.
+- [ ] Integrate Timezone, and Timestamp through Build Flag, or comparable.
 - [ ] Check if webrtc is available as c++ implementation to run on coco. [Link1](https://github.com/congjiye/vad), [Link2](https://chromium.googlesource.com/external/webrtc/+/branch-heads/43/webrtc/common_audio/vad/include/vad.h)
+- [ ] Include WiFiMulti, so that multiple Networks are known. Secondly, Scan for known Location, by checking SSIDs, and connect then.
 
 ### Misc
 - [Further Information](https://wiki.seeedstudio.com/xiao_esp32s3_getting_started/)
@@ -60,6 +63,8 @@ Never use priority 25 (reserved for system tasks)
 ---
 
 ## Next Steps:
-5. Integrate File Transfer. Check if it's a blocking operation or not.
-6. Überarbeite Setup and Init
-7. Clean Up Task Frequency. Especially WiFi Connection and Time Grabbing.
+- Überarbeite Setup and Init
+- Find a routine for the initial run after flash.
+- Reintegrate DeepSleep
+- Rewrite logging. It's currently pretty wild.
+- Write Function for "normal log"
