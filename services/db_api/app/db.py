@@ -29,19 +29,6 @@ class Document(Base):
     filename = Column(String, nullable=False)
     chunk_index = Column(Integer, nullable=False)
     total_chunks = Column(Integer, nullable=False)
-
-class DocumentWithDate(Base):
-    __tablename__ = "documents"
-    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
-    text = Column(String, nullable=False, unique=True)
-    embedding = Column(
-        Vector(VEKTOR_DIM), nullable=False
-    )  # dim for nomic model, change if necessary
-    language = Column(String, nullable=False)
-    filename = Column(String, nullable=False)
-    chunk_index = Column(Integer, nullable=False)
-    total_chunks = Column(Integer, nullable=False)
-    # turn into false at some point
     date = Column(Date, nullable=True)
 
 

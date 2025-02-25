@@ -10,8 +10,6 @@ from datetime import date
 
 from db import get_db
 from db import Document as DbDocument
-from db import DocumentWithDate as DbDocumentWithDate
-
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -37,25 +35,13 @@ class DocumentMetadata(BaseModel):
     filename: str
     chunk_index: int
     total_chunks: int
+    date: date
 
 
 class Document(BaseModel):
     text: str
     embedding: List[float]
     metadata: DocumentMetadata
-    
-class DocumentMetadataWithDate(BaseModel):
-    language: str
-    filename: str
-    chunk_index: int
-    total_chunks: int
-    date: date
-
-
-class DocumentWithDate(BaseModel):
-    text: str
-    embedding: List[float]
-    metadata: DocumentMetadataWithDate
 
 
 class AddRequest(BaseModel):
@@ -135,6 +121,7 @@ async def add(
             filename=doc.metadata.filename,
             chunk_index=doc.metadata.chunk_index,
             total_chunks=doc.metadata.total_chunks,
+            date=doc.metadata.date
         )
         db.add(db_doc)
         added_count += 1
@@ -142,37 +129,6 @@ async def add(
     db.commit()
     return {"status": "success", "added": added_count, "skipped": skipped_count}
 
-@app.post("/add_withdate")
-async def add(
-    data: AddRequest, db: Session = Depends(get_db), api_key: str = Depends(get_api_key)
-):
-    """
-    Add documents with a date to postgres database. Skip if document text already exists. 
-    """
-    added_count = 0
-    skipped_count = 0
-
-    for doc in data.documents:
-        # todo - this is inefficient as hell
-        # todo - so do this properly some time
-        existing_doc = db.query(DbDocumentWithDate).filter(DbDocumentWithDate.text == doc.text).first()
-        if existing_doc:
-            skipped_count += 1
-            continue
-        db_doc = DbDocumentWithDate(
-            text=doc.text,
-            embedding=doc.embedding,
-            language=doc.metadata.language,
-            filename=doc.metadata.filename,
-            chunk_index=doc.metadata.chunk_index,
-            total_chunks=doc.metadata.total_chunks,
-            date=doc.metadata.date,
-        )
-        db.add(db_doc)
-        added_count += 1
-
-    db.commit()
-    return {"status": "success", "added": added_count, "skipped": skipped_count}
 
 @app.post("/get_closest")
 async def get_closest(
