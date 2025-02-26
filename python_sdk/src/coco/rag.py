@@ -10,21 +10,26 @@ from .lm import LanguageModelClient
 logger = logging.getLogger(__name__)
 
 PROMPT = """
-    Du bist ein zweites Gehirn für mich, ein Erinnerungsexperte, und deine Aufgabe ist es, basierend auf dem gegebenen Kontext den du aus meinen Erinnerungen in Form von Textausschnitten innerhalb der XML tags die dann folgende Frage so akkurat wie möglich beantwortest. Achte dabei darauf das deine Knowledge Base nur auf dem gegebenen Kontext basiert und du dich streng an das gegebene Format hälst:
+Du bist mein zweites Gehirn und ein Erinnerungsexperte. Deine Aufgabe ist es, die folgende Frage ausschließlich auf Basis des gegebenen Kontextes zu beantworten. Ignoriere jegliches externes Wissen.  
 
-    <Kontext> 
-    {context}
-    </Kontext>
+### Kontext  
+<Kontext>  
+{context}  
+</Kontext>  
 
-    <Format>
-    Ein Satz mit maximal 50 Tokens. Deine Antwort ist klar und beantwortet die Frage indem es sich direkt auf den Kontext stützt. Gebe bei der Antwort KEINE XML tags oder sonstigen Werte an. Beantworte die Frage ausschließlich auf Deutsch.
-    </Format>
+### Antwortformat  
+- Maximal 50 Tokens.
+- Klar und präzise.  
+- Direkt auf den Kontext gestützt.  
+- Keine XML-Tags oder zusätzliche Informationen.  
+- Antwort ausschließlich auf Deutsch. 
 
-    Du hast jetzt den Kontext in den <Kontext> XML Tags verstanden hast und das Format übernommen. Beantworte nun die nachfolgende Frage innerhalb der <Frage> XML Tags basierend auf dem gegebenen Kontext in den XML tags. Achte dabei darauf die streng an das Format aus den XML Tags zu halten.
+### Frage  
+<Frage>  
+{query}  
+</Frage>  
 
-    <Frage>
-    {query}
-    </Frage>
+Gib nun deine Antwort gemäß den oben definierten Regeln aus.  
 """
 
 
