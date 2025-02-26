@@ -240,6 +240,38 @@ async def delete_all(
     }
 
 
+@app.delete("/delete_by_date")
+async def delete_by_date(
+    start_date: date = None,
+    end_date: date = None,
+    db: Session = Depends(get_db), api_key: str = Depends(get_api_key)
+):
+    """
+    Delete documents within a specified date range.
+    If no dates are provided, no documents will be deleted.
+    """
+    if not start_date and not end_date:
+        return {
+            "status": "error",
+            "message": "At least one of start_date or end_date must be provided",
+            "count": 0
+        }
+
+    query = delete(DbDocument)
+    if start_date:
+        query = query.where(DbDocument.date >= start_date)
+    if end_date:
+        query = query.where(DbDocument.date <= end_date)
+
+    result = db.execute(query)
+    db.commit()
+
+    return {
+        "status": "success",
+        "count": result.rowcount,
+    }
+
+
 # Super basic test endpoint
 @app.get("/test")
 async def test_endpoint(api_key: str = Depends(get_api_key)):
