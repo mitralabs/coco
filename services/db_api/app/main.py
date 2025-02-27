@@ -272,7 +272,6 @@ async def delete_by_date(
     }
 
 
-# Super basic test endpoint
 @app.get("/test")
 async def test_endpoint(api_key: str = Depends(get_api_key)):
     return {

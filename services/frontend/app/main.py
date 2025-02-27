@@ -169,7 +169,7 @@ def create_dataframe(query=None, start_date=None, end_date=None):
                 "ids": ids,
                 "documents": documents,
                 "filename": [e["filename"] for e in metadata],
-                "date": [e.get("date", "N/A") for e in metadata],  # Include date in dataframe
+                "date": [e.get("date", "N/A") for e in metadata],
                 "distances": [round(e, 2) for e in distances],
             }
         )
