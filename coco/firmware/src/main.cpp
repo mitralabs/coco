@@ -746,7 +746,7 @@ void logFlushTask(void *parameter) {
   const int sampleCount = 10;  // Number of ADC samples for averaging
 
   // Remove the latter. Currently the board is badly soldered and voltage measurement is not possible.
-  vTaskDelete(NULL);
+  // vTaskDelete(NULL);
 
   while (true) {
     long total = 0;

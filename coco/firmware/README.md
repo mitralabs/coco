@@ -10,12 +10,17 @@
     - Click on `Upload and Monitor`. <br>-> Make sure to not open the Arduino IDE in parallel, since it might result in VS Code not being able to connect to the device. <br>(You can also manually `Build`, `Upload` and `Monitor` the ESP output.)
 
 
-## Some Notes on the current blinking pattern (regarding v0.1)
-- After you turn the device on, the LED will be off for 5s. If you switch of the device during this time period and turn it back on, it will go to "Transfer" Mode. Otherwise it will start recording.
-- If you are in "Transfer" Mode, coco will try to send the saved .wav Files over the WiFi you configured (see Step 3 above), to a machine where the coco Backend is installed (which is also in your network).
+## Some Notes on the current blinking pattern (regarding v1.0)
 - If coco blinks rapidly, this indicates an error.
 	- If occurs directly after turning on, the most probable cause is a missing SD card, or one that is badly plugged in.
-- During recording, the LED will be solid on. 
+- During recording, the LED will be solid on.
+
+### Task Priority Guidelines
+IDLE Task: Priority 0
+Your Background Tasks: 1-3
+Your Time-Critical Tasks: 4-5
+System Critical Tasks: 18-24
+Never use priority 25 (reserved for system tasks)
 
 ## ToDo
 - [ ] Find a handle for SD Card Error to reset device utilizing the button. Factory Reset Button will mostlikely not be reachable, since inside of case.
@@ -29,42 +34,10 @@
 
 
 ---
-```
-// Audio recording task on Core 1 (away from system tasks)
-xTaskCreatePinnedToCore(
-    i2s_adc,
-    "i2s_adc",
-    1024 * 8,
-    NULL,
-    1,             // Higher than idle task priority
-    NULL,
-    1             // Application core
-);
-
-// WiFi task on Core 0 (with system network stack)
-xTaskCreatePinnedToCore(
-    wifiConnect,
-    "wifi_Connect",
-    4096,
-    NULL,
-    3,            // Higher priority for network stability
-    NULL,
-    0            // Protocol core
-);
-```
-
-### Task Priority Guidelines
-IDLE Task: Priority 0
-Your Background Tasks: 1-3
-Your Time-Critical Tasks: 4-5
-System Critical Tasks: 18-24
-Never use priority 25 (reserved for system tasks)
-
----
 
 ## Next Steps:
-- Überarbeite Setup and Init
-- Find a routine for the initial run after flash.
+- Integrate /test endpoint to check whether coco backend is online. (inkluding backoff)
 - Reintegrate DeepSleep
-- Rewrite logging. It's currently pretty wild.
+- Überarbeite Setup and Init (maybe find a routine for initial boot or boot from complete power loss).
 - Write Function for "normal log"
+- Rewrite logging. It's currently pretty wild.
