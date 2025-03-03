@@ -120,10 +120,44 @@ def get_available_models():
     return available_models
 
 
-async def add_context(user_message: str = "", history: list = [], messages: list = []):
+async def add_context(
+    user_message: str = "",
+    history: list = [],
+    messages: list = [],
+    start_date=None,
+    end_date=None,
+):
+    # Convert DateTime component output to date objects
+    start_date_obj = None
+    end_date_obj = None
+
+    if start_date:
+        # Handle different possible formats from gr.DateTime
+        if isinstance(start_date, datetime.datetime):
+            start_date_obj = start_date.date()
+        elif isinstance(start_date, date):
+            start_date_obj = start_date
+        elif isinstance(start_date, str) and start_date.strip():
+            try:
+                start_date_obj = datetime.datetime.fromisoformat(start_date).date()
+            except ValueError:
+                print(f"Invalid start date format: {start_date}")
+
+    if end_date:
+        # Handle different possible formats from gr.DateTime
+        if isinstance(end_date, datetime.datetime):
+            end_date_obj = end_date.date()
+        elif isinstance(end_date, date):
+            end_date_obj = end_date
+        elif isinstance(end_date, str) and end_date.strip():
+            try:
+                end_date_obj = datetime.datetime.fromisoformat(end_date).date()
+            except ValueError:
+                print(f"Invalid end date format: {end_date}")
+
     # Get RAG context with date filters
     contexts = await cc.rag.async_retrieve_chunks(
-        [user_message], 5, start_date=start_date, end_date=end_date
+        [user_message], 5, start_date=start_date_obj, end_date=end_date_obj
     )
     context_chunks = contexts[0][1]
     rag_context = CONTEXT_FORMAT.format(context="\n-----\n".join(context_chunks))
@@ -193,7 +227,13 @@ async def call_rag(
 
 
 async def call_rag_stream(
-    user_message, history, selected_model, system_message, include_context
+    user_message,
+    history,
+    selected_model,
+    system_message,
+    start_date,
+    end_date,
+    include_context,
 ):
 
     messages = []
@@ -207,7 +247,9 @@ async def call_rag_stream(
         messages.append({"role": element["role"], "content": element["content"]})
 
     if include_context == "Yes":
-        messages, history = await add_context(user_message, history, messages)
+        messages, history = await add_context(
+            user_message, history, messages, start_date, end_date
+        )
     else:
         messages.append({"role": "user", "content": user_message})
 
@@ -264,14 +306,37 @@ def handle_audio_upload(file):
 
 
 def create_dataframe(query=None, start_date=None, end_date=None):
-    if start_date and isinstance(start_date, str):
-        start_date = date.fromisoformat(start_date)
-    if end_date and isinstance(end_date, str):
-        end_date = date.fromisoformat(end_date)
+    # Convert DateTime component output to date objects
+    start_date_obj = None
+    end_date_obj = None
+
+    if start_date:
+        # Handle different possible formats from gr.DateTime
+        if isinstance(start_date, datetime.datetime):
+            start_date_obj = start_date.date()
+        elif isinstance(start_date, date):
+            start_date_obj = start_date
+        elif isinstance(start_date, str) and start_date.strip():
+            try:
+                start_date_obj = datetime.datetime.fromisoformat(start_date).date()
+            except ValueError:
+                print(f"Invalid start date format: {start_date}")
+
+    if end_date:
+        # Handle different possible formats from gr.DateTime
+        if isinstance(end_date, datetime.datetime):
+            end_date_obj = end_date.date()
+        elif isinstance(end_date, date):
+            end_date_obj = end_date
+        elif isinstance(end_date, str) and end_date.strip():
+            try:
+                end_date_obj = datetime.datetime.fromisoformat(end_date).date()
+            except ValueError:
+                print(f"Invalid end date format: {end_date}")
 
     if query:
         query_answers = cc.rag.retrieve_chunks(
-            query_texts=[query], start_date=start_date, end_date=end_date
+            query_texts=[query], start_date=start_date_obj, end_date=end_date_obj
         )
         ids, documents, metadata, distances = query_answers[0]
         df = pd.DataFrame(
@@ -288,7 +353,9 @@ def create_dataframe(query=None, start_date=None, end_date=None):
         return df
     else:
         # Get all documents, possibly filtered by date
-        ids, documents, metadata = cc.db_api.get_full_database(start_date, end_date)
+        ids, documents, metadata = cc.db_api.get_full_database(
+            start_date_obj, end_date_obj
+        )
         df = pd.DataFrame(
             {
                 "ids": ids,
@@ -300,6 +367,11 @@ def create_dataframe(query=None, start_date=None, end_date=None):
             }
         )
         return df
+
+
+def filter_by_date(start_date, end_date):
+    """Filter the database by date range without a query."""
+    return create_dataframe(query=None, start_date=start_date, end_date=end_date)
 
 
 with gr.Blocks(
@@ -342,8 +414,14 @@ with gr.Blocks(
 
     with gr.Group():
         with gr.Row():
-            chat_start_date = gr.Date(label="Filter documents from", value=None)
-            chat_end_date = gr.Date(label="Filter documents to", value=None)
+            chat_start_date = gr.DateTime(
+                label="Filter documents from",
+                value=None,
+            )
+            chat_end_date = gr.DateTime(
+                label="Filter documents to",
+                value=None,
+            )
 
         chatbot = gr.Chatbot(
             label="coco",
@@ -398,8 +476,8 @@ with demo.route("Memory") as incrementer_demo:
         )
 
     with gr.Row():
-        start_date = gr.Date(label="Start Date", value=None)
-        end_date = gr.Date(label="End Date", value=None)
+        start_date = gr.DateTime(label="Start Date", value=None)
+        end_date = gr.DateTime(label="End Date", value=None)
 
     data_view = gr.DataFrame(create_dataframe, wrap=True)
     with gr.Row():
@@ -425,7 +503,7 @@ with demo.route("Memory") as incrementer_demo:
     # Date filter buttons
     btn_show_all.click(create_dataframe, outputs=[data_view])
     btn_filter_by_date.click(
-        create_dataframe, inputs=[None, start_date, end_date], outputs=[data_view]
+        filter_by_date, inputs=[start_date, end_date], outputs=[data_view]
     )
     btn_clear_dates.click(lambda: (None, None), outputs=[start_date, end_date]).then(
         create_dataframe, [], [data_view]

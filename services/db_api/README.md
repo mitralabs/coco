@@ -218,77 +218,63 @@ Get the maximum embedding dimension supported by the database.
 
 ## Database Migrations
 
-The DB API service uses Alembic for database migrations. The migration files are located in the `app/migrations` directory.
+The DB API service uses Alembic for database migrations. All database models are defined in `app/models.py` and migrations are managed through Docker. Follow these steps to modify the database schema:
 
-### Prerequisites
+### Making Changes to Database Models
 
-**Important:** The database service (`db`) must be running before you can apply migrations. If the database is not running, migrations will fail with connection errors.
+1. **Modify the models.py file**:
+   Edit `app/models.py` to add, remove, or modify database columns or tables.
 
-To ensure the database is running:
+   Example:
 
-```bash
-# Start the database service if it's not already running
-docker compose up -d db
+   ```python
+   # Adding a new column to the Document model
+   class Document(Base):
+       # ... existing columns ...
+       new_column = Column(String, nullable=True)
+   ```
 
-# Wait for the database to be healthy
-docker compose ps db
-```
+2. **Generate a migration script**:
+   Run the following command to auto-generate a migration script:
 
-Make sure the `db` service shows as healthy before proceeding with migrations.
+   ```bash
+   docker compose run --rm db-api alembic revision --autogenerate -m "description of your change"
+   ```
 
-### Running Migrations
+   This will create a new file in `app/migrations/versions/` with upgrade and downgrade functions.
 
-Since the service requires environment variables, you should run Alembic commands using Docker Compose. This ensures all the necessary environment variables are properly set.
+   Note that Alembic generates the migration script from the difference between the (new) database schema defined in `models.py` and the current state of the actual database. So make sure the database is in appropriate state (all previous migrations applied).
 
-#### Upgrade to the Latest Version
+3. **Apply the migration**:
+   Run the following command to apply the migration:
 
-To apply all pending migrations and upgrade the database to the latest version:
+   ```bash
+   docker compose run --rm db-api alembic upgrade head
+   ```
 
-```bash
-docker compose run --rm db-api alembic upgrade head
-```
+   This will update the database schema to the latest version.
 
-#### Generate Migration Script
+4. **Verify the changes**:
+   You can check the current database state with:
+   ```bash
+   docker compose run --rm db-api alembic current
+   ```
 
-To automatically generate a new migration script based on model changes:
+### Common Alembic Commands
 
-```bash
-docker compose run --rm db-api alembic revision --autogenerate -m "Description of changes"
-```
+- **View migration history**:
 
-#### Check Current Version
+  ```bash
+  docker compose run --rm db-api alembic history
+  ```
 
-To see the current database version:
+- **Downgrade to a specific version**:
 
-```bash
-docker compose run --rm db-api alembic current
-```
+  ```bash
+  docker compose run --rm db-api alembic downgrade <revision_id>
+  ```
 
-#### Migration History
-
-To see the migration history:
-
-```bash
-docker compose run --rm db-api alembic history
-```
-
-#### Downgrade Database
-
-To downgrade to a previous version:
-
-```bash
-docker compose run --rm db-api alembic downgrade -1  # Downgrade one version
-```
-
-or
-
-```bash
-docker compose run --rm db-api alembic downgrade <revision_id>  # Downgrade to specific revision
-```
-
-### Notes on Migrations
-
-- Always back up your database before running migrations in production
-- The migrations use the database connection details from the Docker Compose environment variables
-- If you add new models, make sure to import them in `app/migrations/env.py` to enable autogenerate support
-- If you encounter connection errors, verify that the database service is running and healthy
+- **Downgrade one version**:
+  ```bash
+  docker compose run --rm db-api alembic downgrade -1
+  ```

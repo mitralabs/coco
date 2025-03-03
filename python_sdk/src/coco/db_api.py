@@ -73,12 +73,22 @@ class DbApiClient:
         return ids, documents, metadatas, distances
 
     async def _get_multiple_closest(
-        self, embeddings: List[List[float]], n_results: int = 5
+        self,
+        embeddings: List[List[float]],
+        n_results: int = 5,
+        start_date=None,
+        end_date=None,
     ):
         async with httpx.AsyncClient(timeout=300.0) as client:
+            request_data = {"embeddings": embeddings, "n_results": n_results}
+            if start_date:
+                request_data["start_date"] = start_date
+            if end_date:
+                request_data["end_date"] = end_date
+
             response = await client.post(
                 f"{self.base_url}/get_multiple_closest",
-                json={"embeddings": embeddings, "n_results": n_results},
+                json=request_data,
                 headers={"X-API-Key": self.api_key, "Content-Type": "application/json"},
             )
             response.raise_for_status()
@@ -107,6 +117,8 @@ class DbApiClient:
         batch_size: int = 20,
         limit_parallel: int = 10,
         show_progress: bool = True,
+        start_date=None,
+        end_date=None,
     ):
         """Get the closest results from the database service for multiple embeddings.
 
@@ -116,6 +128,8 @@ class DbApiClient:
             batch_size (int, optional): The size of each batch. Defaults to 20.
             limit_parallel (int, optional): The maximum number of parallel tasks / batches. Defaults to 10.
             show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to True.
+            start_date (date, optional): Only return documents with a date greater than or equal to this. Defaults to None.
+            end_date (date, optional): Only return documents with a date less than or equal to this. Defaults to None.
 
         Returns:
             List[Tuple[List[str], List[str], List[Dict], List[float]]]: The closest results for each embedding.
@@ -132,12 +146,19 @@ class DbApiClient:
             show_progress=show_progress,
             description="Getting multiple closest",
         )
-        return batched_get_multiple_closest(embeddings, n_results)
+        return batched_get_multiple_closest(embeddings, n_results, start_date, end_date)
 
-    def get_full_database(self):
+    def get_full_database(self, start_date=None, end_date=None):
         with httpx.Client() as client:
+            params = {}
+            if start_date:
+                params["start_date"] = start_date
+            if end_date:
+                params["end_date"] = end_date
+
             response = client.get(
                 f"{self.base_url}/get_all",
+                params=params,
                 headers={"X-API-Key": self.api_key},
             )
             response.raise_for_status()

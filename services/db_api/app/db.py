@@ -20,7 +20,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 try:
     # Create a temporary session to check the vector dimension
     temp_session = SessionLocal()
-    db_embedding_dim = get_vector_dim_from_db(engine, temp_session)
+    db_embedding_dim = get_vector_dim_from_db(engine, temp_session, logger)
     if db_embedding_dim is not None:
         logger.info(f"Database vector embedding dimension: {db_embedding_dim}")
     else:

@@ -9,7 +9,7 @@ from sqlalchemy import select, delete
 from datetime import date
 
 from db import get_db, EMBEDDING_DIM
-from db import Document as DbDocument
+from models import Document as DbDocument
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ class DocumentMetadata(BaseModel):
     filename: str
     chunk_index: int
     total_chunks: int
-    date: date
+    date: date = None
 
 
 class Document(BaseModel):

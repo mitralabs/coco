@@ -1,7 +1,7 @@
 name: germandpr
 hf_name: deepset/germandpr
 language: de
-limit_samples: 20
+limit_samples: null
 use_train: true
 use_test: false
 backup_db: false
