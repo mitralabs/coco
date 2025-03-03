@@ -177,8 +177,8 @@ async def call_rag(
             show_progress=True,
         )
         reponse, tok_s = responses[0], tok_ss[0]
-
-        yield history.append(gr.ChatMessage(role="assistant", content=reponse))
+        history.append(gr.ChatMessage(role="assistant", content=reponse))
+        yield history
 
     except Exception as e:
         history.append({"role": "assistant", "content": f"Error: {str(e)}"})
@@ -220,7 +220,7 @@ async def call_rag_stream(
             async for chunk in response:
                 delta_content = chunk.choices[0].delta.content
                 if delta_content:
-                    if type(history[-1]) == dict:
+                    if history[-1].role == "user":
                         history.append(
                             gr.ChatMessage(role="assistant", content=delta_content)
                         )
@@ -235,7 +235,7 @@ async def call_rag_stream(
         ):
             delta_content = part["message"]["content"]
             if delta_content:
-                if type(history[-1]) == dict:
+                if history[-1].role == "user":
                     history.append(
                         gr.ChatMessage(role="assistant", content=delta_content)
                     )
