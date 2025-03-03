@@ -1,175 +1,294 @@
-# Database Container with ChromaDB
+# DB API Service
 
-This is a FastAPI-based service that provides vector database functionality using ChromaDB. The service is containerized with Docker for easy deployment and serves as the storage component of the pipeline.
+A vector database service for document storage and retrieval using semantic similarity search.
 
-## Setup
+## Overview
 
-1. **Build the Docker image:**
-   ```bash
-   docker build -t chroma-database .
-   ```
+The DB API service provides a REST API for storing documents with vector embeddings and retrieving them based on semantic similarity. It uses PostgreSQL with the pgvector extension for efficient vector similarity search.
 
-2. **Run the Docker container:**
-   
-   For Unix/Linux/MacOS:
-   ```bash
-   docker run -d -p 8000:8000 -v $(pwd)/app:/app -v $(pwd)/../_data:/data chroma-database
-   ```
+## Authentication
 
-   For Windows (PowerShell):
-   ```powershell
-   docker run -d -p 8000:8000 -v ${PWD}/app:/app -v ${PWD}/../_data:/data chroma-database
-   ```
+All endpoints require API key authentication. The API key must be provided in the request header:
 
-## Usage
+```
+X-API-Key: your_api_key
+```
 
-The service provides these endpoints:
+## API Endpoints
 
-### 1. Add Documents Endpoint (`/add`)
+### Test Endpoint
 
-Send a POST request to add documents to the ChromaDB collection:
+Basic endpoint to test if the service is running.
+
+- **URL**: `/test`
+- **Method**: `GET`
+- **Response**:
+  ```json
+  {
+    "status": "success",
+    "message": "Database service: Test endpoint accessed successfully"
+  }
+  ```
+
+### Add Documents
+
+Add documents with embeddings to the database.
+
+- **URL**: `/add`
+- **Method**: `POST`
+- **Request Body**:
+  ```json
+  {
+    "documents": [
+      {
+        "text": "Document text content",
+        "embedding": [0.1, 0.2, ...],
+        "metadata": {
+          "language": "en",
+          "filename": "example.txt",
+          "chunk_index": 0,
+          "total_chunks": 10
+        }
+      }
+    ]
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "status": "success",
+    "added": 5,
+    "skipped": 2
+  }
+  ```
+- **Notes**:
+  - Documents with text that already exists in the database will be skipped
+  - Embeddings will be padded with zeros if they are smaller than the maximum embedding dimension
+
+### Get Closest Documents
+
+Retrieve documents closest to a given vector embedding.
+
+- **URL**: `/get_closest`
+- **Method**: `POST`
+- **Request Body**:
+  ```json
+  {
+    "embedding": [0.1, 0.2, ...],
+    "n_results": 5
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "status": "success",
+    "count": 5,
+    "results": [
+      {
+        "id": 1,
+        "document": "Document text content",
+        "metadata": {
+          "language": "en",
+          "filename": "example.txt",
+          "chunk_index": 0,
+          "total_chunks": 10
+        },
+        "distance": 0.123
+      }
+    ]
+  }
+  ```
+
+### Get Multiple Closest Documents
+
+Retrieve documents closest to multiple query embeddings in a single request.
+
+- **URL**: `/get_multiple_closest`
+- **Method**: `POST`
+- **Request Body**:
+  ```json
+  {
+    "embeddings": [
+      [0.1, 0.2, ...],
+      [0.3, 0.4, ...]
+    ],
+    "n_results": 5
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "status": "success",
+    "embedding_count": 2,
+    "docs_per_embedding_count": 5,
+    "results": [
+      [
+        {
+          "id": 1,
+          "document": "Document text content",
+          "metadata": {
+            "language": "en",
+            "filename": "example.txt",
+            "chunk_index": 0,
+            "total_chunks": 10
+          },
+          "distance": 0.123
+        }
+      ]
+    ]
+  }
+  ```
+
+### Get All Documents
+
+Retrieve all documents stored in the database.
+
+- **URL**: `/get_all`
+- **Method**: `GET`
+- **Response**:
+  ```json
+  {
+    "status": "success",
+    "count": 100,
+    "results": [
+      {
+        "id": 1,
+        "document": "Document text content",
+        "metadata": {
+          "language": "en",
+          "filename": "example.txt",
+          "chunk_index": 0,
+          "total_chunks": 10
+        }
+      }
+    ]
+  }
+  ```
+
+### Delete All Documents
+
+Remove all documents from the database.
+
+- **URL**: `/delete_all`
+- **Method**: `DELETE`
+- **Response**:
+  ```json
+  {
+    "status": "success",
+    "count": 100
+  }
+  ```
+
+### Get Maximum Embedding Dimension
+
+Get the maximum embedding dimension supported by the database.
+
+- **URL**: `/max_embedding_dim`
+- **Method**: `GET`
+- **Response**:
+  ```json
+  {
+    "status": "success",
+    "max_embedding_dim": 768
+  }
+  ```
+
+## Data Models
+
+### Document
+
+- `id`: Unique identifier (auto-generated)
+- `text`: Document content (must be unique)
+- `embedding`: Vector representation of document content
+- `language`: Document language code
+- `filename`: Source filename
+- `chunk_index`: Index of chunk within the file
+- `total_chunks`: Total number of chunks in the file
+
+## Environment Variables
+
+- `API_KEY`: Required. Authentication key for API access
+- `EMBEDDING_DIM`: Dimension of the vector embeddings (default: 768)
+
+## Usage Notes
+
+- The service automatically pads embeddings that are smaller than the maximum dimension
+- Documents with identical text content will be skipped during insertion
+- The API uses cosine similarity for finding semantically similar documents
+
+## Database Migrations
+
+The DB API service uses Alembic for database migrations. The migration files are located in the `app/migrations` directory.
+
+### Prerequisites
+
+**Important:** The database service (`db`) must be running before you can apply migrations. If the database is not running, migrations will fail with connection errors.
+
+To ensure the database is running:
 
 ```bash
-curl -X POST "http://localhost:8000/add" \
-     -H "X-API-Key: your_api_key" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "status": "success",
-       "documents": [
-         {
-           "text": "Your document text here",
-           "metadata": {
-             "language": "en",
-             "filename": "example.txt",
-             "chunk_index": 0,
-             "total_chunks": 1
-           }
-         }
-       ]
-     }'
+# Start the database service if it's not already running
+docker compose up -d db
+
+# Wait for the database to be healthy
+docker compose ps db
 ```
 
-Parameters:
-- `documents`: Array of document objects containing:
-  - `text`: The document content (required)
-  - `metadata`: Document metadata (required)
-    - `language`: Document language (optional)
-    - `filename`: Source filename (optional)
-    - `chunk_index`: Index of this chunk (required)
-    - `total_chunks`: Total number of chunks (required)
+Make sure the `db` service shows as healthy before proceeding with migrations.
 
-### 2. Query Documents Endpoint (`/query`)
+### Running Migrations
 
-Send a POST request to search for similar documents:
+Since the service requires environment variables, you should run Alembic commands using Docker Compose. This ensures all the necessary environment variables are properly set.
+
+#### Upgrade to the Latest Version
+
+To apply all pending migrations and upgrade the database to the latest version:
 
 ```bash
-curl -X POST "http://localhost:8000/query" \
-     -H "X-API-Key: your_api_key" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "query_text": "Your search query here",
-       "n_results": 5
-     }'
+docker compose run --rm db-api alembic upgrade head
 ```
 
-Parameters:
-- `query_text`: The text to search for (required)
-- `n_results`: Number of results to return (optional, default: 5)
+#### Generate Migration Script
 
-### 3. Get All Documents Endpoint (`/get_all`)
-
-Send a GET request to retrieve all documents from the collection:
+To automatically generate a new migration script based on model changes:
 
 ```bash
-curl -X GET "http://localhost:8000/get_all" \
-     -H "X-API-Key: your_api_key"
+docker compose run --rm db-api alembic revision --autogenerate -m "Description of changes"
 ```
 
-### 4. Delete All Documents Endpoint (`/delete_all`)
+#### Check Current Version
 
-Send a DELETE request to remove all documents from the collection:
+To see the current database version:
 
 ```bash
-curl -X DELETE "http://localhost:8000/delete_all" \
-     -H "X-API-Key: your_api_key"
+docker compose run --rm db-api alembic current
 ```
 
-### 5. Test Endpoint (`/test`)
+#### Migration History
 
-Basic endpoint to verify the service is running:
+To see the migration history:
 
 ```bash
-curl -X GET "http://localhost:8000/test" \
-     -H "X-API-Key: your_api_key"
+docker compose run --rm db-api alembic history
 ```
 
-## Response Formats
+#### Downgrade Database
 
-### Add Documents Response:
-```json
-{
-  "status": "success",
-  "message": "Documents added successfully"
-}
+To downgrade to a previous version:
+
+```bash
+docker compose run --rm db-api alembic downgrade -1  # Downgrade one version
 ```
 
-### Query Response:
-```json
-{
-  "status": "success",
-  "results": [
-    {
-      "documents": ["document content"],
-      "metadatas": [{
-        "language": "en",
-        "filename": "example.txt",
-        "chunk_index": 0,
-        "total_chunks": 1
-      }],
-      "distances": [0.123]
-    }
-  ]
-}
+or
+
+```bash
+docker compose run --rm db-api alembic downgrade <revision_id>  # Downgrade to specific revision
 ```
 
-### Get All Documents Response:
-```json
-{
-  "status": "success",
-  "count": 2,
-  "documents": [
-    {
-      "document": "Document content here",
-      "metadata": {
-        "language": "en",
-        "filename": "example.txt",
-        "chunk_index": 0,
-        "total_chunks": 1
-      },
-      "distance": 0.0
-    }
-  ]
-}
-```
+### Notes on Migrations
 
-### Delete All Response:
-```json
-{
-  "status": "success",
-  "message": "All documents deleted successfully",
-  "count": 2
-}
-```
-
-## Configuration
-
-The service requires the following environment variables:
-
-- `API_KEY`: Your API key for authentication
-
-## Notes
-
-- The service uses ChromaDB for efficient vector storage and similarity search
-- All endpoints require API key authentication
-- Documents are stored with their metadata for easy retrieval and filtering
-- For more information on ChromaDB, visit the [ChromaDB Documentation](https://github.com/chroma-core/chroma)
+- Always back up your database before running migrations in production
+- The migrations use the database connection details from the Docker Compose environment variables
+- If you add new models, make sure to import them in `app/migrations/env.py` to enable autogenerate support
+- If you encounter connection errors, verify that the database service is running and healthy

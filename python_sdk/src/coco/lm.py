@@ -11,6 +11,8 @@ from .async_utils import batched_parallel
 
 logger = logging.getLogger(__name__)
 
+OLLAMA_NUM_CTX = 2048  # TODO check if we can get that from the ollama api
+
 
 class LanguageModelClient:
     def __init__(
@@ -66,6 +68,23 @@ class LanguageModelClient:
             res = self.openai.embeddings.create(model=model, input=["Some mock text."])
             dim = len(res.data[0].embedding)
             return dim
+
+    def get_context_length(self, model: str) -> int:
+        """Get the context length of a given model.
+        Only implemented for ollama.
+
+        Args:
+            model (str): The model to get the context length for.
+
+        Returns:
+            int: The context length of the given model.
+        """
+        if self.llm_api == "ollama":
+            show_response = self.ollama.show(model)
+            for k, v in show_response.modelinfo.items():
+                if "context_length" in k.lower():
+                    return v
+        return None
 
     async def _embed(
         self, chunks: List[str], model: str = "nomic-embed-text"
@@ -132,6 +151,25 @@ class LanguageModelClient:
                 response = await self.async_ollama.generate(
                     model=model, prompt=prompt, options={"temperature": temperature}
                 )
+                if response.prompt_eval_count == OLLAMA_NUM_CTX:
+                    try:
+                        model_num_ctx = self.get_context_length(model)
+                        redo_response = await self.async_ollama.generate(
+                            model=model,
+                            prompt=prompt,
+                            options={
+                                "temperature": temperature,
+                                "num_ctx": model_num_ctx,
+                            },
+                        )
+                        response = redo_response
+                        logger.info(
+                            f"Coco generate: Prompt was likely truncated to ollama num_ctx. Redid with model num_ctx."
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            f"Coco generate: Prompt was likely truncated to ollama num_ctx"
+                        )
                 texts.append(response.response)
                 tok_ss.append(response.eval_count / response.eval_duration * 10**9)
         elif self.llm_api == "openai":
@@ -199,6 +237,7 @@ class LanguageModelClient:
             batch_size=batch_size,
             limit_parallel=limit_parallel,
             show_progress=show_progress,
+            description="Generating text",
         )
 
         return batched_generate(prompts, model=model)
@@ -246,6 +285,22 @@ class LanguageModelClient:
             texts, tok_ss = [], []
             for messages in messages_list:
                 response = await self.async_ollama.chat(model=model, messages=messages)
+                if response.prompt_eval_count == OLLAMA_NUM_CTX:
+                    try:
+                        model_num_ctx = self.get_context_length(model)
+                        redo_response = await self.async_ollama.chat(
+                            model=model,
+                            messages=messages,
+                            options={"num_ctx": model_num_ctx},
+                        )
+                        response = redo_response
+                        logger.info(
+                            f"Coco chat: Prompt was likely truncated to ollama num_ctx. Redid with model num_ctx."
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            f"Coco chat: Prompt was likely truncated to ollama num_ctx"
+                        )
                 texts.append(response["message"]["content"])
                 tok_ss.append(
                     response["eval_count"] / response["eval_duration"] * 10**9

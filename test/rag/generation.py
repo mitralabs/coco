@@ -129,22 +129,40 @@ class SemScore:
             aggr_references (Callable, optional): _description_. Defaults to np.max.
             aggr_predictions (Callable, optional): _description_. Defaults to np.mean.
         """
-        model_name = "sentence-transformers/all-mpnet-base-v2"
-        self.model = SentenceTransformer(model_name)
+        model_name_paper = "sentence-transformers/all-mpnet-base-v2"
+        model_name_multilingual = (
+            "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
+        )
+        self.model_paper = SentenceTransformer(model_name_paper)
+        self.model_multilingual = SentenceTransformer(model_name_multilingual)
         self.aggr_references = aggr_references
         self.aggr_predictions = aggr_predictions
 
-    def __call__(self, predictions: List[str], references: List[str]) -> float:
-        pred_embeddings = self.model.encode(
-            predictions, show_progress_bar=False
-        )  # (n, dim)
-        ref_embeddings = self.model.encode(
-            references, show_progress_bar=False
-        )  # (n, dim)
+    def _score(
+        self, predictions: List[str], references: List[str], model: SentenceTransformer
+    ) -> float:
+        pred_embeddings = model.encode(predictions, show_progress_bar=False)  # (n, dim)
+        pred_embeddings = pred_embeddings / np.linalg.norm(
+            pred_embeddings, ord=2, axis=1, keepdims=True
+        )
+        ref_embeddings = model.encode(references, show_progress_bar=False)  # (n, dim)
+        ref_embeddings = ref_embeddings / np.linalg.norm(
+            ref_embeddings, ord=2, axis=1, keepdims=True
+        )
         all_scores = pred_embeddings @ ref_embeddings.T
         pred_scores = self.aggr_references(all_scores, axis=1)
         score = self.aggr_predictions(pred_scores)
         return score
+
+    def __call__(self, predictions: List[str], references: List[str]) -> float:
+        score_paper = self._score(predictions, references, self.model_paper)
+        score_multilingual = self._score(
+            predictions, references, self.model_multilingual
+        )
+        return {
+            "paper": score_paper,
+            "multilingual": score_multilingual,
+        }
 
 
 def groundedness(
@@ -197,7 +215,7 @@ def correctness(ds: Dataset, answers: Dict[str, Dict[str, Any]], wandb_prefix: s
     semscore_metric = SemScore()
     bertscore_precisions, bertscore_recalls, bertscore_f1s = [], [], []
     rouge1s, rouge2s, rougeLs, rougeLsums = [], [], [], []
-    semscores = []
+    semscores_paper, semscores_multilingual = [], []
     (
         sacrebleu_scores,
         sacrebleu_1gram_precisions,
@@ -236,9 +254,11 @@ def correctness(ds: Dataset, answers: Dict[str, Dict[str, Any]], wandb_prefix: s
         sacrebleu_3gram_precisions.append(sacrebleu["precisions"][2])
         sacrebleu_4gram_precisions.append(sacrebleu["precisions"][3])
         sacrebleu_bp.append(sacrebleu["bp"])
-        semscores.append(
-            semscore_metric(predictions=[generated_answer], references=[gt_answer])
+        semscore_scores = semscore_metric(
+            predictions=[generated_answer], references=[gt_answer]
         )
+        semscores_paper.append(semscore_scores["paper"])
+        semscores_multilingual.append(semscore_scores["multilingual"])
     metrics = {
         "bertscore_precision": np.mean(bertscore_precisions),
         "bertscore_recall": np.mean(bertscore_recalls),
@@ -253,7 +273,8 @@ def correctness(ds: Dataset, answers: Dict[str, Dict[str, Any]], wandb_prefix: s
         "sacrebleu_precision3": np.mean(sacrebleu_3gram_precisions),
         "sacrebleu_precision4": np.mean(sacrebleu_4gram_precisions),
         "sacrebleu_brevity_penalty": np.mean(sacrebleu_bp),
-        "semscore": np.mean(semscores),
+        "semscore": np.mean(semscores_paper),
+        "semscore_multilingual": np.mean(semscores_multilingual),
     }
     wandb.log({f"{wandb_prefix}/answer_correctness/{k}": v for k, v in metrics.items()})
     return metrics
@@ -289,7 +310,8 @@ def generation_stage(
 
     # optimization target for wandb sweeps
     optimization_target = (
-        0.5 * ret_corr_metrics["bertscore_f1"] + 0.5 * ret_corr_metrics["semscore"]
+        0.5 * ret_corr_metrics["bertscore_f1"]
+        + 0.5 * ret_corr_metrics["semscore_multilingual"]
     )
     wandb.log({"optimization_target": optimization_target})
 
