@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Date
 from sqlalchemy.ext.declarative import declarative_base
 from pgvector.sqlalchemy import Vector
 
@@ -16,3 +16,4 @@ class Document(Base):
     filename = Column(String, nullable=False)
     chunk_index = Column(Integer, nullable=False)
     total_chunks = Column(Integer, nullable=False)
+    date = Column(Date, nullable=True)
