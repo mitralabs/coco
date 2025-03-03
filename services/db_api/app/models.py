@@ -1,10 +1,8 @@
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from pgvector.sqlalchemy import Vector
-import os
 
-# Get embedding dimension directly from environment
-EMBEDDING_DIM = int(os.getenv("EMBEDDING_DIM", "768"))
+from vector_utils import EMBEDDING_DIM
 
 Base = declarative_base()
 

@@ -11,8 +11,6 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from database_url import SQLALCHEMY_DATABASE_URL
-
-# Import all models for autogenerate support
 from models import Base
 
 # this is the Alembic Config object, which provides

@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security.api_key import APIKeyHeader
-from pydantic import BaseModel, ValidationError, field_validator
+from pydantic import BaseModel, field_validator
 import os
 from typing import List
 import logging

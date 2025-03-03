@@ -3,7 +3,6 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from database_url import SQLALCHEMY_DATABASE_URL
-from models import Document
 from vector_utils import get_vector_dim_from_db
 
 # Get embedding dimension directly from environment
