@@ -140,12 +140,13 @@ class RagClient:
         context_chunks: List[List[str]],
         prompt_template: str | None = None,
         model: str | None = "llama3.2:1b",
+        temperature: float = 0.0,
     ) -> Dict[str, Dict[str, Any]]:
         prompts = [
             self.format_prompt(q, c, prompt_template)
             for q, c in zip(queries, context_chunks)
         ]
-        return await self.lm._generate(prompts, model=model)
+        return await self.lm._generate(prompts, model=model, temperature=temperature)
 
     def generate_answers(
         self,
@@ -153,6 +154,7 @@ class RagClient:
         context_chunks: List[List[str]],
         prompt_template: str | None = None,
         model: str = "llama3.2:1b",
+        temperature: float = 0.0,
         pull_model: bool = False,
         batch_size: int = 20,
         limit_parallel: int = 10,
@@ -192,4 +194,5 @@ class RagClient:
             context_chunks=context_chunks,
             prompt_template=prompt_template,
             model=model,
+            temperature=temperature,
         )

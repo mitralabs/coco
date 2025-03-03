@@ -14,46 +14,42 @@ logger = logging.getLogger(__name__)
 
 
 def get_top_chunks(cc: CocoClient, cfg: DictConfig, ds: Dataset):
-    # load from file if present
-    if Path(cfg.retrieval.get_top_chunks.file_name).exists():
-        with open(cfg.retrieval.get_top_chunks.file_name, "r") as f:
+    if cfg.retrieval.get_top_chunks.load_from_file:
+        # load from file if specified
+        chunks_file = Path(cfg.retrieval.get_top_chunks.load_file_name)
+        with chunks_file.open("r") as f:
             top_chunks = json.load(f)
-        logger.info(
-            f"Loaded retrieved chunks from {cfg.retrieval.get_top_chunks.file_name}"
-        )
+        logger.info(f"Loaded retrieved chunks from {chunks_file}")
         if (
             not len(top_chunks[next(iter(top_chunks))]["ids"])
             == cfg.retrieval.get_top_chunks.top_k
         ):
-            logger.warning(
-                f"Retrieved chunks from {cfg.retrieval.get_top_chunks.file_name} do not match top_k"
-            )
-        return top_chunks
-
-    # obtain from db
-    top_chunks = {}
-    queries = [sample["question"] for sample in ds]
-    results = cc.rag.retrieve_chunks(
-        query_texts=queries,
-        n_results=cfg.retrieval.get_top_chunks.top_k,
-        model=cfg.data.fill_db.embedding_model,
-        show_progress=True,
-    )
-    for query, (ids, documents, metadatas, distances) in zip(queries, results):
-        top_chunks[query] = {
-            "ids": ids,
-            "documents": documents,
-            "metadatas": metadatas,
-            "distances": distances,
-        }
+            logger.warning(f"Retrieved chunks from {chunks_file} do not match top_k")
+    else:
+        # obtain from db
+        top_chunks = {}
+        queries = [sample["question"] for sample in ds]
+        results = cc.rag.retrieve_chunks(
+            query_texts=queries,
+            n_results=cfg.retrieval.get_top_chunks.top_k,
+            model=cfg.retrieval.embedding_model[0],
+            show_progress=True,
+        )
+        for query, (ids, documents, metadatas, distances) in zip(queries, results):
+            top_chunks[query] = {
+                "ids": ids,
+                "documents": documents,
+                "metadatas": metadatas,
+                "distances": distances,
+            }
+        logger.info(f"Retrieved chunks from database")
 
     # save to file
-    Path(cfg.retrieval.get_top_chunks.file_name).parent.mkdir(
-        parents=True, exist_ok=True
-    )
-    with open(cfg.retrieval.get_top_chunks.file_name, "w") as f:
+    output_file = Path(cfg.retrieval.get_top_chunks.output_file_name)
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    with output_file.open("w") as f:
         json.dump(top_chunks, f)
-    logger.info(f"Saved retrieved chunks to {cfg.retrieval.get_top_chunks.file_name}")
+    logger.info(f"Saved retrieved chunks to {output_file}")
 
     return top_chunks
 
@@ -92,7 +88,9 @@ def rank_first_relevant(
 
 
 def mean_reciprocal_rank(ranks: List[int]):
-    return np.nanmean(1 / np.array(ranks))
+    inv = 1 / np.array(ranks)
+    inv[np.isnan(inv)] = 0
+    return np.mean(inv)
 
 
 def average_precision(retrieved_chunks: List[str], gt_chunks: List[str]):
@@ -169,6 +167,8 @@ def relevance(top_chunks: Dict[str, Dict[str, Any]], cfg: DictConfig, ds: Datase
 
 
 def retrieval_stage(cc: CocoClient, cfg: DictConfig, ds: Dataset):
+    logger.info("Starting retrieval stage")
     top_chunks = get_top_chunks(cc, cfg, ds)
     relevance(top_chunks, cfg, ds)
+    logger.info("Retrieval stage completed")
     return top_chunks

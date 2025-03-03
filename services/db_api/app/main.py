@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security.api_key import APIKeyHeader
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError, field_validator
 import os
 from typing import List
 import logging
@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select, delete
 from datetime import date
 
-from db import get_db
+from db import get_db, EMBEDDING_DIM
 from db import Document as DbDocument
 
 logging.basicConfig(level=logging.INFO)
@@ -43,6 +43,17 @@ class Document(BaseModel):
     embedding: List[float]
     metadata: DocumentMetadata
 
+    @field_validator("embedding", mode="before")
+    @classmethod
+    def pad_embedding(cls, v: List[float]) -> List[float]:
+        if len(v) > EMBEDDING_DIM:
+            raise ValueError(
+                f"Embedding dimension cannot be larger than {EMBEDDING_DIM}"
+            )
+        if len(v) < EMBEDDING_DIM:
+            v += [0.0] * (EMBEDDING_DIM - len(v))
+        return v
+
 
 class AddRequest(BaseModel):
     documents: List[Document]
@@ -54,12 +65,35 @@ class GetClosestRequest(BaseModel):
     start_date: date = None
     end_date: date = None
 
+    @field_validator("embedding", mode="before")
+    @classmethod
+    def pad_embedding(cls, v: List[float]) -> List[float]:
+        if len(v) > EMBEDDING_DIM:
+            raise ValueError(
+                f"Embedding dimension cannot be larger than {EMBEDDING_DIM}"
+            )
+        if len(v) < EMBEDDING_DIM:
+            v += [0.0] * (EMBEDDING_DIM - len(v))
+        return v
+
 
 class GetMultipleClosestRequest(BaseModel):
     embeddings: List[List[float]]
     n_results: int = 5
     start_date: date = None
     end_date: date = None
+
+    @field_validator("embeddings", mode="before")
+    @classmethod
+    def pad_embeddings(cls, v: List[List[float]]) -> List[List[float]]:
+        for i, embedding in enumerate(v):
+            if len(embedding) > EMBEDDING_DIM:
+                raise ValueError(
+                    f"Embedding dimension cannot be larger than {EMBEDDING_DIM}"
+                )
+            if len(embedding) < EMBEDDING_DIM:
+                v[i] += [0.0] * (EMBEDDING_DIM - len(embedding))
+        return v
 
 
 def nearest_neighbor_query(db: Session, query_embedding: List[float], n_results: int):
@@ -76,25 +110,29 @@ def nearest_neighbor_query(db: Session, query_embedding: List[float], n_results:
 
 
 def get_closest_from_embeddings(
-    db: Session, embeddings: List[List[float]], n_results: int, start_date=None, end_date=None
+    db: Session,
+    embeddings: List[List[float]],
+    n_results: int,
+    start_date=None,
+    end_date=None,
 ):
     all_formatted_results = []
     for embedding in embeddings:
         formatted_results = []
-        query = (
-            select(
-                DbDocument,
-                DbDocument.embedding.cosine_distance(embedding).label("distance"),
-            )
+        query = select(
+            DbDocument,
+            DbDocument.embedding.cosine_distance(embedding).label("distance"),
         )
-        
+
         if start_date:
             query = query.where(DbDocument.date >= start_date)
         if end_date:
             query = query.where(DbDocument.date <= end_date)
-            
-        query = query.order_by(DbDocument.embedding.cosine_distance(embedding)).limit(n_results)
-        
+
+        query = query.order_by(DbDocument.embedding.cosine_distance(embedding)).limit(
+            n_results
+        )
+
         results = db.execute(query)
         formatted_results = []
         for doc, distance in results:
@@ -140,7 +178,7 @@ async def add(
             filename=doc.metadata.filename,
             chunk_index=doc.metadata.chunk_index,
             total_chunks=doc.metadata.total_chunks,
-            date=doc.metadata.date
+            date=doc.metadata.date,
         )
         db.add(db_doc)
         added_count += 1
@@ -156,11 +194,11 @@ async def get_closest(
     api_key: str = Depends(get_api_key),
 ):
     formatted_results = get_closest_from_embeddings(
-        db=db, 
-        embeddings=[request.embedding], 
+        db=db,
+        embeddings=[request.embedding],
         n_results=request.n_results,
         start_date=request.start_date,
-        end_date=request.end_date
+        end_date=request.end_date,
     )[0]
     return {
         "status": "success",
@@ -176,11 +214,11 @@ async def get_multiple_closest(
     api_key: str = Depends(get_api_key),
 ):
     all_formatted_results = get_closest_from_embeddings(
-        db=db, 
-        embeddings=request.embeddings, 
+        db=db,
+        embeddings=request.embeddings,
         n_results=request.n_results,
         start_date=request.start_date,
-        end_date=request.end_date
+        end_date=request.end_date,
     )
     assert len(all_formatted_results) > 0
     return {
@@ -193,17 +231,17 @@ async def get_multiple_closest(
 
 @app.get("/get_all")
 async def get_all(
-    start_date: date = None, 
-    end_date: date = None, 
-    db: Session = Depends(get_db), 
-    api_key: str = Depends(get_api_key)
+    start_date: date = None,
+    end_date: date = None,
+    db: Session = Depends(get_db),
+    api_key: str = Depends(get_api_key),
 ):
     query = select(DbDocument)
     if start_date:
         query = query.where(DbDocument.date >= start_date)
     if end_date:
         query = query.where(DbDocument.date <= end_date)
-        
+
     results = db.execute(query).scalars().all()
     formatted_results = []
     for result in results:
@@ -240,11 +278,20 @@ async def delete_all(
     }
 
 
+@app.get("/max_embedding_dim")
+async def max_embedding_dim(api_key: str = Depends(get_api_key)):
+    return {
+        "status": "success",
+        "max_embedding_dim": EMBEDDING_DIM,
+    }
+
+
 @app.delete("/delete_by_date")
 async def delete_by_date(
     start_date: date = None,
     end_date: date = None,
-    db: Session = Depends(get_db), api_key: str = Depends(get_api_key)
+    db: Session = Depends(get_db),
+    api_key: str = Depends(get_api_key),
 ):
     """
     Delete documents within a specified date range.
@@ -254,7 +301,7 @@ async def delete_by_date(
         return {
             "status": "error",
             "message": "At least one of start_date or end_date must be provided",
-            "count": 0
+            "count": 0,
         }
 
     query = delete(DbDocument)

@@ -1,48 +1,42 @@
+import logging
 import os
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from pgvector.sqlalchemy import Vector
-from sqlalchemy import Column, Integer, String, text, Date
+from database_url import SQLALCHEMY_DATABASE_URL
+from models import Document
+from vector_utils import get_vector_dim_from_db
 
+# Get embedding dimension directly from environment
+EMBEDDING_DIM = int(os.getenv("EMBEDDING_DIM", "768"))
 
-POSTGRES_USER = os.getenv("POSTGRES_USER")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
-POSTGRES_DB = os.getenv("POSTGRES_DB")
-POSTGRES_HOST = os.getenv("POSTGRES_HOST")
-POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
-VEKTOR_DIM = int(os.getenv("VEKTOR_DIM", "768"))
-SQLALCHEMY_DATABASE_URL = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
+# Ensure a basic configuration is set here (or do this in the main entry before importing modules)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
+# Create engine and session factory
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
 
-class Document(Base):
-    __tablename__ = "documents"
-    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
-    text = Column(String, nullable=False, unique=True)
-    embedding = Column(
-        Vector(VEKTOR_DIM), nullable=False
-    )  # dim for nomic model, change if necessary
-    language = Column(String, nullable=False)
-    filename = Column(String, nullable=False)
-    chunk_index = Column(Integer, nullable=False)
-    total_chunks = Column(Integer, nullable=False)
-    date = Column(Date, nullable=True)
-
-
-with SessionLocal() as session:
-    session.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-    session.commit()
-    Base.metadata.create_all(bind=engine)
+# Log the actual embedding dimension from the database
+try:
+    # Create a temporary session to check the vector dimension
+    temp_session = SessionLocal()
+    db_embedding_dim = get_vector_dim_from_db(engine, temp_session)
+    if db_embedding_dim is not None:
+        logger.info(f"Database vector embedding dimension: {db_embedding_dim}")
+    else:
+        logger.info(f"Using configured embedding dimension: {EMBEDDING_DIM}")
+    temp_session.close()
+except Exception as e:
+    logger.error(f"Could not check database embedding dimension: {e}")
+    logger.info(f"Using configured embedding dimension: {EMBEDDING_DIM}")
 
 
 def get_db():
-    """fastpi dependency to get db session
+    """FastAPI dependency to get db session
 
     Yields:
-        _type_: _description_
+        Session: A SQLAlchemy session
     """
     db = SessionLocal()
     try:

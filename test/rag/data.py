@@ -45,9 +45,7 @@ def unique_texts(ds, verbose=False):
 
 
 def init_dataset(cfg: DictConfig) -> Dataset:
-    ds_data_dir = Path(cfg.general.data_dir) / "hf_datasets" / cfg.data.name
-    Path(ds_data_dir).mkdir(parents=True, exist_ok=True)
-    ds = load_dataset(cfg.data.hf_name, cache_dir=ds_data_dir)
+    ds = load_dataset(cfg.data.hf_name, trust_remote_code=True)
     train_ds, test_ds = ds["train"], ds["test"]
     datasets = []
     if cfg.data.use_train:
@@ -95,13 +93,18 @@ def fill_database(cc: CocoClient, cfg: DictConfig, dataset: Dataset):
     if cfg.data.fill_db.skip:
         logger.info(f"Skipping {cfg.data.name} to db")
         return
+    model_emb_dim = cc.lm.get_embedding_dim(cfg.retrieval.embedding_model[0])
+    db_emb_dim = cc.db_api.get_max_embedding_dim()
+    assert (
+        model_emb_dim <= db_emb_dim
+    ), f"Embedding model {cfg.retrieval.embedding_model[0]} has dimension {model_emb_dim} which is greater than the maximum supported dimension {db_emb_dim}"
     unique = unique_texts(dataset)
     texts = [text for text, _ in unique]  # don't use titles for now
     added, skipped = cc.embed_and_store(
         chunks=texts,
         language=cfg.data.language,
         filename=cfg.data.name,
-        model=cfg.data.fill_db.embedding_model,
+        model=cfg.retrieval.embedding_model[0],
         batch_size=cfg.data.fill_db.embed_and_store_batch_size,
         limit_parallel=cfg.data.fill_db.embed_and_store_limit_parallel,
         show_progress=True,
@@ -110,10 +113,12 @@ def fill_database(cc: CocoClient, cfg: DictConfig, dataset: Dataset):
 
 
 def data_stage(cc: CocoClient, cfg: DictConfig) -> Dataset:
+    logger.info(f"Starting data stage")
     ds = init_dataset(cfg)
     if cfg.data.limit_samples:
         ds = ds.select(range(cfg.data.limit_samples))
     backup_database(cfg)
     clear_database(cc, cfg)
     fill_database(cc, cfg, ds)
+    logger.info(f"Data stage completed")
     return ds

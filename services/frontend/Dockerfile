@@ -1,18 +1,18 @@
 FROM python:3.10-slim
 
-# Install curl for health checks
-RUN apt-get update && apt-get install -y curl
+RUN apt-get update
+RUN apt-get install -y curl
 
 # Install dependencies
 RUN pip install --upgrade pip
-COPY requirements.txt .
+COPY frontend/requirements.txt .
 RUN pip install -r requirements.txt
 
-# Copy application code
-COPY start.sh .
 
-# Make the script runnable
-RUN chmod +x ./start.sh
+COPY python_sdk_entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
-ENTRYPOINT ["./start.sh"]
+WORKDIR /app
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["gradio", "main.py"]

@@ -1,4 +1,5 @@
 from typing import List, Literal, Tuple
+import json
 import time
 import logging
 import ollama
@@ -9,6 +10,8 @@ import os
 from .async_utils import batched_parallel
 
 logger = logging.getLogger(__name__)
+
+OLLAMA_NUM_CTX = 2048  # TODO check if we can get that from the ollama api
 
 
 class LanguageModelClient:
@@ -38,6 +41,50 @@ class LanguageModelClient:
             self.openai = openai.OpenAI(
                 base_url=openai_base_url, api_key=os.environ.get("OPENAI_API_KEY")
             )
+
+    def get_embedding_dim(self, model: str) -> int:
+        """Get the dimension of the embedding for a given model.
+
+        Args:
+            model (str): The model to get the embedding dimension for.
+
+        Raises:
+            ValueError: If the embedding dimension is not found in the modelinfo.
+
+        Returns:
+            int: The dimension of the embedding for the given model.
+        """
+        if self.embedding_api == "ollama":
+            show_response = self.ollama.show(model)
+            length_key = None
+            for k in show_response.modelinfo:
+                if "embedding_length" in k:
+                    length_key = k
+                    break
+            if length_key is None:
+                raise ValueError("embedding_length key not found in modelinfo")
+            return show_response.modelinfo[length_key]
+        elif self.embedding_api == "openai":
+            res = self.openai.embeddings.create(model=model, input=["Some mock text."])
+            dim = len(res.data[0].embedding)
+            return dim
+
+    def get_context_length(self, model: str) -> int:
+        """Get the context length of a given model.
+        Only implemented for ollama.
+
+        Args:
+            model (str): The model to get the context length for.
+
+        Returns:
+            int: The context length of the given model.
+        """
+        if self.llm_api == "ollama":
+            show_response = self.ollama.show(model)
+            for k, v in show_response.modelinfo.items():
+                if "context_length" in k.lower():
+                    return v
+        return None
 
     async def _embed(
         self, chunks: List[str], model: str = "nomic-embed-text"
@@ -95,22 +142,74 @@ class LanguageModelClient:
         )
         return batched_create_embeddings(chunks, model=model)
 
-    async def _generate(self, prompts: List[str], model: str = "llama3.2:1b") -> str:
+    async def _generate(
+        self, prompts: List[str], model: str = "llama3.2:1b", temperature: float = 0.0
+    ) -> str:
         if self.llm_api == "ollama":
             texts, tok_ss = [], []
             for prompt in prompts:
-                response = await self.async_ollama.generate(model=model, prompt=prompt)
+                response = await self.async_ollama.generate(
+                    model=model, prompt=prompt, options={"temperature": temperature}
+                )
+                if response.prompt_eval_count == OLLAMA_NUM_CTX:
+                    try:
+                        model_num_ctx = self.get_context_length(model)
+                        redo_response = await self.async_ollama.generate(
+                            model=model,
+                            prompt=prompt,
+                            options={
+                                "temperature": temperature,
+                                "num_ctx": model_num_ctx,
+                            },
+                        )
+                        response = redo_response
+                        logger.info(
+                            f"Coco generate: Prompt was likely truncated to ollama num_ctx. Redid with model num_ctx."
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            f"Coco generate: Prompt was likely truncated to ollama num_ctx"
+                        )
                 texts.append(response.response)
                 tok_ss.append(response.eval_count / response.eval_duration * 10**9)
         elif self.llm_api == "openai":
             texts, tok_ss = [], []
             for prompt in prompts:
-                start = time.time()
-                response = await self.async_openai.chat.completions.create(
-                    model=model, messages=[{"role": "user", "content": prompt}]
-                )
-                tok_ss.append(response.usage.completion_tokens / (time.time() - start))
-                texts.append(response.choices[0].message.content)
+                for attempt in range(3):
+                    try:
+                        start = time.time()
+                        response = await self.async_openai.chat.completions.create(
+                            model=model,
+                            messages=[{"role": "user", "content": prompt}],
+                            temperature=temperature,
+                        )
+                        tok_ss.append(
+                            response.usage.completion_tokens / (time.time() - start)
+                        )
+                        texts.append(response.choices[0].message.content)
+                        break
+                    except openai.NotFoundError as e:
+                        if attempt == 2:  # Last attempt failed
+                            raise e
+                        logger.warning(
+                            f"OpenAI api gave not found error. Retrying ({attempt + 1}/3)"
+                        )
+                        continue
+                    except openai.RateLimitError as e:
+                        if attempt == 2:
+                            raise e
+                        logger.warning(
+                            f"OpenAI api gave rate limit error. Retrying in 60 seconds ({attempt + 1}/3)"
+                        )
+                        time.sleep(61)  # ionos api wants 60 seconds before retry
+                        continue
+                    except json.JSONDecodeError as e:
+                        if attempt == 2:
+                            raise e
+                        logger.warning(
+                            f"OpenAI api gave json decode error. Retrying ({attempt + 1}/3)"
+                        )
+                        continue
         return texts, tok_ss
 
     def generate(
@@ -138,6 +237,7 @@ class LanguageModelClient:
             batch_size=batch_size,
             limit_parallel=limit_parallel,
             show_progress=show_progress,
+            description="Generating text",
         )
 
         return batched_generate(prompts, model=model)
@@ -185,6 +285,22 @@ class LanguageModelClient:
             texts, tok_ss = [], []
             for messages in messages_list:
                 response = await self.async_ollama.chat(model=model, messages=messages)
+                if response.prompt_eval_count == OLLAMA_NUM_CTX:
+                    try:
+                        model_num_ctx = self.get_context_length(model)
+                        redo_response = await self.async_ollama.chat(
+                            model=model,
+                            messages=messages,
+                            options={"num_ctx": model_num_ctx},
+                        )
+                        response = redo_response
+                        logger.info(
+                            f"Coco chat: Prompt was likely truncated to ollama num_ctx. Redid with model num_ctx."
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            f"Coco chat: Prompt was likely truncated to ollama num_ctx"
+                        )
                 texts.append(response["message"]["content"])
                 tok_ss.append(
                     response["eval_count"] / response["eval_duration"] * 10**9

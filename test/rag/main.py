@@ -12,6 +12,7 @@ from generation import generation_stage
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("absl").setLevel(logging.WARNING)
+logging.getLogger("sentence_transformers.SentenceTransformer").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
@@ -24,10 +25,16 @@ def main(cfg: DictConfig) -> None:
         project=cfg.wandb.project,
         name=cfg.wandb.name,
         config=OmegaConf.to_container(cfg),
+        settings=wandb.Settings(start_method="thread"),
     )
 
-    cc = CocoClient(**cfg.coco)
+    cc = CocoClient(
+        **cfg.coco,
+        embedding_api=cfg.retrieval.embedding_model[1],
+        llm_api=cfg.generation.llm_model[1],
+    )
     cc.health_check()
+
     ds = data_stage(cc, cfg)
     top_chunks = retrieval_stage(cc, cfg, ds)
     generation_stage(cc, cfg, top_chunks, ds)
