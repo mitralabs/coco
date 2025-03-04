@@ -5,7 +5,7 @@ import os
 from typing import List
 import logging
 from sqlalchemy.orm import Session
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, or_
 from datetime import date
 
 from db import get_db, EMBEDDING_DIM
@@ -125,9 +125,13 @@ def get_closest_from_embeddings(
         )
 
         if start_date:
-            query = query.where(DbDocument.date >= start_date)
+            query = query.where(
+                or_(DbDocument.date >= start_date, DbDocument.date == None)
+            )
         if end_date:
-            query = query.where(DbDocument.date <= end_date)
+            query = query.where(
+                or_(DbDocument.date <= end_date, DbDocument.date == None)
+            )
 
         query = query.order_by(DbDocument.embedding.cosine_distance(embedding)).limit(
             n_results
@@ -238,9 +242,9 @@ async def get_all(
 ):
     query = select(DbDocument)
     if start_date:
-        query = query.where(DbDocument.date >= start_date)
+        query = query.where(or_(DbDocument.date >= start_date, DbDocument.date == None))
     if end_date:
-        query = query.where(DbDocument.date <= end_date)
+        query = query.where(or_(DbDocument.date <= end_date, DbDocument.date == None))
 
     results = db.execute(query).scalars().all()
     formatted_results = []
@@ -297,13 +301,6 @@ async def delete_by_date(
     Delete documents within a specified date range.
     If no dates are provided, no documents will be deleted.
     """
-    if not start_date and not end_date:
-        return {
-            "status": "error",
-            "message": "At least one of start_date or end_date must be provided",
-            "count": 0,
-        }
-
     query = delete(DbDocument)
     if start_date:
         query = query.where(DbDocument.date >= start_date)

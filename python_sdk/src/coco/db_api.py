@@ -1,6 +1,7 @@
-from typing import Tuple, List
+from typing import Tuple, List, Dict, Union, Optional
 import logging
 import httpx
+from datetime import date
 
 from .async_utils import batched_parallel
 
@@ -37,12 +38,20 @@ class DbApiClient:
 
         return max_embedding_dim_response["max_embedding_dim"]
 
-    def get_closest(self, embedding: List[float], n_results: int = 5):
+    def get_closest(
+        self,
+        embedding: List[float],
+        n_results: int = 5,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+    ):
         """Retrieve the closest results from the database service.
 
         Args:
             embedding (List[float]): The embedding to search for.
             n_results (int, optional): The number of results to return. Defaults to 5.
+            start_date (date, optional): Only return documents with a date greater than or equal to this. Defaults to None.
+            end_date (date, optional): Only return documents with a date less than or equal to this. Defaults to None.
 
         Returns:
             Tuple[List[str], List[str], List[Dict], List[float]]: (ids, documents, metadatas, distances)
@@ -51,11 +60,18 @@ class DbApiClient:
                 - filename: str (the audio filename the chunk was extracted from)
                 - chunk_index: int (the index of the chunk in the audio file)
                 - total_chunks: int (the total number of chunks of the audio file)
+                - date: str (ISO format date string, or None if no date is present)
         """
         with httpx.Client() as client:
+            request_data = {"embedding": embedding, "n_results": n_results}
+            if start_date:
+                request_data["start_date"] = start_date.isoformat()
+            if end_date:
+                request_data["end_date"] = end_date.isoformat()
+
             response = client.post(
                 f"{self.base_url}/get_closest",
-                json={"embedding": embedding, "n_results": n_results},
+                json=request_data,
                 headers={"X-API-Key": self.api_key, "Content-Type": "application/json"},
             )
             response.raise_for_status()
@@ -76,15 +92,26 @@ class DbApiClient:
         self,
         embeddings: List[List[float]],
         n_results: int = 5,
-        start_date=None,
-        end_date=None,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
     ):
+        """Internal async method to get closest results from the database.
+
+        Args:
+            embeddings: List of embeddings to search for
+            n_results: Number of results to return per embedding
+            start_date: Optional date object to filter results (inclusive)
+            end_date: Optional date object to filter results (inclusive)
+
+        Note:
+            start_date and end_date must be date objects, not strings
+        """
         async with httpx.AsyncClient(timeout=300.0) as client:
             request_data = {"embeddings": embeddings, "n_results": n_results}
             if start_date:
-                request_data["start_date"] = start_date
+                request_data["start_date"] = start_date.isoformat()
             if end_date:
-                request_data["end_date"] = end_date
+                request_data["end_date"] = end_date.isoformat()
 
             response = await client.post(
                 f"{self.base_url}/get_multiple_closest",
@@ -117,8 +144,8 @@ class DbApiClient:
         batch_size: int = 20,
         limit_parallel: int = 10,
         show_progress: bool = True,
-        start_date=None,
-        end_date=None,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
     ):
         """Get the closest results from the database service for multiple embeddings.
 
@@ -138,6 +165,7 @@ class DbApiClient:
                 - filename: str (the audio filename the chunk was extracted from)
                 - chunk_index: int (the index of the chunk in the audio file)
                 - total_chunks: int (the total number of chunks of the audio file)
+                - date: str (ISO format date string, or None if no date is present)
         """
         batched_get_multiple_closest = batched_parallel(
             function=self._get_multiple_closest,
@@ -148,13 +176,30 @@ class DbApiClient:
         )
         return batched_get_multiple_closest(embeddings, n_results, start_date, end_date)
 
-    def get_full_database(self, start_date=None, end_date=None):
+    def get_full_database(
+        self, start_date: Optional[date] = None, end_date: Optional[date] = None
+    ):
+        """Get all documents in the database.
+
+        Args:
+            start_date (date, optional): Only return documents with a date greater than or equal to this. Defaults to None.
+            end_date (date, optional): Only return documents with a date less than or equal to this. Defaults to None.
+
+        Returns:
+            Tuple[List[str], List[str], List[Dict]]: (ids, documents, metadatas)
+            metadata dict includes:
+                - language: str (the chunk's language)
+                - filename: str (the audio filename the chunk was extracted from)
+                - chunk_index: int (the index of the chunk in the audio file)
+                - total_chunks: int (the total number of chunks of the audio file)
+                - date: str (ISO format date string, or None if no date is present)
+        """
         with httpx.Client() as client:
             params = {}
             if start_date:
-                params["start_date"] = start_date
+                params["start_date"] = start_date.isoformat()
             if end_date:
-                params["end_date"] = end_date
+                params["end_date"] = end_date.isoformat()
 
             response = client.get(
                 f"{self.base_url}/get_all",
