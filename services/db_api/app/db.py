@@ -3,7 +3,6 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from database_url import SQLALCHEMY_DATABASE_URL
-from models import Document
 from vector_utils import get_vector_dim_from_db
 
 # Get embedding dimension directly from environment
@@ -21,7 +20,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 try:
     # Create a temporary session to check the vector dimension
     temp_session = SessionLocal()
-    db_embedding_dim = get_vector_dim_from_db(engine, temp_session)
+    db_embedding_dim = get_vector_dim_from_db(engine, temp_session, logger)
     if db_embedding_dim is not None:
         logger.info(f"Database vector embedding dimension: {db_embedding_dim}")
     else:

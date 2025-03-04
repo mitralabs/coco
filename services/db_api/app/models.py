@@ -1,10 +1,8 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Date
 from sqlalchemy.ext.declarative import declarative_base
 from pgvector.sqlalchemy import Vector
-import os
 
-# Get embedding dimension directly from environment
-EMBEDDING_DIM = int(os.getenv("EMBEDDING_DIM", "768"))
+from vector_utils import EMBEDDING_DIM
 
 Base = declarative_base()
 
@@ -18,3 +16,4 @@ class Document(Base):
     filename = Column(String, nullable=False)
     chunk_index = Column(Integer, nullable=False)
     total_chunks = Column(Integer, nullable=False)
+    date = Column(Date, nullable=True)

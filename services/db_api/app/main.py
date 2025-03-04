@@ -1,15 +1,15 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security.api_key import APIKeyHeader
-from pydantic import BaseModel, ValidationError, field_validator
+from pydantic import BaseModel, field_validator
 import os
 from typing import List
 import logging
 from sqlalchemy.orm import Session
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, or_
+from datetime import date
 
 from db import get_db, EMBEDDING_DIM
-from db import Document as DbDocument
-
+from models import Document as DbDocument
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -35,6 +35,7 @@ class DocumentMetadata(BaseModel):
     filename: str
     chunk_index: int
     total_chunks: int
+    date: date = None
 
 
 class Document(BaseModel):
@@ -61,6 +62,8 @@ class AddRequest(BaseModel):
 class GetClosestRequest(BaseModel):
     embedding: List[float]
     n_results: int = 5
+    start_date: date = None
+    end_date: date = None
 
     @field_validator("embedding", mode="before")
     @classmethod
@@ -77,6 +80,8 @@ class GetClosestRequest(BaseModel):
 class GetMultipleClosestRequest(BaseModel):
     embeddings: List[List[float]]
     n_results: int = 5
+    start_date: date = None
+    end_date: date = None
 
     @field_validator("embeddings", mode="before")
     @classmethod
@@ -105,12 +110,34 @@ def nearest_neighbor_query(db: Session, query_embedding: List[float], n_results:
 
 
 def get_closest_from_embeddings(
-    db: Session, embeddings: List[List[float]], n_results: int
+    db: Session,
+    embeddings: List[List[float]],
+    n_results: int,
+    start_date=None,
+    end_date=None,
 ):
     all_formatted_results = []
     for embedding in embeddings:
         formatted_results = []
-        results = nearest_neighbor_query(db, embedding, n_results)
+        query = select(
+            DbDocument,
+            DbDocument.embedding.cosine_distance(embedding).label("distance"),
+        )
+
+        if start_date:
+            query = query.where(
+                or_(DbDocument.date >= start_date, DbDocument.date == None)
+            )
+        if end_date:
+            query = query.where(
+                or_(DbDocument.date <= end_date, DbDocument.date == None)
+            )
+
+        query = query.order_by(DbDocument.embedding.cosine_distance(embedding)).limit(
+            n_results
+        )
+
+        results = db.execute(query)
         formatted_results = []
         for doc, distance in results:
             formatted_results.append(
@@ -122,6 +149,7 @@ def get_closest_from_embeddings(
                         "filename": doc.filename,
                         "chunk_index": doc.chunk_index,
                         "total_chunks": doc.total_chunks,
+                        "date": doc.date.isoformat() if doc.date else None,
                     },
                     "distance": distance,
                 }
@@ -154,6 +182,7 @@ async def add(
             filename=doc.metadata.filename,
             chunk_index=doc.metadata.chunk_index,
             total_chunks=doc.metadata.total_chunks,
+            date=doc.metadata.date,
         )
         db.add(db_doc)
         added_count += 1
@@ -169,7 +198,11 @@ async def get_closest(
     api_key: str = Depends(get_api_key),
 ):
     formatted_results = get_closest_from_embeddings(
-        db=db, embeddings=[request.embedding], n_results=request.n_results
+        db=db,
+        embeddings=[request.embedding],
+        n_results=request.n_results,
+        start_date=request.start_date,
+        end_date=request.end_date,
     )[0]
     return {
         "status": "success",
@@ -185,7 +218,11 @@ async def get_multiple_closest(
     api_key: str = Depends(get_api_key),
 ):
     all_formatted_results = get_closest_from_embeddings(
-        db=db, embeddings=request.embeddings, n_results=request.n_results
+        db=db,
+        embeddings=request.embeddings,
+        n_results=request.n_results,
+        start_date=request.start_date,
+        end_date=request.end_date,
     )
     assert len(all_formatted_results) > 0
     return {
@@ -197,8 +234,19 @@ async def get_multiple_closest(
 
 
 @app.get("/get_all")
-async def get_all(db: Session = Depends(get_db), api_key: str = Depends(get_api_key)):
-    results = db.execute(select(DbDocument)).scalars().all()
+async def get_all(
+    start_date: date = None,
+    end_date: date = None,
+    db: Session = Depends(get_db),
+    api_key: str = Depends(get_api_key),
+):
+    query = select(DbDocument)
+    if start_date:
+        query = query.where(or_(DbDocument.date >= start_date, DbDocument.date == None))
+    if end_date:
+        query = query.where(or_(DbDocument.date <= end_date, DbDocument.date == None))
+
+    results = db.execute(query).scalars().all()
     formatted_results = []
     for result in results:
         formatted_results.append(
@@ -210,6 +258,7 @@ async def get_all(db: Session = Depends(get_db), api_key: str = Depends(get_api_
                     "filename": result.filename,
                     "chunk_index": result.chunk_index,
                     "total_chunks": result.total_chunks,
+                    "date": result.date.isoformat() if result.date else None,
                 },
             }
         )
@@ -241,7 +290,32 @@ async def max_embedding_dim(api_key: str = Depends(get_api_key)):
     }
 
 
-# Super basic test endpoint
+@app.delete("/delete_by_date")
+async def delete_by_date(
+    start_date: date = None,
+    end_date: date = None,
+    db: Session = Depends(get_db),
+    api_key: str = Depends(get_api_key),
+):
+    """
+    Delete documents within a specified date range.
+    If no dates are provided, no documents will be deleted.
+    """
+    query = delete(DbDocument)
+    if start_date:
+        query = query.where(DbDocument.date >= start_date)
+    if end_date:
+        query = query.where(DbDocument.date <= end_date)
+
+    result = db.execute(query)
+    db.commit()
+
+    return {
+        "status": "success",
+        "count": result.rowcount,
+    }
+
+
 @app.get("/test")
 async def test_endpoint(api_key: str = Depends(get_api_key)):
     return {

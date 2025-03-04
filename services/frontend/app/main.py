@@ -1,6 +1,8 @@
 import gradio as gr
 import pandas as pd
 import numpy as np
+import datetime
+from datetime import date
 
 from coco import CocoClient
 
@@ -51,11 +53,11 @@ CONTEXT_FORMAT = """
 
 
 def user(user_message, history):
-    # print(user_message)
     if history is None:
         history = []
     history.append({"role": "user", "content": user_message})
-    # print(history)
+    # Return empty string for input_message to clear the textbox
+    # But the message is already stored in current_user_message state
     return "", history
 
 
@@ -124,9 +126,45 @@ def get_available_models():
     return available_models
 
 
-async def add_context(user_message: str = "", history: list = [], messages: list = []):
-    # Get RAG context
-    contexts = await cc.rag.async_retrieve_chunks([user_message], 5)
+async def add_context(
+    user_message: str = "",
+    history: list = [],
+    messages: list = [],
+    start_date=None,
+    end_date=None,
+):
+    # Convert DateTime component output to date objects
+    start_date_obj = None
+    end_date_obj = None
+
+    if start_date:
+        # Handle different possible formats from gr.DateTime
+        if isinstance(start_date, datetime.datetime):
+            start_date_obj = start_date.date()
+        elif isinstance(start_date, date):
+            start_date_obj = start_date
+        elif isinstance(start_date, str) and start_date.strip():
+            try:
+                start_date_obj = datetime.datetime.fromisoformat(start_date).date()
+            except ValueError:
+                print(f"Invalid start date format: {start_date}")
+
+    if end_date:
+        # Handle different possible formats from gr.DateTime
+        if isinstance(end_date, datetime.datetime):
+            end_date_obj = end_date.date()
+        elif isinstance(end_date, date):
+            end_date_obj = end_date
+        elif isinstance(end_date, str) and end_date.strip():
+            try:
+                end_date_obj = datetime.datetime.fromisoformat(end_date).date()
+            except ValueError:
+                print(f"Invalid end date format: {end_date}")
+
+    # Get RAG context with date filters
+    contexts = await cc.rag.async_retrieve_chunks(
+        [user_message], 5, start_date=start_date_obj, end_date=end_date_obj
+    )
     context_chunks = contexts[0][1]
     rag_context = CONTEXT_FORMAT.format(context="\n-----\n".join(context_chunks))
     # Add RAG context -> Note the "tool" role is ollama specific and will be useful in the future. See: https://github.com/ollama/ollama/blob/main/docs/api.md#generate-a-chat-completion
@@ -151,9 +189,17 @@ async def call_rag(
     history,
     selected_model,
     system_message,
-    include_context,
+    start_date=None,
+    end_date=None,
 ):
     try:
+        # Get RAG context with date filters
+        contexts = await cc.rag.async_retrieve_chunks(
+            [user_message], 5, start_date=start_date, end_date=end_date
+        )
+        context_chunks = contexts[0][1]
+        rag_context = CONTEXT_FORMAT.format(context="\n-----\n".join(context_chunks))
+
         messages = []
         # Add system message
         if system_message == "":
@@ -191,9 +237,10 @@ async def call_rag_stream(
     history,
     selected_model,
     system_message,
+    start_date,
+    end_date,
     include_context,
 ):
-
     messages = []
     # Add system message
     if system_message == "":
@@ -205,7 +252,18 @@ async def call_rag_stream(
         messages.append({"role": element["role"], "content": element["content"]})
 
     if include_context == "Yes":
-        messages, history = await add_context(user_message, history, messages)
+        # Explicitly get the user message from history if available
+        actual_user_message = user_message
+        if not actual_user_message and history and len(history) > 0:
+            # Try to get the user message from the last history item
+            if hasattr(history[-1], "role") and history[-1].role == "user":
+                actual_user_message = history[-1].content
+            elif isinstance(history[-1], dict) and history[-1].get("role") == "user":
+                actual_user_message = history[-1].get("content", "")
+
+        messages, history = await add_context(
+            actual_user_message, history, messages, start_date, end_date
+        )
     else:
         messages.append({"role": "user", "content": user_message})
 
@@ -261,26 +319,46 @@ def handle_audio_upload(file):
         return f"Error processing file: {str(e)}"
 
 
-def create_dataframe(query=None):
-    ids, documents, metadata = cc.db_api.get_full_database()
-    # print(documents[0])
-    df = pd.DataFrame(
-        {
-            "ids": ids,
-            "documents": documents,
-            "filename": [e["filename"] for e in metadata],
-        }
-    )
-    print(f"query: {query}")
+def create_dataframe(query=None, start_date=None, end_date=None):
+    # Convert DateTime component output to date objects
+    start_date_obj = None
+    end_date_obj = None
+
+    if start_date:
+        # Handle different possible formats from gr.DateTime
+        if isinstance(start_date, datetime.datetime):
+            start_date_obj = start_date.date()
+        elif isinstance(start_date, date):
+            start_date_obj = start_date
+        elif isinstance(start_date, str) and start_date.strip():
+            try:
+                start_date_obj = datetime.datetime.fromisoformat(start_date).date()
+            except ValueError:
+                print(f"Invalid start date format: {start_date}")
+
+    if end_date:
+        # Handle different possible formats from gr.DateTime
+        if isinstance(end_date, datetime.datetime):
+            end_date_obj = end_date.date()
+        elif isinstance(end_date, date):
+            end_date_obj = end_date
+        elif isinstance(end_date, str) and end_date.strip():
+            try:
+                end_date_obj = datetime.datetime.fromisoformat(end_date).date()
+            except ValueError:
+                print(f"Invalid end date format: {end_date}")
 
     if query:
-        query_answers = cc.rag.retrieve_chunks(query_texts=[query])
+        query_answers = cc.rag.retrieve_chunks(
+            query_texts=[query], start_date=start_date_obj, end_date=end_date_obj
+        )
         ids, documents, metadata, distances = query_answers[0]
         df = pd.DataFrame(
             {
                 "ids": ids,
                 "documents": documents,
                 "filename": [e["filename"] for e in metadata],
+                "date": [e.get("date", "N/A") for e in metadata],
                 "distances": [round(e, 2) for e in distances],
             }
         )
@@ -288,7 +366,26 @@ def create_dataframe(query=None):
         df = df.sort_values(by="distances", ascending=False)
         return df
     else:
+        # Get all documents, possibly filtered by date
+        ids, documents, metadata = cc.db_api.get_full_database(
+            start_date_obj, end_date_obj
+        )
+        df = pd.DataFrame(
+            {
+                "ids": ids,
+                "documents": documents,
+                "filename": [e["filename"] for e in metadata],
+                "date": [
+                    e.get("date", "N/A") for e in metadata
+                ],  # Include date in dataframe
+            }
+        )
         return df
+
+
+def filter_by_date(start_date, end_date):
+    """Filter the database by date range without a query."""
+    return create_dataframe(query=None, start_date=start_date, end_date=end_date)
 
 
 with gr.Blocks(
@@ -329,7 +426,20 @@ with gr.Blocks(
             update_available_models, [provider_dropdown], [model_dropdown]
         )
 
+    # Add a state variable to store the current user message
+    current_user_message = gr.State("")
+
     with gr.Group():
+        with gr.Row():
+            chat_start_date = gr.DateTime(
+                label="Filter documents from",
+                value=None,
+            )
+            chat_end_date = gr.DateTime(
+                label="Filter documents to",
+                value=None,
+            )
+
         chatbot = gr.Chatbot(
             label="coco",
             type="messages",
@@ -345,28 +455,54 @@ with gr.Blocks(
             elem_id="input_message",
         )
 
+        # Function to update the current_user_message state
+        def update_user_message(msg):
+            return msg
+
         # Also allow Enter key to submit
         input_message.submit(
+            update_user_message, [input_message], [current_user_message]
+        ).then(
             user, [input_message, chatbot], [input_message, chatbot], queue=False
         ).then(
             fn=call_rag_stream,
             inputs=[
-                input_message,
+                current_user_message,  # Use the state variable instead of input_message
                 chatbot,
                 model_dropdown,
                 system_message,
+                chat_start_date,
+                chat_end_date,
                 include_context,
             ],
             outputs=[chatbot],
         )
 
+        # For retry, we don't have a new user message, so use empty string or last message in history
         chatbot.retry(retry, [chatbot], [chatbot], queue=False).then(
             fn=call_rag_stream,
             inputs=[
-                input_message,
+                current_user_message,  # Use stored message for retry
                 chatbot,
                 model_dropdown,
                 system_message,
+                chat_start_date,
+                chat_end_date,
+                include_context,
+            ],
+            outputs=[chatbot],
+        )
+
+        # Second retry handler
+        chatbot.retry(retry, [chatbot], [chatbot], queue=False).then(
+            fn=call_rag_stream,
+            inputs=[
+                current_user_message,  # Use stored message for retry
+                chatbot,
+                model_dropdown,
+                system_message,
+                chat_start_date,
+                chat_end_date,
                 include_context,
             ],
             outputs=[chatbot],
@@ -385,16 +521,22 @@ with demo.route("Memory") as incrementer_demo:
         )
         upload_status = gr.Textbox(label="Upload Status", interactive=False)
 
-    query = gr.Textbox(
-        label="Query",
-        lines=1,
-        placeholder="Insert some query you want to search for...",
-    )
+    with gr.Row():
+        query = gr.Textbox(
+            label="Query",
+            lines=1,
+            placeholder="Insert some query you want to search for...",
+        )
+
+    with gr.Row():
+        start_date = gr.DateTime(label="Start Date", value=None)
+        end_date = gr.DateTime(label="End Date", value=None)
 
     data_view = gr.DataFrame(create_dataframe, wrap=True)
     with gr.Row():
         btn_show_all = gr.Button("Show All")
-        btn_show_all.click(create_dataframe, outputs=[data_view])
+        btn_filter_by_date = gr.Button("Filter by Date")
+        btn_clear_dates = gr.Button("Clear Date Filters")
         gr.Button("Clear Database (Not yet implemented)")
 
     # Add file upload handler
@@ -406,12 +548,19 @@ with demo.route("Memory") as incrementer_demo:
 
     query.submit(
         fn=create_dataframe,
-        inputs=[query],
+        inputs=[query, start_date, end_date],
         outputs=[data_view],
         queue=False,
     ).then(clear, [query], [query])
 
-    # test if change detected. again.
+    # Date filter buttons
+    btn_show_all.click(create_dataframe, outputs=[data_view])
+    btn_filter_by_date.click(
+        filter_by_date, inputs=[start_date, end_date], outputs=[data_view]
+    )
+    btn_clear_dates.click(lambda: (None, None), outputs=[start_date, end_date]).then(
+        create_dataframe, [], [data_view]
+    )
 
 if __name__ == "__main__":
     demo.launch(favicon_path="favicon.png")
