@@ -53,11 +53,11 @@ CONTEXT_FORMAT = """
 
 
 def user(user_message, history):
-    # print(user_message)
     if history is None:
         history = []
     history.append({"role": "user", "content": user_message})
-    # print(history)
+    # Return empty string for input_message to clear the textbox
+    # But the message is already stored in current_user_message state
     return "", history
 
 
@@ -241,7 +241,6 @@ async def call_rag_stream(
     end_date,
     include_context,
 ):
-
     messages = []
     # Add system message
     if system_message == "":
@@ -253,8 +252,17 @@ async def call_rag_stream(
         messages.append({"role": element["role"], "content": element["content"]})
 
     if include_context == "Yes":
+        # Explicitly get the user message from history if available
+        actual_user_message = user_message
+        if not actual_user_message and history and len(history) > 0:
+            # Try to get the user message from the last history item
+            if hasattr(history[-1], "role") and history[-1].role == "user":
+                actual_user_message = history[-1].content
+            elif isinstance(history[-1], dict) and history[-1].get("role") == "user":
+                actual_user_message = history[-1].get("content", "")
+
         messages, history = await add_context(
-            user_message, history, messages, start_date, end_date
+            actual_user_message, history, messages, start_date, end_date
         )
     else:
         messages.append({"role": "user", "content": user_message})
@@ -418,6 +426,9 @@ with gr.Blocks(
             update_available_models, [provider_dropdown], [model_dropdown]
         )
 
+    # Add a state variable to store the current user message
+    current_user_message = gr.State("")
+
     with gr.Group():
         with gr.Row():
             chat_start_date = gr.DateTime(
@@ -444,13 +455,19 @@ with gr.Blocks(
             elem_id="input_message",
         )
 
+        # Function to update the current_user_message state
+        def update_user_message(msg):
+            return msg
+
         # Also allow Enter key to submit
         input_message.submit(
+            update_user_message, [input_message], [current_user_message]
+        ).then(
             user, [input_message, chatbot], [input_message, chatbot], queue=False
         ).then(
             fn=call_rag_stream,
             inputs=[
-                input_message,
+                current_user_message,  # Use the state variable instead of input_message
                 chatbot,
                 model_dropdown,
                 system_message,
@@ -461,10 +478,11 @@ with gr.Blocks(
             outputs=[chatbot],
         )
 
+        # For retry, we don't have a new user message, so use empty string or last message in history
         chatbot.retry(retry, [chatbot], [chatbot], queue=False).then(
             fn=call_rag_stream,
             inputs=[
-                input_message,
+                current_user_message,  # Use stored message for retry
                 chatbot,
                 model_dropdown,
                 system_message,
@@ -475,10 +493,11 @@ with gr.Blocks(
             outputs=[chatbot],
         )
 
+        # Second retry handler
         chatbot.retry(retry, [chatbot], [chatbot], queue=False).then(
             fn=call_rag_stream,
             inputs=[
-                input_message,
+                current_user_message,  # Use stored message for retry
                 chatbot,
                 model_dropdown,
                 system_message,
