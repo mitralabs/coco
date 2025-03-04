@@ -1,4 +1,5 @@
-embedding_model: ["nomic-embed-text", "ollama"] # (model name, coco embedding_api)
+skip: true
+embedding_model: ["bge-m3", "ollama"] # (model name, coco embedding_api)
 get_top_chunks:
   load_from_file: false
   load_file_name: ${general.data_dir}/runs/test-gt-qa-2/retrieved_chunks.json

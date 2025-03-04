@@ -283,6 +283,10 @@ def correctness(ds: Dataset, answers: Dict[str, Dict[str, Any]], wandb_prefix: s
 def generation_stage(
     cc: CocoClient, cfg: DictConfig, top_chunks: Dict[str, Dict[str, List]], ds: Dataset
 ) -> None:
+    if cfg.generation.skip:
+        logger.info("Generation stage skipped")
+        return
+
     logger.info("Starting generation stage for retrieved chunks")
     answers_ret = get_answers(
         top_chunks=top_chunks,
