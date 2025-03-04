@@ -14,6 +14,10 @@ logger = logging.getLogger(__name__)
 
 
 def get_top_chunks(cc: CocoClient, cfg: DictConfig, ds: Dataset):
+    if cfg.retrieval.skip:
+        logger.info("Retrieval stage skipped")
+        return
+
     if cfg.retrieval.get_top_chunks.load_from_file:
         # load from file if specified
         chunks_file = Path(cfg.retrieval.get_top_chunks.load_file_name)
