@@ -82,10 +82,10 @@ services:
       - COCO_TRANSCRIPTION_URL_BASE=http://host.docker.internal:8000
       - COCO_OLLAMA_URL_BASE=http://host.docker.internal:11434
       - COCO_OPENAI_URL_BASE=https://openai.inference.de-txl.ionos.com/v1
-      - COCO_EMBEDDING_API=ollama
+      - COCO_EMBEDDING_API=openai
       - COCO_LLM_API=openai
       - COCO_API_KEY=test
-      - COCO_EMBEDDING_MODEL=nomic-embed-text
+      - COCO_EMBEDDING_MODEL=BAAI/bge-m3
       - COCO_DEFAULT_LLM_MODEL=meta-llama/Llama-3.3-70B-Instruct
     restart: unless-stopped
     depends_on:
@@ -110,10 +110,12 @@ services:
       - COCO_TRANSCRIPTION_URL_BASE=http://host.docker.internal:8000
       - COCO_OLLAMA_URL_BASE=http://host.docker.internal:11434
       - COCO_OPENAI_URL_BASE=https://openai.inference.de-txl.ionos.com/v1
-      - COCO_EMBEDDING_API=ollama
+      - COCO_EMBEDDING_API=openai
       - COCO_LLM_API=openai
       - COCO_API_KEY=test
-      - COCO_EMBEDDING_MODEL=nomic-embed-text
+      - COCO_EMBEDDING_MODEL=BAAI/bge-m3
+    env_file:
+      - ".env"
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
