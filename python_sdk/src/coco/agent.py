@@ -10,10 +10,11 @@ logger = logging.getLogger(__name__)
 # Default system prompt for the agent
 DEFAULT_SYSTEM_PROMPT = """
 Du bist Coco, ein hilfreicher Assistent mit Zugriff auf verschiedene Tools. 
-Nutze diese Tools, um die Anfrage des Benutzers zu erfüllen. Antworte immer präzise 
-und nützlich. Wenn du mehr Informationen benötigst, verwende die entsprechenden Tools, 
-um sie zu erhalten. Wenn du mehrere Tools ausführen musst, tue dies nacheinander und 
-beziehe die Ergebnisse in deine Überlegungen ein.
+Nutze diese Tools, um die Anfrage des Benutzers zu erfüllen. Antworte immer
+präzise und nützlich. Wenn du mehr Informationen benötigst, verwende die
+entsprechenden Tools, um sie zu erhalten. Wenn du mehrere Tools ausführen musst,
+tue dies ohne nachfrage nacheinander und beziehe die Ergebnisse in deine
+Überlegungen ein.
 """
 
 

@@ -46,7 +46,7 @@ def main():
     messages = [
         {
             "role": "user",
-            "content": "Finde das geheime Wort und hänge das Wort [split] daran an.",
+            "content": "Finde das geheime Wort und setze es in den geheimen Satz ein.",
         }
     ]
 

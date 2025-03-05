@@ -397,22 +397,29 @@ class ToolsClient:
         return results
 
     @tool(description="Get the secret word")
-    def get_secret_word(self, modifier: str = "") -> Dict[str, Any]:
+    def get_secret_word(self) -> Dict[str, Any]:
         """
         Returns the secret word.
-
-        Args:
-            modifier: A string to append to the secret word (optional)
 
         Returns:
             A dictionary containing the secret word and additional information
         """
         secret_word = "banana"
-        if modifier:
-            secret_word = f"{secret_word}_{modifier}"
 
         return {
             "secret_word": secret_word,
             "timestamp": datetime.now().isoformat(),
-            "message": "This is a secret word for testing purposes",
+            "message": "This is the secret word",
+        }
+
+    @tool(description="Obtain formatted secret sentence")
+    def get_secret_sentence(self, insertion: str = "") -> Dict[str, Any]:
+        """
+        Returns the secret sentence.
+        """
+        secret_sentence = f"I like eating {insertion}"
+        return {
+            "secret_sentence": secret_sentence,
+            "timestamp": datetime.now().isoformat(),
+            "message": "This is the secret sentence with inserted word",
         }
