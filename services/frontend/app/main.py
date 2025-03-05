@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import datetime
 from datetime import date
+import json
 
 from coco import CocoClient
 
@@ -561,6 +562,201 @@ with demo.route("Memory") as incrementer_demo:
     btn_clear_dates.click(lambda: (None, None), outputs=[start_date, end_date]).then(
         create_dataframe, [], [data_view]
     )
+
+# Add new Agent page with agent capabilities
+with demo.route("Agent") as agent_demo:
+    with gr.Sidebar(open=False):
+        gr.Markdown("# ")
+        gr.Markdown("# Set agent options")
+        agent_provider_dropdown = gr.Dropdown(
+            choices=["ollama", "openai"],
+            value=cc.lm.llm_api,
+            label="Select Provider",
+            interactive=True,
+        )
+        # Add model selection dropdown
+        agent_model_dropdown = gr.Dropdown(
+            choices=get_available_models(),
+            label="Select Model",
+            interactive=True,
+        )
+        # Add a simple default system message that explicitly forbids Python tag usage
+        default_agent_system_message = """
+Du bist Coco, ein hilfreicher Assistent mit Zugriff auf verschiedene Tools. 
+Nutze diese Tools, um die Anfrage des Benutzers zu erfüllen. Antworte immer
+präzise und nützlich. Wenn du mehr Informationen benötigst, verwende die
+entsprechenden Tools, um sie zu erhalten. Wenn du mehrere Tools ausführen musst,
+tue dies ohne nachfrage nacheinander und beziehe die Ergebnisse in deine
+Überlegungen ein.
+"""
+
+        agent_system_message = gr.Textbox(
+            label="System Message",
+            lines=10,
+            value=default_agent_system_message,
+            placeholder="Du bist Coco, ein Assistent mit Zugriff auf Tools. Nutze Tools um Anfragen zu erfüllen. Verwende die Werte aus Tool-Ergebnissen direkt in deinen Antworten.",
+        )
+        max_iterations = gr.Slider(
+            minimum=1, maximum=10, value=5, step=1, label="Max Iterations"
+        )
+        max_tool_calls = gr.Slider(
+            minimum=1,
+            maximum=20,
+            value=10,  # Higher default value
+            step=1,
+            label="Max Tool Calls",
+        )
+        # temperature slider removed as it causes issues with tool usage
+
+        agent_provider_dropdown.input(
+            update_available_models, [agent_provider_dropdown], [agent_model_dropdown]
+        )
+
+    # Current agent conversation state
+    agent_current_user_message = gr.State("")
+    agent_chat_history = gr.State([])
+
+    # Main agent chat interface
+    agent_chatbot = gr.Chatbot(
+        label="Agent Chat",
+        type="messages",
+        height="80vh",
+        render_markdown=True,
+    )
+    agent_input_message = gr.Textbox(
+        placeholder="Ask the agent to do something...",
+        show_label=False,
+        autofocus=True,
+        submit_btn=True,
+    )
+
+    # Define agent chat function
+    async def agent_chat(
+        user_message,
+        history,
+        model,
+        system_message,
+        max_iterations,
+        max_tool_calls,
+        temperature,  # Parameter kept for compatibility but not used
+    ):
+        # Initialize chat history if empty
+        if history is None:
+            history = []
+
+        # Convert history format for agent
+        agent_messages = []
+        if system_message and system_message.strip():
+            agent_messages.append({"role": "system", "content": system_message})
+
+        # Safely extract messages from history
+        for msg in history:
+            # Handle both gr.ChatMessage and dict formats
+            if hasattr(msg, "role") and hasattr(msg, "content"):
+                role = msg.role
+                content = msg.content
+            elif isinstance(msg, dict) and "role" in msg and "content" in msg:
+                role = msg["role"]
+                content = msg["content"]
+            else:
+                continue  # Skip invalid message formats
+
+            agent_messages.append({"role": role, "content": content})
+
+        # Add user message to agent messages if not already included
+        if (
+            not agent_messages
+            or agent_messages[-1].get("role") != "user"
+            or agent_messages[-1].get("content") != user_message
+        ):
+            agent_messages.append({"role": "user", "content": user_message})
+
+        try:
+            # Call agent with temperature always 0 for tool calls
+            result = cc.agent.chat(
+                messages=agent_messages,
+                model=model,
+                max_iterations=max_iterations,
+                max_tool_calls=max_tool_calls,
+                temperature=0.0,  # Always use temperature 0 for tool calls
+                stream=False,
+            )
+
+            # Display tool calls and results with minimal formatting
+            for i, (tool_call, tool_result) in enumerate(
+                zip(result.get("tool_calls", []), result.get("tool_results", []))
+            ):
+                tool_name = tool_call.get("function", {}).get("name")
+                tool_args = tool_call.get("function", {}).get("arguments")
+                if isinstance(tool_args, str):
+                    try:
+                        tool_args = json.loads(tool_args)
+                    except:
+                        pass
+
+                # Log tool call for debugging
+                print(f"Tool call {i+1}: {tool_name}({tool_args})")
+
+                # Format tool call with minimal formatting
+                tool_call_content = f"🔧 **Using tool:** `{tool_name}`\n\n**Arguments:**\n```json\n{json.dumps(tool_args, indent=2)}\n```"
+                history.append(
+                    gr.ChatMessage(role="assistant", content=tool_call_content)
+                )
+                yield history
+
+                # Format tool result with minimal formatting
+                tool_result_str = json.dumps(tool_result, indent=2)
+                result_display = f"**Tool Result:**\n```json\n{tool_result_str}\n```"
+                history.append(gr.ChatMessage(role="assistant", content=result_display))
+                yield history
+
+            # Look for Python tag in the content and remove it (handle malformed outputs)
+            final_content = result.get("content", "")
+
+            # Only if there's content, display it
+            if final_content and final_content.strip() and final_content != "None":
+                history.append(gr.ChatMessage(role="assistant", content=final_content))
+                yield history
+
+        except Exception as e:
+            error_message = f"Error: {str(e)}"
+            print(f"Agent error: {error_message}")
+            history.append(gr.ChatMessage(role="assistant", content=error_message))
+            yield history
+
+    # Function to update agent_current_user_message
+    def update_agent_user_message(msg):
+        return msg
+
+    # Connect UI event handlers
+    agent_input_message.submit(
+        update_agent_user_message, [agent_input_message], [agent_current_user_message]
+    ).then(
+        # Add the user message to history, ensuring it's a gr.ChatMessage
+        lambda msg, history: (
+            "",  # Clear input box
+            (history or []) + [gr.ChatMessage(role="user", content=msg)],
+        ),
+        [agent_input_message, agent_chatbot],
+        [agent_input_message, agent_chatbot],
+        queue=False,
+    ).then(
+        fn=agent_chat,
+        inputs=[
+            agent_current_user_message,
+            agent_chatbot,
+            agent_model_dropdown,
+            agent_system_message,
+            max_iterations,
+            max_tool_calls,
+            gr.State(0.0),  # Always use temperature 0.0 instead of the slider
+        ],
+        outputs=[agent_chatbot],
+    )
+
+    # Clear chat button for the agent
+    agent_clear_button = gr.Button("Clear Chat")
+    agent_clear_button.click(lambda: [], outputs=[agent_chatbot])
 
 if __name__ == "__main__":
     demo.launch(favicon_path="favicon.png")
