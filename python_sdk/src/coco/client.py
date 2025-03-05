@@ -6,9 +6,11 @@ import logging
 from .async_utils import batched_parallel
 from .chunking import ChunkingClient
 from .db_api import DbApiClient
-from .rag import RagClient
 from .transcription import TranscriptionClient
 from .lm import LanguageModelClient
+from .tools import ToolsClient
+from .rag import RagClient
+from .agent import AgentClient
 
 
 logger = logging.getLogger(__name__)
@@ -57,15 +59,18 @@ class CocoClient:
             assert self.openai_base, "OpenAI base URL is not set"
         assert self.api_key, "API key is not set"
 
+        # Initialize the clients in the correct order to avoid circular dependencies
         self.chunking = ChunkingClient(self.chunking_base, self.api_key)
         self.db_api = DbApiClient(self.db_api_base, self.api_key)
         self.transcription = TranscriptionClient(self.transcription_base, self.api_key)
         self.lm = LanguageModelClient(
             self.ollama_base, self.openai_base, self.embedding_api, self.llm_api
         )
-        self.rag = RagClient(
-            self.db_api,
-            self.lm,
+        self.rag = RagClient(db_api=self.db_api, lm=self.lm)
+
+        self._tools_client = ToolsClient(lm=self.lm, db_api=self.db_api)
+        self.agent = AgentClient(
+            lm=self.lm, tools_client=self._tools_client, llm_api=self.llm_api
         )
 
     def health_check(self, raise_on_error: bool = False):
