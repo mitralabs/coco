@@ -168,6 +168,7 @@ class CocoClient:
         batch_size: int = 20,
         limit_parallel: int = 10,
         show_progress: bool = True,
+        embedding_model: str = "nomic-embed-text",
     ):
         """Transcribe, chunk, embed and store.
 
@@ -191,6 +192,7 @@ class CocoClient:
             chunks=chunks,
             language=language,
             filename=filename,
+            model=embedding_model,
             batch_size=batch_size,
             limit_parallel=limit_parallel,
             show_progress=show_progress,

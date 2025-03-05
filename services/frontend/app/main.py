@@ -18,6 +18,11 @@ OPENAI_BASE = os.getenv("COCO_OPENAI_URL_BASE")
 EMBEDDING_API = os.getenv("COCO_EMBEDDING_API")
 LLM_API = os.getenv("COCO_LLM_API")
 API_KEY = os.getenv("COCO_API_KEY")
+# Default models from environment variables or fallback to defaults
+EMBEDDING_MODEL = os.getenv("COCO_EMBEDDING_MODEL", "nomic-embed-text")
+DEFAULT_LLM_MODEL = os.getenv(
+    "COCO_DEFAULT_LLM_MODEL", "meta-llama/Llama-3.3-70B-Instruct"
+)
 
 openai = AsyncOpenAI(
     base_url="https://openai.inference.de-txl.ionos.com/v1",
@@ -117,8 +122,8 @@ def get_available_models():
 
     if not available_models:
         available_models = [
-            "meta-llama/Llama-3.3-70B-Instruct"
-        ]  # Default fallback model for Openai
+            DEFAULT_LLM_MODEL
+        ]  # Default fallback model from environment variable
 
     if cc.lm.llm_api == "openai":
         try:
@@ -169,7 +174,11 @@ async def add_context(
 
     # Get RAG context with date filters
     contexts = await cc.rag.async_retrieve_chunks(
-        [user_message], 5, start_date=start_date_obj, end_date=end_date_obj
+        [user_message],
+        5,
+        start_date=start_date_obj,
+        end_date=end_date_obj,
+        model=EMBEDDING_MODEL,
     )
     context_chunks = contexts[0][1]
     rag_context = CONTEXT_FORMAT.format(context="\n-----\n".join(context_chunks))
@@ -201,7 +210,11 @@ async def call_rag(
     try:
         # Get RAG context with date filters
         contexts = await cc.rag.async_retrieve_chunks(
-            [user_message], 5, start_date=start_date, end_date=end_date
+            [user_message],
+            5,
+            start_date=start_date,
+            end_date=end_date,
+            model=EMBEDDING_MODEL,
         )
         context_chunks = contexts[0][1]
         rag_context = CONTEXT_FORMAT.format(context="\n-----\n".join(context_chunks))

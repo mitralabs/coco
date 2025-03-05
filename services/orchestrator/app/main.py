@@ -23,6 +23,8 @@ OPENAI_BASE = os.getenv("COCO_OPENAI_URL_BASE")
 API_KEY = os.getenv("COCO_API_KEY")
 EMBEDDING_API = os.getenv("COCO_EMBEDDING_API")
 LLM_API = os.getenv("COCO_LLM_API")
+# Default models from environment variables or fallback to defaults
+EMBEDDING_MODEL = os.getenv("COCO_EMBEDDING_MODEL", "nomic-embed-text")
 
 cc = CocoClient(
     chunking_base=CHUNKING_BASE,
@@ -114,7 +116,7 @@ def kick_off_processing(audio_path: str, store_in_db: bool = True):
 
     try:
         if store_in_db:
-            cc.transcribe_and_store(audio_path)
+            cc.transcribe_and_store(audio_path, embedding_model=EMBEDDING_MODEL)
 
             logger.info("Full Orchestration completed successfully.")
             return True

@@ -85,6 +85,8 @@ services:
       - COCO_EMBEDDING_API=ollama
       - COCO_LLM_API=openai
       - COCO_API_KEY=test
+      - COCO_EMBEDDING_MODEL=nomic-embed-text
+      - COCO_DEFAULT_LLM_MODEL=meta-llama/Llama-3.3-70B-Instruct
     restart: unless-stopped
     depends_on:
       chunking:
@@ -111,6 +113,7 @@ services:
       - COCO_EMBEDDING_API=ollama
       - COCO_LLM_API=openai
       - COCO_API_KEY=test
+      - COCO_EMBEDDING_MODEL=nomic-embed-text
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
