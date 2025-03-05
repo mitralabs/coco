@@ -1,16 +1,23 @@
 import gradio as gr
 import pandas as pd
-import numpy as np
 import datetime
 from datetime import date
+import os
 
 from coco import CocoClient
-
-# See Gradio Docs for reference: https://www.gradio.app/docs
 
 # Can be removed, only until functions are in SDK
 from ollama import AsyncClient
 from openai import AsyncOpenAI
+
+CHUNKING_BASE = os.getenv("COCO_CHUNK_URL_BASE")
+DB_API_BASE = os.getenv("COCO_DB_API_URL_BASE")
+TRANSCRIPTION_BASE = os.getenv("COCO_TRANSCRIPTION_URL_BASE")
+OLLAMA_BASE = os.getenv("COCO_OLLAMA_URL_BASE")
+OPENAI_BASE = os.getenv("COCO_OPENAI_URL_BASE")
+EMBEDDING_API = os.getenv("COCO_EMBEDDING_API")
+LLM_API = os.getenv("COCO_LLM_API")
+API_KEY = os.getenv("COCO_API_KEY")
 
 openai = AsyncOpenAI(
     base_url="https://openai.inference.de-txl.ionos.com/v1",
@@ -29,15 +36,14 @@ theme = gr.themes.Ocean(
 )
 
 cc = CocoClient(
-    chunking_base="http://chunking:8000",
-    db_api_base="http://db-api:8000",
-    transcription_base="http://host.docker.internal:8000",
-    # ollama_base="https://jetson-ollama.mitra-labs.ai",
-    ollama_base="http://host.docker.internal:11434",
-    openai_base="https://openai.inference.de-txl.ionos.com/v1",
-    embedding_api="ollama",
-    llm_api="openai",
-    api_key="test",
+    chunking_base=CHUNKING_BASE,
+    db_api_base=DB_API_BASE,
+    transcription_base=TRANSCRIPTION_BASE,
+    ollama_base=OLLAMA_BASE,
+    openai_base=OPENAI_BASE,
+    embedding_api=EMBEDDING_API,
+    llm_api=LLM_API,
+    api_key=API_KEY,
 )
 
 

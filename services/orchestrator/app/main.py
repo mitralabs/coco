@@ -15,14 +15,24 @@ import re
 
 from coco import CocoClient
 
+CHUNKING_BASE = os.getenv("COCO_CHUNK_URL_BASE")
+DB_API_BASE = os.getenv("COCO_DB_API_URL_BASE")
+TRANSCRIPTION_BASE = os.getenv("COCO_TRANSCRIPTION_URL_BASE")
+OLLAMA_BASE = os.getenv("COCO_OLLAMA_URL_BASE")
+OPENAI_BASE = os.getenv("COCO_OPENAI_URL_BASE")
+API_KEY = os.getenv("COCO_API_KEY")
+EMBEDDING_API = os.getenv("COCO_EMBEDDING_API")
+LLM_API = os.getenv("COCO_LLM_API")
+
 cc = CocoClient(
-    chunking_base="http://chunking:8000",
-    db_api_base="http://db-api:8000",
-    transcription_base="http://host.docker.internal:8000",
-    ollama_base="http://host.docker.internal:11434",
-    embedding_api="ollama",
-    llm_api="ollama",
-    api_key="test",
+    chunking_base=CHUNKING_BASE,
+    db_api_base=DB_API_BASE,
+    transcription_base=TRANSCRIPTION_BASE,
+    ollama_base=OLLAMA_BASE,
+    openai_base=OPENAI_BASE,
+    embedding_api=EMBEDDING_API,
+    llm_api=LLM_API,
+    api_key=API_KEY,
 )
 
 # Configure logging
@@ -33,8 +43,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# API Key Authentication
-API_KEY = os.getenv("API_KEY", "test")
 
 if not API_KEY:
     raise ValueError("API_KEY environment variable must be set")

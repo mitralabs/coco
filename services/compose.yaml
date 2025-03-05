@@ -77,6 +77,14 @@ services:
       - ".env"
     environment:
       - GRADIO_SERVER_NAME=0.0.0.0
+      - COCO_CHUNK_URL_BASE=http://chunking:8000
+      - COCO_DB_API_URL_BASE=http://db-api:8000
+      - COCO_TRANSCRIPTION_URL_BASE=http://host.docker.internal:8000
+      - COCO_OLLAMA_URL_BASE=http://host.docker.internal:11434
+      - COCO_OPENAI_URL_BASE=https://openai.inference.de-txl.ionos.com/v1
+      - COCO_EMBEDDING_API=ollama
+      - COCO_LLM_API=openai
+      - COCO_API_KEY=test
     restart: unless-stopped
     depends_on:
       chunking:
@@ -95,7 +103,14 @@ services:
       - ./orchestrator/app:/app
       - ./_data/audio_files:/data
     environment:
-      - API_KEY=test
+      - COCO_CHUNK_URL_BASE=http://chunking:8000
+      - COCO_DB_API_URL_BASE=http://db-api:8000
+      - COCO_TRANSCRIPTION_URL_BASE=http://host.docker.internal:8000
+      - COCO_OLLAMA_URL_BASE=http://host.docker.internal:11434
+      - COCO_OPENAI_URL_BASE=https://openai.inference.de-txl.ionos.com/v1
+      - COCO_EMBEDDING_API=ollama
+      - COCO_LLM_API=openai
+      - COCO_API_KEY=test
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
