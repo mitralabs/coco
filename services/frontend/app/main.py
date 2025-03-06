@@ -632,7 +632,9 @@ tue dies ohne nachfrage nacheinander und beziehe die Ergebnisse in deine
 
     # Current agent conversation state
     agent_current_user_message = gr.State("")
-    agent_chat_history = gr.State([])
+    # Remove the old agent_chat_history as it's not needed with the dual approach
+    # Add state for the actual conversation used by the agent
+    agent_actual_conversation = gr.State([])
 
     # Main agent chat interface
     agent_chatbot = gr.Chatbot(
@@ -652,47 +654,42 @@ tue dies ohne nachfrage nacheinander und beziehe die Ergebnisse in deine
     async def agent_chat(
         user_message,
         history,
+        actual_conversation,
         model,
         system_message,
         max_iterations,
         max_tool_calls,
         temperature,  # Parameter kept for compatibility but not used
     ):
-        # Initialize chat history if empty
+        # Initialize histories if empty
         if history is None:
             history = []
 
-        # Convert history format for agent
-        agent_messages = []
+        if actual_conversation is None:
+            actual_conversation = []
+
+        # Prepare system message for the agent
         if system_message and system_message.strip():
-            agent_messages.append({"role": "system", "content": system_message})
+            system_msg = {"role": "system", "content": system_message}
+            # Only add system message to actual_conversation if it's not already there
+            if (
+                not actual_conversation
+                or actual_conversation[0].get("role") != "system"
+            ):
+                actual_conversation = [system_msg] + actual_conversation
 
-        # Safely extract messages from history
-        for msg in history:
-            # Handle both gr.ChatMessage and dict formats
-            if hasattr(msg, "role") and hasattr(msg, "content"):
-                role = msg.role
-                content = msg.content
-            elif isinstance(msg, dict) and "role" in msg and "content" in msg:
-                role = msg["role"]
-                content = msg["content"]
-            else:
-                continue  # Skip invalid message formats
-
-            agent_messages.append({"role": role, "content": content})
-
-        # Add user message to agent messages if not already included
+        # Add current user message to the actual conversation if not already included
         if (
-            not agent_messages
-            or agent_messages[-1].get("role") != "user"
-            or agent_messages[-1].get("content") != user_message
+            not actual_conversation
+            or actual_conversation[-1].get("role") != "user"
+            or actual_conversation[-1].get("content") != user_message
         ):
-            agent_messages.append({"role": "user", "content": user_message})
+            actual_conversation.append({"role": "user", "content": user_message})
 
         try:
             # Call agent with temperature always 0 for tool calls
             result = cc.agent.chat(
-                messages=agent_messages,
+                messages=actual_conversation,
                 model=model,
                 max_iterations=max_iterations,
                 max_tool_calls=max_tool_calls,
@@ -700,6 +697,8 @@ tue dies ohne nachfrage nacheinander und beziehe die Ergebnisse in deine
                 stream=False,
             )
 
+            # Update the actual conversation with what the agent returned
+            actual_conversation = result["conversation_history"]
             # Display tool calls and results with minimal formatting
             for i, (tool_call, tool_result) in enumerate(
                 zip(result["tool_calls"], result["tool_results"])
@@ -713,20 +712,20 @@ tue dies ohne nachfrage nacheinander und beziehe die Ergebnisse in deine
                         pass
 
                 # Log tool call for debugging
-                print(f"Tool call {i+1}: {tool_name}({tool_args})")
+                print(f"Tool call {i+1}: {tool_call}")
 
                 # Format tool call with minimal formatting
                 tool_call_content = f"🔧 **Using tool:** `{tool_name}`\n\n**Arguments:**\n```json\n{json.dumps(tool_args, indent=2)}\n```"
                 history.append(
                     gr.ChatMessage(role="assistant", content=tool_call_content)
                 )
-                yield history
+                yield history, actual_conversation
 
                 # Format tool result with minimal formatting
                 tool_result_str = json.dumps(tool_result, indent=2)
                 result_display = f"**Tool Result:**\n```json\n{tool_result_str}\n```"
                 history.append(gr.ChatMessage(role="assistant", content=result_display))
-                yield history
+                yield history, actual_conversation
 
             # Look for Python tag in the content and remove it (handle malformed outputs)
             final_content = result.get("content", "")
@@ -734,13 +733,13 @@ tue dies ohne nachfrage nacheinander und beziehe die Ergebnisse in deine
             # Only if there's content, display it
             if final_content and final_content.strip() and final_content != "None":
                 history.append(gr.ChatMessage(role="assistant", content=final_content))
-                yield history
+                yield history, actual_conversation
 
         except Exception as e:
             error_message = f"Error: {str(e)}"
             print(f"Agent error: {error_message}")
             history.append(gr.ChatMessage(role="assistant", content=error_message))
-            yield history
+            yield history, actual_conversation
 
     # Function to update agent_current_user_message
     def update_agent_user_message(msg):
@@ -751,30 +750,34 @@ tue dies ohne nachfrage nacheinander und beziehe die Ergebnisse in deine
         update_agent_user_message, [agent_input_message], [agent_current_user_message]
     ).then(
         # Add the user message to history, ensuring it's a gr.ChatMessage
-        lambda msg, history: (
+        lambda msg, history, actual_conv: (
             "",  # Clear input box
             (history or []) + [gr.ChatMessage(role="user", content=msg)],
+            actual_conv,  # Pass through the actual conversation unchanged
         ),
-        [agent_input_message, agent_chatbot],
-        [agent_input_message, agent_chatbot],
+        [agent_input_message, agent_chatbot, agent_actual_conversation],
+        [agent_input_message, agent_chatbot, agent_actual_conversation],
         queue=False,
     ).then(
         fn=agent_chat,
         inputs=[
             agent_current_user_message,
             agent_chatbot,
+            agent_actual_conversation,
             agent_model_dropdown,
             agent_system_message,
             max_iterations,
             max_tool_calls,
             gr.State(0.0),  # Always use temperature 0.0 instead of the slider
         ],
-        outputs=[agent_chatbot],
+        outputs=[agent_chatbot, agent_actual_conversation],
     )
 
     # Clear chat button for the agent
     agent_clear_button = gr.Button("Clear Chat")
-    agent_clear_button.click(lambda: [], outputs=[agent_chatbot])
+    agent_clear_button.click(
+        lambda: ([], []), outputs=[agent_chatbot, agent_actual_conversation]
+    )
 
 if __name__ == "__main__":
     demo.launch(favicon_path="favicon.png")
