@@ -425,6 +425,7 @@ with gr.Blocks(
         # Add model selection dropdown
         model_dropdown = gr.Dropdown(
             choices=get_available_models(),
+            value=DEFAULT_LLM_MODEL,
             label="Select Model",
             interactive=True,
         )
@@ -593,6 +594,7 @@ with demo.route("Agent") as agent_demo:
         # Add model selection dropdown
         agent_model_dropdown = gr.Dropdown(
             choices=get_available_models(),
+            value=DEFAULT_LLM_MODEL,
             label="Select Model",
             interactive=True,
         )
