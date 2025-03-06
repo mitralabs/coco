@@ -197,3 +197,35 @@ class CocoClient:
             limit_parallel=limit_parallel,
             show_progress=show_progress,
         )
+
+    def chunk_and_store(
+        self,
+        text: str,
+        language: str = "",
+        filename: str = "",
+        batch_size: int = 20,
+        limit_parallel: int = 10,
+        show_progress: bool = True,
+    ):
+        """Chunk, embed and store.
+
+        Args:
+            text (str): The text to chunk, embed and store.
+            batch_size (int, optional): The size of each batch. Defaults to 20.
+            limit_parallel (int, optional): The maximum number of parallel tasks / batches. Defaults to 10.
+            show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to True.
+
+        Returns:
+            Tuple[int, int]: The number of documents added and skipped.
+        """
+
+        chunks = self.chunking.chunk_text(text=text)
+
+        return self.embed_and_store(
+            chunks=chunks,
+            language=language,
+            filename=filename,
+            batch_size=batch_size,
+            limit_parallel=limit_parallel,
+            show_progress=show_progress,
+        )
