@@ -24,8 +24,10 @@ def main():
         openai_base="https://openai.inference.de-txl.ionos.com/v1",
         api_key="test",
         embedding_api="openai",
-        llm_api="openai",
+        llm_api="ollama",
     )
+    # model = "meta-llama/Llama-3.3-70B-Instruct"
+    model = "mistral-nemo"
 
     # Perform a health check to ensure all services are running
     logger.info("Performing health check...")
@@ -54,14 +56,35 @@ def main():
     messages = [
         {
             "role": "user",
-            "content": "Finde das geheime Wort und setze es in den geheimen Satz ein.",
+            "content": "Finde das geheime Wort.",
         }
     ]
 
     agent_result = cc.agent.chat(
         messages=messages,
-        model="meta-llama/Llama-3.3-70B-Instruct",
-        # model="mistral-nemo",
+        model=model,
+        max_iterations=3,
+    )
+    messages = agent_result["conversation_history"] + [
+        {
+            "role": "user",
+            "content": "Kannst du es in den geheimen Satz einsetzen?",
+        }
+    ]
+    agent_result = cc.agent.chat(
+        messages=messages,
+        model=model,
+        max_iterations=3,
+    )
+    messages = agent_result["conversation_history"] + [
+        {
+            "role": "user",
+            "content": "Ich weiß nicht, ob sich die Geheimnisse nicht ändern. Kannst du bitte nochmal nachschauen?",
+        }
+    ]
+    agent_result = cc.agent.chat(
+        messages=messages,
+        model=model,
         max_iterations=3,
     )
     logger.info(
