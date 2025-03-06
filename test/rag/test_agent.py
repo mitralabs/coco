@@ -1,6 +1,8 @@
 import logging
 import json
+
 from coco.client import CocoClient
+from coco.structs import ToolCall
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -34,12 +36,18 @@ def main():
         logger.warning("Continuing with the test despite health check issues...")
 
     logger.info("Testing direct tool execution...")
-    result = cc._tools_client.execute_tool("get_secret_word")
+    result = cc._tools_client.execute_tool(
+        ToolCall(
+            id="tool_call_1",
+            name="get_secret_word",
+            arguments={},
+        )
+    )
     logger.info(f"Secret word result (direct):\n{json.dumps(result, indent=2)}")
 
     # Print available tools for debugging
     logger.info("Available tools:")
-    tools = cc.agent.tools_client.get_tools("ollama")
+    tools = cc.agent.tools_client.get_tools()
     logger.info(f"{json.dumps(tools, indent=2)}")
 
     logger.info("Testing tool through agent...")
@@ -56,7 +64,10 @@ def main():
         # model="mistral-nemo",
         max_iterations=3,
     )
-    logger.info(f"Agent result:\n{json.dumps(agent_result, indent=2)}")
+    logger.info(
+        f"Messages History: {json.dumps(agent_result['conversation_history'], indent=2)}"
+    )
+    logger.info(f"Agent result: {agent_result['content']}")
 
 
 if __name__ == "__main__":

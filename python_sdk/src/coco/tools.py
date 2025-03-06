@@ -4,97 +4,20 @@ from typing import (
     List,
     Any,
     Optional,
-    Callable,
     get_type_hints,
     Literal,
     Union,
 )
 import logging
-from dataclasses import dataclass, field
 import functools
 from datetime import date, datetime
 import json
 
 from .db_api import DbApiClient
 from .lm import LanguageModelClient
+from .structs import ToolCall, ToolDefinition, ToolParameter
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class ToolParameter:
-    name: str
-    type: str
-    description: str
-    required: bool = True
-    default: Any = None
-    enum: List[str] = None
-
-
-@dataclass
-class ToolDefinition:
-    name: str
-    description: str
-    parameters: List[ToolParameter] = field(default_factory=list)
-    method: Optional[Callable] = None
-
-    def to_openai_format(self) -> Dict[str, Any]:
-        """Convert to OpenAI function calling format"""
-        properties = {}
-        required = []
-
-        for param in self.parameters:
-            param_spec = {"type": param.type, "description": param.description}
-
-            if param.enum:
-                param_spec["enum"] = param.enum
-
-            properties[param.name] = param_spec
-
-            if param.required:
-                required.append(param.name)
-
-        return {
-            "type": "function",
-            "function": {
-                "name": self.name,
-                "description": self.description,
-                "parameters": {
-                    "type": "object",
-                    "properties": properties,
-                    "required": required,
-                },
-            },
-        }
-
-    def to_ollama_format(self) -> Dict[str, Any]:
-        """Convert to Ollama tool format"""
-        parameters = {}
-        required = []
-
-        for param in self.parameters:
-            param_spec = {"type": param.type, "description": param.description}
-
-            if param.enum:
-                param_spec["enum"] = param.enum
-
-            parameters[param.name] = param_spec
-
-            if param.required:
-                required.append(param.name)
-
-        return {
-            "type": "function",
-            "function": {
-                "name": self.name,
-                "description": self.description,
-                "parameters": {
-                    "type": "object",
-                    "properties": parameters,
-                    "required": required,
-                },
-            },
-        }
 
 
 def tool(name: str = None, description: str = None):
@@ -217,36 +140,32 @@ class ToolsClient:
                 # Update the method reference
                 self.tools[name].method = method
 
-    def get_tools(self, provider: Literal["ollama", "openai"]) -> List[Dict[str, Any]]:
-        if provider == "ollama":
-            return [tool.to_ollama_format() for tool in self.tools.values()]
-        elif provider == "openai":
-            return [tool.to_openai_format() for tool in self.tools.values()]
-        else:
-            raise ValueError(f"Invalid provider: {provider}")
+    def get_tools(self) -> List[Dict[str, Any]]:
+        return [tool.to_dict() for tool in self.tools.values()]
 
-    def execute_tool(self, tool_name: str, **kwargs) -> Any:
+    def execute_tool(self, tool_call: ToolCall) -> Any:
         """
         Execute a tool by name with provided arguments
 
         Args:
-            tool_name: The name of the tool to execute
-            **kwargs: Arguments to pass to the tool
+            tool_call: The tool call to execute
 
         Returns:
             The result of the tool execution
         """
-        if tool_name not in self.tools:
-            raise ValueError(f"Tool '{tool_name}' not found")
+        if tool_call.name not in self.tools:
+            raise ValueError(f"Tool '{tool_call.name}' not found")
 
-        tool = self.tools[tool_name]
+        logger.info(f"Executing tool: {tool_call}")
+
+        tool = self.tools[tool_call.name]
 
         # Get type hints for the tool method
         type_hints = get_type_hints(tool.method)
         converted_kwargs = {}
 
         # Convert arguments to their expected types based on type annotations
-        for param_name, param_value in kwargs.items():
+        for param_name, param_value in tool_call.arguments.items():
             # Skip 'self' parameter
             if param_name == "self":
                 continue
@@ -330,7 +249,7 @@ class ToolsClient:
             A list of matching documents with their content and metadata
         """
         # Use the language model to create an embedding for the query
-        embeddings = self.lm.embed([query])[0]
+        embeddings = self.lm.embed_multiple([query])[0]
 
         # Use the database client to find the closest matches
         results = self.db_api.get_closest(embeddings, n_results=num_results)
@@ -362,7 +281,7 @@ class ToolsClient:
             A list of dictionaries containing matching documents with their content and metadata
         """
         # Use the language model to create an embedding for the query
-        embeddings = self.lm.embed([query])[0]
+        embeddings = self.lm.embed_multiple([query])[0]
 
         # Convert string dates to date objects if provided
         start_date_obj = None

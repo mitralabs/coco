@@ -20,9 +20,6 @@ ollama = AsyncClient(
     host="http://host.docker.internal:11434",
 )
 
-# ---
-
-
 theme = gr.themes.Ocean(
     primary_hue="sky",
     neutral_hue="neutral",
@@ -216,7 +213,7 @@ async def call_rag(
         else:
             messages.append({"role": "user", "content": user_message})
 
-        responses, tok_ss = await cc.lm.async_chat(
+        responses, tok_ss = await cc.lm.async_chat_multiple(
             messages_list=[messages],
             model=selected_model,
             batch_size=20,
@@ -684,10 +681,10 @@ tue dies ohne nachfrage nacheinander und beziehe die Ergebnisse in deine
 
             # Display tool calls and results with minimal formatting
             for i, (tool_call, tool_result) in enumerate(
-                zip(result.get("tool_calls", []), result.get("tool_results", []))
+                zip(result["tool_calls"], result["tool_results"])
             ):
-                tool_name = tool_call.get("function", {}).get("name")
-                tool_args = tool_call.get("function", {}).get("arguments")
+                tool_name = tool_call.name
+                tool_args = tool_call.arguments
                 if isinstance(tool_args, str):
                     try:
                         tool_args = json.loads(tool_args)

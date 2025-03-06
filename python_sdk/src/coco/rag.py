@@ -42,9 +42,18 @@ class RagClient:
         self.db_api = db_api
         self.lm = lm
 
-    async def _retrieve_chunks(self, query_texts, n_results, model="nomic-embed-text", start_date=None, end_date=None):
-        embeddings = await self.lm._embed(query_texts, model)
-        return await self.db_api._get_multiple_closest(embeddings, n_results, start_date, end_date)
+    async def _retrieve_chunks(
+        self,
+        query_texts,
+        n_results,
+        model="nomic-embed-text",
+        start_date=None,
+        end_date=None,
+    ):
+        embeddings = await self.lm._embed_multiple(query_texts, model)
+        return await self.db_api._get_multiple_closest(
+            embeddings, n_results, start_date, end_date
+        )
 
     def retrieve_chunks(
         self,
@@ -78,7 +87,9 @@ class RagClient:
             show_progress=show_progress,
             description="Retrieving chunks",
         )
-        return batched_retrieve_chunks(query_texts, n_results, model, start_date, end_date)
+        return batched_retrieve_chunks(
+            query_texts, n_results, model, start_date, end_date
+        )
 
     async def async_retrieve_chunks(
         self,
@@ -113,7 +124,9 @@ class RagClient:
             description="Retrieving chunks",
             return_async_wrapper=True,
         )
-        return await batched_retrieve_chunks(query_texts, n_results, model, start_date, end_date)
+        return await batched_retrieve_chunks(
+            query_texts, n_results, model, start_date, end_date
+        )
 
     def format_prompt(
         self, query: str, context_chunks: List[str], prompt_template: str | None = None
@@ -146,7 +159,9 @@ class RagClient:
             self.format_prompt(q, c, prompt_template)
             for q, c in zip(queries, context_chunks)
         ]
-        return await self.lm._generate(prompts, model=model, temperature=temperature)
+        return await self.lm._generate_multiple(
+            prompts, model=model, temperature=temperature
+        )
 
     def generate_answers(
         self,

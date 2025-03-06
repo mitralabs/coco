@@ -127,7 +127,7 @@ class CocoClient:
     async def _embed_and_store(
         self, chunks, language, filename, model="nomic-embed-text"
     ):
-        embeddings = await self.lm._embed(chunks, model)
+        embeddings = await self.lm._embed_multiple(chunks, model)
         ns_added, ns_skipped = await self.db_api._store_in_database(
             chunks, embeddings, language, filename
         )
