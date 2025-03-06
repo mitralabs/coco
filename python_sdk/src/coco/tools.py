@@ -248,14 +248,16 @@ class ToolsClient:
         Returns:
             A list of matching documents with their content and metadata
         """
-        # Use the language model to create an embedding for the query
-        embeddings = self.lm.embed_multiple([query])[0]
-
-        # Use the database client to find the closest matches
-        results = self.db_api.get_closest(embeddings, n_results=num_results)
-
-        # Process and return the results
-        return results
+        embedding = self.lm.embed(query)
+        ids, documents, metadatas, distances = self.db_api.get_closest(
+            embedding=embedding, n_results=num_results
+        )
+        return {
+            "documents": documents,
+            "metadata": metadatas,
+            "timestamp": datetime.now().isoformat(),
+            "message": f"These are the top {num_results} results (documents and metadata) for the query: {query}",
+        }
 
     @tool(
         description="Search for relevant information in the database with date filtering"
@@ -280,40 +282,28 @@ class ToolsClient:
         Returns:
             A list of dictionaries containing matching documents with their content and metadata
         """
-        # Use the language model to create an embedding for the query
-        embeddings = self.lm.embed_multiple([query])[0]
+        embedding = self.lm.embed(query)
 
-        # Convert string dates to date objects if provided
         start_date_obj = None
         end_date_obj = None
-
         if start_date:
             start_date_obj = date.fromisoformat(start_date)
         if end_date:
             end_date_obj = date.fromisoformat(end_date)
 
-        # Use the database client to find the closest matches with date filtering
         ids, documents, metadatas, distances = self.db_api.get_closest(
-            embedding=embeddings,
+            embedding=embedding,
             n_results=top_k,
             start_date=start_date_obj,
             end_date=end_date_obj,
         )
 
-        # Process and return the results as a list of dictionaries
-        results = []
-        for i in range(len(ids)):
-            results.append(
-                {
-                    "id": ids[i],
-                    "content": documents[i],
-                    "metadata": metadatas[i],
-                    "relevance_score": 1.0
-                    - distances[i],  # Convert distance to similarity score
-                }
-            )
-
-        return results
+        return {
+            "documents": documents,
+            "metadata": metadatas,
+            "timestamp": datetime.now().isoformat(),
+            "message": f"These are the top {top_k} results (documents and metadata) for the query: {query} with filter {start_date_obj} to {end_date_obj}",
+        }
 
     @tool(description="Get the secret word")
     def get_secret_word(self) -> Dict[str, Any]:
@@ -323,7 +313,7 @@ class ToolsClient:
         Returns:
             A dictionary containing the secret word and additional information
         """
-        secret_word = "banana"
+        secret_word = "iPod"
 
         return {
             "secret_word": secret_word,
@@ -336,7 +326,7 @@ class ToolsClient:
         """
         Returns the secret sentence.
         """
-        secret_sentence = f"I like eating {insertion}"
+        secret_sentence = f"Steve Jobs invented the {insertion}"
         return {
             "secret_sentence": secret_sentence,
             "timestamp": datetime.now().isoformat(),

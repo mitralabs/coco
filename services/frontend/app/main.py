@@ -606,6 +606,10 @@ präzise und nützlich. Wenn du mehr Informationen benötigst, verwende die
 entsprechenden Tools, um sie zu erhalten. Wenn du mehrere Tools ausführen musst,
 tue dies ohne nachfrage nacheinander und beziehe die Ergebnisse in deine
 Überlegungen ein.
+
+# Wichtig:
+Dein Wissen steht in einer Datenbank. Also falls der Benutzer dich
+fragt, ob du etwas weißt, verwende die Datenbank Tools, um die Antwort zu finden.
 """
 
         agent_system_message = gr.Textbox(

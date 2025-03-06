@@ -124,6 +124,18 @@ class LanguageModelClient:
         ), "Pull model is only supported for ollama"
         self.ollama.pull(model)
 
+    def embed(self, chunk: str, model: str = None) -> List[float]:
+        if self.embedding_api == "ollama":
+            if model is None:
+                model = "nomic-embed-text"
+            response = self.ollama.embed(model=model, input=chunk)
+            return response.embeddings
+        elif self.embedding_api == "openai":
+            if model is None:
+                model = "BAAI/bge-m3"
+            response = self.openai.embeddings.create(model=model, input=chunk)
+            return response.data[0].embedding
+
     async def _embed_multiple(
         self, chunks: List[str], model: str = "nomic-embed-text"
     ) -> List[List[float]]:
