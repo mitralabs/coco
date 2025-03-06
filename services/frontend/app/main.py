@@ -1,17 +1,29 @@
 import gradio as gr
 import pandas as pd
-import numpy as np
 import datetime
 from datetime import date
+import os
 import json
 
 from coco import CocoClient
 
-# See Gradio Docs for reference: https://www.gradio.app/docs
-
 # Can be removed, only until functions are in SDK
 from ollama import AsyncClient
 from openai import AsyncOpenAI
+
+CHUNKING_BASE = os.getenv("COCO_CHUNK_URL_BASE")
+DB_API_BASE = os.getenv("COCO_DB_API_URL_BASE")
+TRANSCRIPTION_BASE = os.getenv("COCO_TRANSCRIPTION_URL_BASE")
+OLLAMA_BASE = os.getenv("COCO_OLLAMA_URL_BASE")
+OPENAI_BASE = os.getenv("COCO_OPENAI_URL_BASE")
+EMBEDDING_API = os.getenv("COCO_EMBEDDING_API")
+LLM_API = os.getenv("COCO_LLM_API")
+API_KEY = os.getenv("COCO_API_KEY")
+# Default models from environment variables or fallback to defaults
+EMBEDDING_MODEL = os.getenv("COCO_EMBEDDING_MODEL", "nomic-embed-text")
+DEFAULT_LLM_MODEL = os.getenv(
+    "COCO_DEFAULT_LLM_MODEL", "meta-llama/Llama-3.3-70B-Instruct"
+)
 
 openai = AsyncOpenAI(
     base_url="https://openai.inference.de-txl.ionos.com/v1",
@@ -27,15 +39,14 @@ theme = gr.themes.Ocean(
 )
 
 cc = CocoClient(
-    chunking_base="http://chunking:8000",
-    db_api_base="http://db-api:8000",
-    transcription_base="http://host.docker.internal:8000",
-    # ollama_base="https://jetson-ollama.mitra-labs.ai",
-    ollama_base="http://host.docker.internal:11434",
-    openai_base="https://openai.inference.de-txl.ionos.com/v1",
-    embedding_api="ollama",
-    llm_api="openai",
-    api_key="test",
+    chunking_base=CHUNKING_BASE,
+    db_api_base=DB_API_BASE,
+    transcription_base=TRANSCRIPTION_BASE,
+    ollama_base=OLLAMA_BASE,
+    openai_base=OPENAI_BASE,
+    embedding_api=EMBEDDING_API,
+    llm_api=LLM_API,
+    api_key=API_KEY,
 )
 
 
@@ -109,8 +120,8 @@ def get_available_models():
 
     if not available_models:
         available_models = [
-            "meta-llama/Llama-3.3-70B-Instruct"
-        ]  # Default fallback model for Openai
+            DEFAULT_LLM_MODEL
+        ]  # Default fallback model from environment variable
 
     if cc.lm.llm_api == "openai":
         try:
@@ -161,7 +172,11 @@ async def add_context(
 
     # Get RAG context with date filters
     contexts = await cc.rag.async_retrieve_chunks(
-        [user_message], 5, start_date=start_date_obj, end_date=end_date_obj
+        [user_message],
+        5,
+        start_date=start_date_obj,
+        end_date=end_date_obj,
+        model=EMBEDDING_MODEL,
     )
     context_chunks = contexts[0][1]
     rag_context = CONTEXT_FORMAT.format(context="\n-----\n".join(context_chunks))
@@ -193,7 +208,11 @@ async def call_rag(
     try:
         # Get RAG context with date filters
         contexts = await cc.rag.async_retrieve_chunks(
-            [user_message], 5, start_date=start_date, end_date=end_date
+            [user_message],
+            5,
+            start_date=start_date,
+            end_date=end_date,
+            model=EMBEDDING_MODEL,
         )
         context_chunks = contexts[0][1]
         rag_context = CONTEXT_FORMAT.format(context="\n-----\n".join(context_chunks))
