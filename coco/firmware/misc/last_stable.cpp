@@ -66,10 +66,6 @@ int bootSession = 0;
 int logFileIndex = 0;
 int audioFileIndex = 0;
 
-// LED PWM configuration parameters
-int freq = 5000;     // PWM frequency in Hz
-int resolution = 8;  // Resolution in bits (1-16)
-
 time_t storedTime = 0;
 
 unsigned long nextWifiScanTime = 0;                   // Next time to scan for networks
@@ -208,13 +204,7 @@ void buttonTimerCallback(TimerHandle_t xTimer) {
   }
   // Update the LED state.
   if (xSemaphoreTake(ledMutex, portMAX_DELAY) == pdPASS) {
-    // use ledcWrite(ledChannel, 20); instead of digital Write
-
-
-    // digitalWrite(LED_PIN, recordingRequested ? HIGH : LOW);
-
-    ledcWrite(LED_PIN, recordingRequested ? 255 : 0);  // 255 is full brightness, 20 is very low brightness
-
+    digitalWrite(LED_PIN, recordingRequested ? HIGH : LOW);
     xSemaphoreGive(ledMutex);
   }
 }
@@ -236,13 +226,10 @@ void buttonTimerCallback(TimerHandle_t xTimer) {
 void setup() {
   Serial.begin(115200);
   setCpuFrequencyMhz(80);  // 80 is lowest stable frequency for this routine.
-
-  ledcAttach(LED_PIN, freq, resolution);
-  ledcWrite(LED_PIN, 0);  // Set brightness (0-255 for 8-bit resolution) // Lower values = dimmer LED = less power consumption
-
-
-  // Set up the button pin
-  pinMode(BUTTON_PIN, INPUT_PULLUP);
+  
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW); // If the core panic's and reboots the LED will be off.
+  pinMode(BUTTON_PIN, INPUT_PULLUP);  // Set up the button pin
 
   ledMutex = xSemaphoreCreateMutex(); // Create the mutex
   sdMutex = xSemaphoreCreateMutex();   // Global mutex for SD card access
@@ -879,8 +866,7 @@ void ErrorBlinkLED(int interval) {
   while (true) {
     if (xSemaphoreTake(ledMutex, portMAX_DELAY) == pdPASS) {
       led_state = !led_state;
-      // digitalWrite(LED_PIN, led_state);
-      ledcWrite(LED_PIN, led_state ? 255 : 20);
+      digitalWrite(LED_PIN, led_state);
       xSemaphoreGive(ledMutex);
     }
     vTaskDelay(pdMS_TO_TICKS(interval));
