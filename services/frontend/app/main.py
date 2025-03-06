@@ -714,17 +714,33 @@ tue dies ohne nachfrage nacheinander und beziehe die Ergebnisse in deine
                 # Log tool call for debugging
                 print(f"Tool call {i+1}: {tool_call}")
 
-                # Format tool call with minimal formatting
-                tool_call_content = f"🔧 **Using tool:** `{tool_name}`\n\n**Arguments:**\n```json\n{json.dumps(tool_args, indent=2)}\n```"
-                history.append(
-                    gr.ChatMessage(role="assistant", content=tool_call_content)
-                )
-                yield history, actual_conversation
-
-                # Format tool result with minimal formatting
+                # Format tool call and result in an accordion
+                tool_call_args_str = json.dumps(tool_args, indent=2)
                 tool_result_str = json.dumps(tool_result, indent=2)
-                result_display = f"**Tool Result:**\n```json\n{tool_result_str}\n```"
-                history.append(gr.ChatMessage(role="assistant", content=result_display))
+
+                # Create accordion content with tool usage details
+                tool_usage_content = f"""
+`{tool_name}`
+
+**Arguments:**
+```json
+{tool_call_args_str}
+```
+
+**Result:**
+```json
+{tool_result_str}
+```
+"""
+
+                # Add accordion to history similar to context
+                history.append(
+                    gr.ChatMessage(
+                        role="assistant",
+                        content=f"{tool_usage_content}",  # Use markdown code block to match context style
+                        metadata={"title": "🔧 Tool Usage", "status": "done"},
+                    )
+                )
                 yield history, actual_conversation
 
             # Look for Python tag in the content and remove it (handle malformed outputs)
