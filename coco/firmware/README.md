@@ -10,16 +10,30 @@
     - Click on `Upload and Monitor`. <br>-> Make sure to not open the Arduino IDE in parallel, since it might result in VS Code not being able to connect to the device. <br>(You can also manually `Build`, `Upload` and `Monitor` the ESP output.)
 
 
-## Some Notes on the current blinking pattern (regarding v0.1)
-- After you turn the device on, the LED will be off for 5s. If you switch of the device during this time period and turn it back on, it will go to "Transfer" Mode. Otherwise it will start recording.
-- If you are in "Transfer" Mode, coco will try to send the saved .wav Files over the WiFi you configured (see Step 3 above), to a machine where the coco Backend is installed (which is also in your network).
+## Some Notes on the current blinking pattern (regarding v1.0)
 - If coco blinks rapidly, this indicates an error.
 	- If occurs directly after turning on, the most probable cause is a missing SD card, or one that is badly plugged in.
-- During recording, the LED will be solid on. 
+- During recording, the LED will be solid on.
+
+### Task Priority Guidelines
+IDLE Task: Priority 0
+Your Background Tasks: 1-3
+Your Time-Critical Tasks: 4-5
+System Critical Tasks: 18-24
+Never use priority 25 (reserved for system tasks)
 
 ## ToDo
-- [ ] Solve this: "[ 99300][E] [esp32-hal-gpio.c:166] _digitalWrite(): 10 42 is not set as GPIO."
-- [ ] Enable device for Timestamping
-- [ ] Integrate Powermonitoring in the Firmware through a hardware voltage devider.
-- [ ] Integrate File Transfer into Main Loop, as possible fix for transfer freeze.
-- [ ] Check if webrtc is available as c++ implementation to run on coco. [Link1](https://github.com/congjiye/vad), [Link2](https://chromium.googlesource.com/external/webrtc/+/branch-heads/43/webrtc/common_audio/vad/include/vad.h)
+- [ ] Überarbeite Setup and Init (maybe find a routine for initial boot or boot from complete power loss).
+- [ ] Check if there is a possibility that audio queue get's lost on the SD card. E.g. when the new one is being written and the device loses power.
+- [ ] Move persistent time saving to SD and away from flash (since the latter degrades)
+- [ ] Integrate /test endpoint to check whether coco backend is online. (inkluding backoff)
+- [ ] Reintegrate DeepSleep. And integrate Routine which brings device to deepsleep, when Voltage below a certain threshold.
+- [ ] Find a handle for SD Card Error to reset device utilizing the button. Factory Reset Button will mostlikely not be reachable, since inside of case.
+- [ ] Rewrite logging. It's currently pretty wild.
+- [ ] Include WiFiMulti, so that multiple Networks are known. Secondly, Scan for known Location, by checking SSIDs, and connect then.
+- [ ] Integrate WiFi, Timezone, and Timestamp optionally on SD Card (although this poses security risks, if device is lost, and card inspected.)
+
+---
+
+### Misc
+- [Further Information](https://wiki.seeedstudio.com/xiao_esp32s3_getting_started/)
