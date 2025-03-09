@@ -62,8 +62,8 @@ class AudioPathManager:
 
         session_path = self.get_session_path(parsed)
 
-        # Format the filename
-        processed_filename = f"snippet_{parsed['file_time']}_{parsed['file_index']}_{parsed['suffix']}.wav"
+        # Optionally reformat the filename
+        processed_filename = filename
 
         return session_path / DIR_RAW / processed_filename
 

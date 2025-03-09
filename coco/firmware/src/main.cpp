@@ -22,8 +22,8 @@
 /**********************************
  *       MACRO DEFINITIONS        *
  **********************************/
-#define LED_PIN 2
-#define BUTTON_PIN GPIO_NUM_1
+#define LED_PIN 1
+#define BUTTON_PIN GPIO_NUM_2
 #define BATTERY_PIN 4
 
 #define RECORD_TIME 10       // seconds
@@ -371,10 +371,10 @@ void setup_from_boot() {
   }
   
   // This task can be used to monitor the stack usage. It can be commented / uncommented as needed.
-  if(xTaskCreatePinnedToCore(stackMonitorTask, "Stack Monitor", 4096, NULL, 1, NULL, 0) != pdPASS ) {
-    log("Failed to create stackMonitor task!");
-    ErrorBlinkLED(100);
-  }
+  // if(xTaskCreatePinnedToCore(stackMonitorTask, "Stack Monitor", 4096, NULL, 1, NULL, 0) != pdPASS ) {
+  //   log("Failed to create stackMonitor task!");
+  //   ErrorBlinkLED(100);
+  // }
 }
 
 void loop() {
