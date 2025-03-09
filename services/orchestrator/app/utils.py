@@ -2,17 +2,14 @@ import os
 from pathlib import Path
 import logging
 import sys
-
 from typing import Dict, Optional, Tuple, List
 
 ROOT_PATH = Path(os.getenv("AUDIO_ROOT_PATH", "/data/audio"))
 
 # Directory structure constants
 DIR_RAW = "raw"
-# DIR_PROCESSED = "processed"
 DIR_TRANSCRIPTS = "transcripts"
-SUBDIRECTORIES = [DIR_RAW, DIR_TRANSCRIPTS]  # DIR_PROCESSED
-TEMP_FILENAME = "temp.wav"
+SUBDIRECTORIES = [DIR_RAW, DIR_TRANSCRIPTS]
 
 # Configure logging
 logging.basicConfig(
@@ -75,17 +72,113 @@ class AudioPathManager:
             ".wav", ".txt"
         )
 
+    def save_transcription(self, transcription: str, audio_path: str) -> str:
+        """
+        Save a transcription for an audio file and return the file path
+        """
+        logger.info(f"Processing transcription for audio: {audio_path}")
+        file_path = self.get_transcript_path(audio_path)
+        file_directory = os.path.dirname(file_path)
 
-# Initialize the path manager
-path_manager = AudioPathManager(ROOT_PATH)
+        if not os.path.exists(file_directory):
+            os.makedirs(file_directory)
+            logger.info(f"Created transcript directory: {file_directory}")
+
+        try:
+            with open(file_path, "w") as f:
+                f.write(transcription)
+            logger.info(f"Transcription saved successfully to: {file_path}")
+        except Exception as e:
+            logger.error(f"Failed to save transcription: {str(e)}")
+
+        return file_path
+
+    def get_prompt(self, audio_path: str) -> Optional[str]:
+        """
+        Get the transcription of the previous audio snippet to use as context
+        for transcribing the current audio snippet.
+
+        Args:
+            audio_path: Path to the current audio file
+
+        Returns:
+            The content of the previous transcript or None if not available
+        """
+        # Extract filename from path
+        audio_filename = os.path.basename(audio_path)
+
+        # Parse the filename to get components
+        parsed = parse_coco_filename(audio_filename)
+        if not parsed:
+            logger.error(f"Invalid filename format: {audio_filename}")
+            return None
+
+        # Get the current file index and session ID
+        try:
+            current_index = int(parsed["file_index"])
+            session_id = parsed["session_id"]
+        except ValueError:
+            logger.error(f"Invalid file index: {parsed['file_index']}")
+            return None
+
+        # If this is the first file, there's no previous context
+        if current_index <= 0:
+            logger.info(
+                "First audio snippet in sequence, no previous context available"
+            )
+            return None
+
+        # Calculate the previous index
+        prev_index = current_index - 1
+
+        # Get the transcript directory path
+        transcript_dir = os.path.dirname(self.get_transcript_path(audio_path))
+
+        if not os.path.exists(transcript_dir):
+            logger.info(f"Transcript directory does not exist: {transcript_dir}")
+            return None
+
+        # Find any file matching the session ID and previous index
+        prev_transcript = None
+        for file in os.listdir(transcript_dir):
+            if file.endswith(".txt"):
+                parsed_file = parse_coco_filename(file, is_transcript=True)
+                if (
+                    parsed_file
+                    and parsed_file["session_id"] == session_id
+                    and int(parsed_file["file_index"]) == prev_index
+                ):
+                    prev_transcript = os.path.join(transcript_dir, file)
+                    break
+
+        if not prev_transcript:
+            logger.info(f"No previous transcript found for index {prev_index}")
+            return None
+
+        # Read the content of the previous transcript
+        try:
+            with open(prev_transcript, "r") as f:
+                transcript_content = f.read()
+            logger.info(f"Retrieved previous transcript: {prev_transcript}")
+            return transcript_content
+        except Exception as e:
+            logger.error(f"Failed to read previous transcript: {str(e)}")
+            return None
 
 
-def parse_coco_filename(filename: str) -> Optional[Dict[str, str]]:
+def parse_coco_filename(
+    filename: str, is_transcript: bool = False
+) -> Optional[Dict[str, str]]:
     """
-    Parse a filename following the format int_int_YY-DD-MM_HH-MM-SS_suffix.wav
+    Parse a filename following the format int_int_YY-DD-MM_HH-MM-SS_suffix.wav (or .txt)
     Returns a dictionary with the parsed components or None if invalid
+
+    Args:
+        filename: The filename to parse
+        is_transcript: If True, accepts .txt extension instead of .wav
     """
-    if not filename.endswith(".wav"):
+    valid_extension = ".txt" if is_transcript else ".wav"
+    if not filename.endswith(valid_extension):
         return None
 
     parts = filename.split("_")
@@ -112,43 +205,17 @@ def parse_coco_filename(filename: str) -> Optional[Dict[str, str]]:
     }
 
 
+# Initialize the path manager
+PathManager = AudioPathManager(ROOT_PATH)
+
+
 # For backward compatibility
 def get_path(root: Path = ROOT_PATH, filename: str = "") -> Optional[Path]:
     """Legacy function for backward compatibility"""
     return path_manager.get_raw_path(filename)
 
 
+# For backward compatibility
 def process_transcription(transcription: str, audio_path: str) -> str:
-    # (1) save it to a file, and (2) create new "full_transcript" from all existing transcripts.
-    # Swap /post/ with /transcripts/ in audio_path, and swap .wav with .txt
-
-    logger.info(f"Processing transcription for audio: {audio_path}")
-    file_path = path_manager.get_transcript_path(audio_path)
-    file_directory = os.path.dirname(file_path)
-
-    if not os.path.exists(file_directory):
-        os.makedirs(file_directory)
-        logger.info(f"Created transcript directory: {file_directory}")
-
-    try:
-        with open(file_path, "w") as f:
-            f.write(transcription)
-        logger.info(f"Transcription saved successfully to: {file_path}")
-    except Exception as e:
-        logger.error(f"Failed to save transcription: {str(e)}")
-
-    # Include logic to create the full transcript, once every snippet from the audio is transcribed.
-
-    ##############################
-    # IMPLEMENTATION FOR FULL TRANSCRIPT, WILL BE ADDED LATER
-    ##############################
-
-    return file_path
-
-
-def post_process_audio(file_path: str) -> list:
-    # Currently only returns the file_path.
-    # Only addition will be an overlap of audio snippets to ensure no words are missed.
-    # This will be implemented later.
-
-    return [file_path]
+    """Legacy function for backward compatibility"""
+    return path_manager.save_transcription(transcription, audio_path)

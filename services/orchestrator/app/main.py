@@ -13,7 +13,7 @@ import time
 import re
 
 from coco import CocoClient
-from utils import get_path, post_process_audio, process_transcription
+from utils import PathManager
 
 cc = CocoClient(
     chunking_base="http://chunking:8000",
@@ -61,37 +61,32 @@ def kick_off_processing(audio_path: str, store_in_db: bool = True):
     """
     logger.info(f"Processing audio file: {audio_path}")
 
-    # Prepare Files for transcription. Returns a list of audio_paths to transcribe
-    audio_paths = post_process_audio(audio_path)
+    # Get previous transcript as context if available
+    prompt = PathManager.get_prompt(audio_path)
+    if prompt:
+        logger.info(f"Using previous transcript as context for {audio_path}")
 
-    # Check if audio_paths is an empty list
-    if not audio_paths:
-        # This is a fine behavior postprocessing is probably waiting for more audio files
-        logger.info("No audio files to transcribe.")
-        return False
+    # Transcribe the audio
+    try:
+        text, language, filename = cc.transcription.transcribe_audio(audio_path, prompt)
 
-    for audio_path in audio_paths:
-        # Transcribe the audio
-        try:
-            text, language, filename = cc.transcription.transcribe_audio(audio_path)
-
-            if not text:
-                logger.info("No text returned from transcription.")
-                return False
-
-            # Saves the transcription
-            process_transcription(text, audio_path)
-
-            if store_in_db:
-                cc.chunk_and_store(text, language, filename)
-                logger.info("Transcription saved successfully and stored in database.")
-            else:
-                logger.info("Transcription saved successfully.")
-            return True
-
-        except Exception as e:
-            logger.error(f"Error processing session: {str(e)}")
+        if not text:
+            logger.info("No text returned from transcription.")
             return False
+
+        # Saves the transcription
+        PathManager.save_transcription(text, audio_path)
+
+        if store_in_db:
+            cc.chunk_and_store(text, language, filename)
+            logger.info("Transcription saved successfully and stored in database.")
+        else:
+            logger.info("Transcription saved successfully.")
+        return True
+
+    except Exception as e:
+        logger.error(f"Error processing session: {str(e)}")
+        return False
 
 
 # Route to check if the server is running
@@ -120,7 +115,8 @@ async def upload_audio(
             .strip('"')
         )
 
-        if not get_path(filename=filename):
+        audio_path = PathManager.get_raw_path(filename)
+        if not audio_path:
             return JSONResponse(
                 content={
                     "status": "error",
@@ -128,8 +124,6 @@ async def upload_audio(
                 },
                 status_code=400,
             )
-        else:
-            audio_path = get_path(filename=filename)
 
         # Function to save the file to local storage
         async with aiofiles.open(audio_path, "wb") as f:
