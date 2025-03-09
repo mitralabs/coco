@@ -165,6 +165,7 @@ class CocoClient:
     def transcribe_and_store(
         self,
         audio_file: str,
+        prompt: str = None,
         batch_size: int = 20,
         limit_parallel: int = 10,
         show_progress: bool = True,
@@ -174,14 +175,18 @@ class CocoClient:
 
         Args:
             audio_file (str): The audio file to transcribe.
+            prompt (str, optional): Optional prompt to guide the transcription. Defaults to None.
             batch_size (int, optional): The size of each batch. Defaults to 20.
             limit_parallel (int, optional): The maximum number of parallel tasks / batches. Defaults to 10.
             show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to True.
+            embedding_model (str, optional): Model to use for embeddings. Defaults to "nomic-embed-text".
 
         Returns:
             Tuple[int, int]: The number of documents added and skipped.
         """
-        text, language, filename = self.transcription.transcribe_audio(audio_file)
+        text, language, filename = self.transcription.transcribe_audio(
+            audio_file, prompt=prompt
+        )
 
         # Store the transcription text next to the audio
         with open(f"{audio_file[:-4]}.txt", "w") as f:
