@@ -267,9 +267,15 @@ class ToolsClient:
                 datetime.date.fromisoformat(end_date_iso) if end_date_iso else None
             ),
         )
+        knowledge = [
+            {
+                "content": document,
+                "metadata": metadata,
+            }
+            for document, metadata in zip(documents, metadatas)
+        ]
         return {
-            "documents": documents,
-            "metadata": metadatas,
-            "timestamp": datetime.datetime.now().isoformat(),
-            "message": f"Das sind die relevantesten Information aus der Datenbank zu deiner Anfrage. Das erste Array enthält ids, das zweite die Dokumente (den Inhalt deines Wissens) und das dritte die Metadaten. Das vierte Array enthält die semantischen Distanzen der Dokumente zu der Anfrage.",
+            "knowledge": knowledge,
+            "tool_timestamp": datetime.datetime.now().isoformat(),
+            "message": f"Hier sind die relevantesten Informationen aus der Datenbank zu deiner Anfrage.",
         }
