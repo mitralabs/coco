@@ -13,13 +13,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Get the directory of the script
-BASE_DIR = Path() #.resolve().parent.parent.parent  # Adjust based on depth
+BASE_DIR = Path()  # .resolve().parent.parent.parent  # Adjust based on depth
 
 # Load .env file from the directory where Uvicorn is executed
 load_dotenv(BASE_DIR / ".env")
 
 # API Key Authentication and Model Settings
-API_KEY = os.getenv("API_KEY") 
+API_KEY = os.getenv("API_KEY")
 if not API_KEY:
     raise ValueError("API_KEY environment variable must be set")
 
@@ -32,10 +32,10 @@ if not PATH_TO_EXECUTABLE:
     raise ValueError("Executable environment variable must be set")
 
 
-
 app = FastAPI()
 
 api_key_header = APIKeyHeader(name="X-API-Key")
+
 
 def get_api_key(api_key: str = Depends(api_key_header)):
     if api_key != API_KEY:
@@ -67,7 +67,11 @@ def process_whisper_output(audio_path):
 
 
 @app.post("/transcribe")
-async def transcribe(file: UploadFile = File(...), api_key: str = Depends(get_api_key)):
+async def transcribe(
+    file: UploadFile = File(...),
+    api_key: str = Depends(get_api_key),
+    prompt: str = None,  # Add optional prompt parameter
+):
     # Create a temporary file to store the uploaded audio
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_audio:
         content = await file.read()
@@ -88,6 +92,10 @@ async def transcribe(file: UploadFile = File(...), api_key: str = Depends(get_ap
             "-oj",
             "true",  # Output in JSON format
         ]
+        # Add prompt if provided
+        if prompt:
+            command.extend(["--prompt", f'"{prompt}"'])
+
         result = subprocess.run(
             [str(i) for i in command], capture_output=True, text=True, check=True
         )
