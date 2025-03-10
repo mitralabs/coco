@@ -1,14 +1,17 @@
+import datetime
 import os
 import httpx
-from typing import List, Literal
+from typing import List, Literal, Optional
 import logging
 
 from .async_utils import batched_parallel
 from .chunking import ChunkingClient
 from .db_api import DbApiClient
-from .rag import RagClient
 from .transcription import TranscriptionClient
 from .lm import LanguageModelClient
+from .tools import ToolsClient
+from .rag import RagClient
+from .agent import AgentClient
 
 
 logger = logging.getLogger(__name__)
@@ -57,15 +60,18 @@ class CocoClient:
             assert self.openai_base, "OpenAI base URL is not set"
         assert self.api_key, "API key is not set"
 
+        # Initialize the clients in the correct order to avoid circular dependencies
         self.chunking = ChunkingClient(self.chunking_base, self.api_key)
         self.db_api = DbApiClient(self.db_api_base, self.api_key)
         self.transcription = TranscriptionClient(self.transcription_base, self.api_key)
         self.lm = LanguageModelClient(
             self.ollama_base, self.openai_base, self.embedding_api, self.llm_api
         )
-        self.rag = RagClient(
-            self.db_api,
-            self.lm,
+        self.rag = RagClient(db_api=self.db_api, lm=self.lm)
+
+        self._tools_client = ToolsClient(lm=self.lm, db_api=self.db_api)
+        self.agent = AgentClient(
+            lm=self.lm, tools_client=self._tools_client, llm_api=self.llm_api
         )
 
     def health_check(self, raise_on_error: bool = False):
@@ -119,20 +125,26 @@ class CocoClient:
                 if raise_on_error:
                     raise e
 
-    async def _embed_and_store(
-        self, chunks, language, filename, model="nomic-embed-text"
-    ):
-        embeddings = await self.lm._embed(chunks, model)
-        ns_added, ns_skipped = await self.db_api._store_in_database(
-            chunks, embeddings, language, filename
-        )
-        return ns_added, ns_skipped
-
-    def embed_and_store(
+    async def _embed_and_store_multiple(
         self,
         chunks: List[str],
         language: str,
         filename: str,
+        dates: List[Optional[datetime.date]],
+        model: str = "nomic-embed-text",
+    ):
+        embeddings = await self.lm._embed_multiple(chunks, model)
+        ns_added, ns_skipped = await self.db_api._store_multiple(
+            chunks, embeddings, language, filename, dates
+        )
+        return ns_added, ns_skipped
+
+    def embed_and_store_multiple(
+        self,
+        chunks: List[str],
+        language: str,
+        filename: str,
+        dates: List[Optional[datetime.date]],
         model: str = "nomic-embed-text",
         batch_size: int = 20,
         limit_parallel: int = 10,
@@ -145,6 +157,7 @@ class CocoClient:
             chunks (List[str]): The chunks to embed and store.
             language (str): The language of the chunks.
             filename (str): The filename of the chunks.
+            dates (List[Optional[datetime.date]]): The dates of the chunks.
             batch_size (int, optional): The size of each batch. Defaults to 20.
             limit_parallel (int, optional): The maximum number of parallel tasks / batches. Defaults to 10.
             show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to True.
@@ -153,19 +166,43 @@ class CocoClient:
             Tuple[int, int]: The number of documents added and skipped.
         """
         batched_embed_and_store = batched_parallel(
-            function=self._embed_and_store,
+            function=self._embed_and_store_multiple,
             batch_size=batch_size,
             limit_parallel=limit_parallel,
             show_progress=show_progress,
             description="Embedding and storing",
         )
-        n_added, n_skipped = batched_embed_and_store(chunks, language, filename, model)
+        n_added, n_skipped = batched_embed_and_store(
+            chunks, language, filename, dates, model
+        )
         return sum(n_added), sum(n_skipped)
+
+    def async_embed_and_store_multiple(
+        self,
+        chunks: List[str],
+        language: str,
+        filename: str,
+        dates: List[Optional[datetime.date]],
+        model: str = "nomic-embed-text",
+        batch_size: int = 20,
+        limit_parallel: int = 10,
+        show_progress: bool = True,
+    ):
+        async_batched_embed_and_store = batched_parallel(
+            function=self._embed_and_store_multiple,
+            batch_size=batch_size,
+            limit_parallel=limit_parallel,
+            show_progress=show_progress,
+            description="Embedding and storing",
+            return_async_wrapper=True,
+        )
+        return async_batched_embed_and_store(chunks, language, filename, dates, model)
 
     def transcribe_and_store(
         self,
         audio_file: str,
         prompt: str = None,
+        date: Optional[datetime.date] = None,
         batch_size: int = 20,
         limit_parallel: int = 10,
         show_progress: bool = True,
@@ -176,6 +213,7 @@ class CocoClient:
         Args:
             audio_file (str): The audio file to transcribe.
             prompt (str, optional): Optional prompt to guide the transcription. Defaults to None.
+            date (Optional[datetime.date], optional): The date of the audio file. Defaults to None.
             batch_size (int, optional): The size of each batch. Defaults to 20.
             limit_parallel (int, optional): The maximum number of parallel tasks / batches. Defaults to 10.
             show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to True.
@@ -193,10 +231,11 @@ class CocoClient:
             f.write(text)
 
         chunks = self.chunking.chunk_text(text=text)
-        return self.embed_and_store(
+        return self.embed_and_store_multiple(
             chunks=chunks,
             language=language,
             filename=filename,
+            dates=[date] * len(chunks),
             model=embedding_model,
             batch_size=batch_size,
             limit_parallel=limit_parallel,

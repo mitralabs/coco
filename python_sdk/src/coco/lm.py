@@ -1,4 +1,4 @@
-from typing import List, Literal, Tuple
+from typing import Any, Dict, List, Literal, Tuple
 import json
 import time
 import logging
@@ -8,6 +8,8 @@ import httpx
 import os
 
 from .async_utils import batched_parallel
+from .structs import ToolCall
+
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +88,55 @@ class LanguageModelClient:
                     return v
         return None
 
-    async def _embed(
+    def list_llm_models(self) -> List[str]:
+        """List available LLM models. For now just list all models.
+
+        Returns:
+            List[str]: List of model names
+        """
+        if self.llm_api == "ollama":
+            return self._list_ollama_models()
+        elif self.llm_api == "openai":
+            return self._list_openai_models()
+
+    def list_embedding_models(self) -> List[str]:
+        """List available embedding models. For now just list all models.
+
+        Returns:
+            List[str]: List of model names
+        """
+        if self.embedding_api == "ollama":
+            return self._list_ollama_models()
+        elif self.embedding_api == "openai":
+            return self._list_openai_models()
+
+    def _list_ollama_models(self) -> List[str]:
+        list_response = self.ollama.list()
+        return [i["model"] for i in list_response.models]
+
+    def _list_openai_models(self) -> List[str]:
+        list_response = self.openai.models.list()
+        return [i.id for i in list_response.data]
+
+    def pull_ollama_model(self, model: str):
+        assert (
+            self.embedding_api == "ollama" or self.llm_api == "ollama"
+        ), "Pull model is only supported for ollama"
+        self.ollama.pull(model)
+
+    def embed(self, chunk: str, model: str = None) -> List[float]:
+        if self.embedding_api == "ollama":
+            if model is None:
+                model = "nomic-embed-text"
+            response = self.ollama.embed(model=model, input=chunk)
+            return response.embeddings
+        elif self.embedding_api == "openai":
+            if model is None:
+                model = "BAAI/bge-m3"
+            response = self.openai.embeddings.create(model=model, input=chunk)
+            return response.data[0].embedding
+
+    async def _embed_multiple(
         self, chunks: List[str], model: str = "nomic-embed-text"
     ) -> List[List[float]]:
         if self.embedding_api == "ollama":
@@ -114,7 +164,7 @@ class LanguageModelClient:
             )
             return [d.embedding for d in embed_response.data]
 
-    def embed(
+    def embed_multiple(
         self,
         chunks: List[str],
         model: str = "nomic-embed-text",
@@ -134,7 +184,7 @@ class LanguageModelClient:
             List[List[float]]: The embeddings of the chunks.
         """
         batched_create_embeddings = batched_parallel(
-            function=self._embed,
+            function=self._embed_multiple,
             batch_size=batch_size,
             limit_parallel=limit_parallel,
             show_progress=show_progress,
@@ -142,7 +192,7 @@ class LanguageModelClient:
         )
         return batched_create_embeddings(chunks, model=model)
 
-    async def _generate(
+    async def _generate_multiple(
         self, prompts: List[str], model: str = "llama3.2:1b", temperature: float = 0.0
     ) -> str:
         if self.llm_api == "ollama":
@@ -212,7 +262,7 @@ class LanguageModelClient:
                         continue
         return texts, tok_ss
 
-    def generate(
+    def generate_multiple(
         self,
         prompts: List[str],
         model: str = "llama3.2:1b",
@@ -233,7 +283,7 @@ class LanguageModelClient:
             Tuple[List[str], List[float]]: The generated text and the token speeds.
         """
         batched_generate = batched_parallel(
-            function=self._generate,
+            function=self._generate_multiple,
             batch_size=batch_size,
             limit_parallel=limit_parallel,
             show_progress=show_progress,
@@ -242,43 +292,7 @@ class LanguageModelClient:
 
         return batched_generate(prompts, model=model)
 
-    def list_llm_models(self) -> List[str]:
-        """List available LLM models. For now just list all models.
-
-        Returns:
-            List[str]: List of model names
-        """
-        if self.llm_api == "ollama":
-            return self._list_ollama_models()
-        elif self.llm_api == "openai":
-            return self._list_openai_models()
-
-    def list_embedding_models(self) -> List[str]:
-        """List available embedding models. For now just list all models.
-
-        Returns:
-            List[str]: List of model names
-        """
-        if self.embedding_api == "ollama":
-            return self._list_ollama_models()
-        elif self.embedding_api == "openai":
-            return self._list_openai_models()
-
-    def _list_ollama_models(self) -> List[str]:
-        list_response = self.ollama.list()
-        return [i["model"] for i in list_response.models]
-
-    def _list_openai_models(self) -> List[str]:
-        list_response = self.openai.models.list()
-        return [i.id for i in list_response.data]
-
-    def pull_ollama_model(self, model: str):
-        assert (
-            self.embedding_api == "ollama" or self.llm_api == "ollama"
-        ), "Pull model is only supported for ollama"
-        self.ollama.pull(model)
-
-    async def _chat(
+    async def _chat_multiple(
         self, messages_list: List[List[dict]], model: str = "llama3.2:1b"
     ) -> Tuple[List[str], List[float]]:
         if self.llm_api == "ollama":
@@ -316,7 +330,7 @@ class LanguageModelClient:
                 texts.append(response.choices[0].message.content)
         return texts, tok_ss
 
-    def chat(
+    def chat_multiple(
         self,
         messages_list: List[List[dict]],
         model: str = "llama3.2:1b",
@@ -337,7 +351,7 @@ class LanguageModelClient:
             Tuple[List[str], List[float]]: Generated texts and token speeds
         """
         batched_chat = batched_parallel(
-            function=self._chat,
+            function=self._chat_multiple,
             batch_size=batch_size,
             limit_parallel=limit_parallel,
             show_progress=show_progress,
@@ -345,7 +359,7 @@ class LanguageModelClient:
 
         return batched_chat(messages_list, model=model)
 
-    async def async_chat(
+    async def async_chat_multiple(
         self,
         messages_list: List[List[dict]],
         model: str = "llama3.2:1b",
@@ -366,7 +380,7 @@ class LanguageModelClient:
             Tuple[List[str], List[float]]: Generated texts and token speeds
         """
         batched_chat = batched_parallel(
-            function=self._chat,
+            function=self._chat_multiple,
             batch_size=batch_size,
             limit_parallel=limit_parallel,
             show_progress=show_progress,
@@ -375,3 +389,176 @@ class LanguageModelClient:
         )
 
         return await batched_chat(messages_list, model=model)
+
+    async def async_tool_chat(
+        self,
+        messages: List[Dict[str, str]],
+        model: str,
+        tools: List[Dict[str, Any]],
+        temperature: float = 0.0,
+        stream: bool = False,
+    ) -> Dict[str, Any]:
+        """Make async chat call with tools and parse response and potential tool calls.
+
+        Args:
+            messages (List[Dict[str, str]]): List of messages to send to the model
+            model (str): Model to use for chat completion
+            tools (List[Dict[str, Any]]): List of tools to use for chat completion
+            temperature (float, optional): Temperature for chat completion. Defaults to 0.0.
+            stream (bool, optional): Whether to stream the response. Defaults to False.
+
+        Raises:
+            NotImplementedError: Streaming not yet implemented for Ollama
+            NotImplementedError: Streaming not yet implemented for OpenAI
+
+        Returns:
+            {
+                "content": str message content
+                "tool_calls": Dict tool calls dict
+            }
+        """
+        if self.llm_api == "ollama":
+            try:
+                options = {"temperature": temperature}
+
+                if stream:
+                    raise NotImplementedError(
+                        "Streaming not yet implemented for Ollama"
+                    )
+                else:
+                    response = await self.async_ollama.chat(
+                        model=model, messages=messages, options=options, tools=tools
+                    )
+
+                    content = response["message"]["content"] or ""
+
+                    tool_calls = []
+                    if "tool_calls" in response["message"]:
+                        for i, tool_call in enumerate(
+                            response["message"]["tool_calls"]
+                        ):
+                            tool_call = ToolCall.from_chat_response(
+                                tool_call, id=f"tool_call_{i}"
+                            )
+                            tool_calls.append(tool_call)
+                    return {"content": content, "tool_calls": tool_calls}
+
+            except Exception as e:
+                logger.error(f"Error in Ollama chat completion: {str(e)}")
+                return {"content": f"Error: {str(e)}", "tool_calls": []}
+
+        elif self.llm_api == "openai":
+            try:
+                response = await self.async_openai.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    tools=tools,
+                    temperature=temperature,
+                    stream=stream,
+                )
+
+                if stream:
+                    raise NotImplementedError(
+                        "Streaming not yet implemented for OpenAI"
+                    )
+                else:
+                    result = response.choices[0].message
+                    content = result.content or ""
+
+                    tool_calls = []
+                    if hasattr(result, "tool_calls") and result.tool_calls:
+                        for tool_call in result.tool_calls:
+                            tool_call = ToolCall.from_chat_response(tool_call)
+                            tool_calls.append(tool_call)
+                    return {"content": content, "tool_calls": tool_calls}
+
+            except Exception as e:
+                logger.error(f"Error in OpenAI chat completion: {str(e)}")
+                return {"content": f"Error: {str(e)}", "tool_calls": []}
+
+    def tool_chat(
+        self,
+        messages: List[Dict[str, str]],
+        model: str,
+        tools: List[Dict[str, Any]],
+        temperature: float = 0.0,
+        stream: bool = False,
+    ) -> Dict[str, Any]:
+        """Make chat call with tools and parse response and potential tool calls.
+
+        Args:
+            messages (List[Dict[str, str]]): List of messages to send to the model
+            model (str): Model to use for chat completion
+            tools (List[Dict[str, Any]]): List of tools to use for chat completion
+            temperature (float, optional): Temperature for chat completion. Defaults to 0.0.
+            stream (bool, optional): Whether to stream the response. Defaults to False.
+
+        Raises:
+            NotImplementedError: Streaming not yet implemented for Ollama
+            NotImplementedError: Streaming not yet implemented for OpenAI
+
+        Returns:
+            {
+                "content": str message content
+                "tool_calls": Dict tool calls dict
+            }
+        """
+        if self.llm_api == "ollama":
+            try:
+                options = {"temperature": temperature}
+
+                if stream:
+                    raise NotImplementedError(
+                        "Streaming not yet implemented for Ollama"
+                    )
+                else:
+                    response = self.ollama.chat(
+                        model=model, messages=messages, options=options, tools=tools
+                    )
+
+                    content = response["message"]["content"] or ""
+
+                    tool_calls = []
+                    if "tool_calls" in response["message"]:
+                        for i, tool_call in enumerate(
+                            response["message"]["tool_calls"]
+                        ):
+                            tool_call = ToolCall.from_chat_response(
+                                tool_call, id=f"tool_call_{i}"
+                            )
+                            tool_calls.append(tool_call)
+
+                    return {"content": content, "tool_calls": tool_calls}
+
+            except Exception as e:
+                logger.error(f"Error in Ollama chat completion: {str(e)}")
+                return {"content": f"Error: {str(e)}", "tool_calls": []}
+
+        elif self.llm_api == "openai":
+            try:
+                response = self.openai.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    tools=tools,
+                    temperature=temperature,
+                    stream=stream,
+                )
+
+                if stream:
+                    raise NotImplementedError(
+                        "Streaming not yet implemented for OpenAI"
+                    )
+                else:
+                    result = response.choices[0].message
+                    content = result.content or ""
+
+                    tool_calls = []
+                    if hasattr(result, "tool_calls") and result.tool_calls:
+                        for tool_call in result.tool_calls:
+                            tool_call = ToolCall.from_chat_response(tool_call)
+                            tool_calls.append(tool_call)
+                    return {"content": content, "tool_calls": tool_calls}
+
+            except Exception as e:
+                logger.error(f"Error in OpenAI chat completion: {str(e)}")
+                return {"content": f"Error: {str(e)}", "tool_calls": []}

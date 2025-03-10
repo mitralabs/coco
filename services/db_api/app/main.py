@@ -6,7 +6,7 @@ from typing import List
 import logging
 from sqlalchemy.orm import Session
 from sqlalchemy import select, delete, or_
-from datetime import date
+import datetime
 
 from db import get_db, EMBEDDING_DIM
 from models import Document as DbDocument
@@ -35,7 +35,7 @@ class DocumentMetadata(BaseModel):
     filename: str
     chunk_index: int
     total_chunks: int
-    date: date = None
+    date: datetime.date = None
 
 
 class Document(BaseModel):
@@ -62,8 +62,8 @@ class AddRequest(BaseModel):
 class GetClosestRequest(BaseModel):
     embedding: List[float]
     n_results: int = 5
-    start_date: date = None
-    end_date: date = None
+    start_date: datetime.date = None
+    end_date: datetime.date = None
 
     @field_validator("embedding", mode="before")
     @classmethod
@@ -80,8 +80,8 @@ class GetClosestRequest(BaseModel):
 class GetMultipleClosestRequest(BaseModel):
     embeddings: List[List[float]]
     n_results: int = 5
-    start_date: date = None
-    end_date: date = None
+    start_date: datetime.date = None
+    end_date: datetime.date = None
 
     @field_validator("embeddings", mode="before")
     @classmethod
@@ -113,8 +113,8 @@ def get_closest_from_embeddings(
     db: Session,
     embeddings: List[List[float]],
     n_results: int,
-    start_date=None,
-    end_date=None,
+    start_date: datetime.date = None,
+    end_date: datetime.date = None,
 ):
     all_formatted_results = []
     for embedding in embeddings:
@@ -235,8 +235,8 @@ async def get_multiple_closest(
 
 @app.get("/get_all")
 async def get_all(
-    start_date: date = None,
-    end_date: date = None,
+    start_date: datetime.date = None,
+    end_date: datetime.date = None,
     db: Session = Depends(get_db),
     api_key: str = Depends(get_api_key),
 ):
@@ -292,8 +292,8 @@ async def max_embedding_dim(api_key: str = Depends(get_api_key)):
 
 @app.delete("/delete_by_date")
 async def delete_by_date(
-    start_date: date = None,
-    end_date: date = None,
+    start_date: datetime.date = None,
+    end_date: datetime.date = None,
     db: Session = Depends(get_db),
     api_key: str = Depends(get_api_key),
 ):

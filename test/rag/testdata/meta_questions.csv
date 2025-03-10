@@ -1,0 +1,23 @@
+coco_question;gdpr_question;technical_solution
+Über was habe ich hauptsächlich gesprochen?;Was ist das prävalenteste Thema über alle Dokumente hinweg?;semantic clustering + cluster quantity
+Wie oft habe ich über X gesprochen?;Wie viele Dokumente über das Thema X sind präsent?;topic tags + query for counting
+Über was habe ich gestern gesprochen?;Was ist das Thema der Dokumente von gestern?;topic tags + aggregating them over timespan
+Über was habe ich mit Alex gesprochen?;Was ist das Thema der Dokumente mit Tag X?;people tags + filtering tags
+Was habe ich mir vorgenommen und dann nicht eingehalten?;;agentic workflow: semantic search for goals, extract goal list, semantic search for each goal, classify if tackled or not
+Kannst du mich daran erinnern, was ich letzte Woche über meine Ziele für eine bessere Work-Life-Balance gesagt habe?;Was kannst du zu X in den Dokumenten letzter Woche finden?;filtering time
+Ich fühle mich gestresst wegen meines Projekts bei der Arbeit. Welche Muster hast du in meiner Art, über meinen Job zu sprechen, bemerkt?;Wie ist die sprache in den Dokumenten zu Thema X?;sentiment analysis? maybe also just let llm infer
+Letzten Monat haben wir über Strategien gesprochen, um meine Kommunikation mit meinem Partner zu verbessern. Wie läuft es mit der Umsetzung?;;agentic workflow: semantic search for goals, extract goal list, semantic search for each goal, classify if tackled or not
+Bei welchen Themen wirke ich am energiegeladensten, wenn ich mich unterhalte?;;sentiment analysis in metadata
+Zu welcher Tageszeit bin ich am produktivsten?;Welche timestamps haben Dokumente zu Thema X im Schnitt?;topic tags + query for mean time
+Hast du Zusammenhänge zwischen meiner Schlafqualität und meiner Stimmung bemerkt?;;sentiment analysis
+Ich habe vor einigen Wochen eine Buchempfehlung erwähnt, kann mich aber nicht an den Titel erinnern. Kannst du mich daran erinnern?;;time filter
+Wie hat sich meine Sprache bezüglich meiner Fitnessziele verändert?;;timestamps in context
+Wann ist mein Zahnarzttermin für diesen Monat geplant?;;
+Wie lautete die genaue Adresse des Restaurants, das ich letzte Woche ausprobieren wollte?;;
+Kannst du alle Geburtstage auflisten, die ich erwähnt habe und an die ich mich erinnern muss?;;do multiple retrievals if required (top k likely not enough)
+Um wie viel Uhr kommt mein Flug am Donnerstag an?;;time filtering on mentioned dates
+Kannst du Widersprüche in den Zielen finden, die ich erwähnt habe?;;agentic workflow
+Kannst du eine Verbindung zwischen dem, was ich über meine Kindheit gesagt habe, und meinem Umgang mit Herausforderungen bei der Arbeit herstellen?;;agentic workflow
+Wann habe ich das letzte Mal erwähnt, dass ich mich über etwas wirklich gefreut habe?;;time sorting, metadata in context
+Welchen Rat hast du mir gegeben, auf den ich am positivsten reagiert habe?;;agentic workflow
+Kannst du Fälle finden, in denen ich ähnliche Formulierungen verwendet habe, um verschiedene Situationen zu beschreiben?;;co-occurence based filtering and semantic similarity based filtering

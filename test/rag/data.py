@@ -100,7 +100,7 @@ def fill_database(cc: CocoClient, cfg: DictConfig, dataset: Dataset):
     ), f"Embedding model {cfg.retrieval.embedding_model[0]} has dimension {model_emb_dim} which is greater than the maximum supported dimension {db_emb_dim}"
     unique = unique_texts(dataset)
     texts = [text for text, _ in unique]  # don't use titles for now
-    added, skipped = cc.embed_and_store(
+    added, skipped = cc.embed_and_store_multiple(
         chunks=texts,
         language=cfg.data.language,
         filename=cfg.data.name,
