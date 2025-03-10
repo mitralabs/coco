@@ -1,7 +1,7 @@
-from typing import Tuple, List, Dict, Union, Optional
+from typing import Tuple, List, Optional
 import logging
 import httpx
-from datetime import date
+import datetime
 
 from .async_utils import batched_parallel
 
@@ -42,16 +42,16 @@ class DbApiClient:
         self,
         embedding: List[float],
         n_results: int = 5,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
+        start_date: Optional[datetime.date] = None,
+        end_date: Optional[datetime.date] = None,
     ):
         """Retrieve the closest results from the database service.
 
         Args:
             embedding (List[float]): The embedding to search for.
             n_results (int, optional): The number of results to return. Defaults to 5.
-            start_date (date, optional): Only return documents with a date greater than or equal to this. Defaults to None.
-            end_date (date, optional): Only return documents with a date less than or equal to this. Defaults to None.
+            start_date (datetime.date, optional): Only return documents with a date greater than or equal to this. Defaults to None.
+            end_date (datetime.date, optional): Only return documents with a date less than or equal to this. Defaults to None.
 
         Returns:
             Tuple[List[str], List[str], List[Dict], List[float]]: (ids, documents, metadatas, distances)
@@ -88,12 +88,12 @@ class DbApiClient:
 
         return ids, documents, metadatas, distances
 
-    async def _get_multiple_closest(
+    async def _get_closest_multiple(
         self,
         embeddings: List[List[float]],
         n_results: int = 5,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
+        start_date: Optional[datetime.date] = None,
+        end_date: Optional[datetime.date] = None,
     ):
         """Internal async method to get closest results from the database.
 
@@ -137,15 +137,15 @@ class DbApiClient:
 
         return query_answers
 
-    def get_multiple_closest(
+    def get_closest_multiple(
         self,
         embeddings: List[List[float]],
         n_results: int = 5,
         batch_size: int = 20,
         limit_parallel: int = 10,
         show_progress: bool = True,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
+        start_date: Optional[datetime.date] = None,
+        end_date: Optional[datetime.date] = None,
     ):
         """Get the closest results from the database service for multiple embeddings.
 
@@ -155,8 +155,8 @@ class DbApiClient:
             batch_size (int, optional): The size of each batch. Defaults to 20.
             limit_parallel (int, optional): The maximum number of parallel tasks / batches. Defaults to 10.
             show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to True.
-            start_date (date, optional): Only return documents with a date greater than or equal to this. Defaults to None.
-            end_date (date, optional): Only return documents with a date less than or equal to this. Defaults to None.
+            start_date (datetime.date, optional): Only return documents with a date greater than or equal to this. Defaults to None.
+            end_date (datetime.date, optional): Only return documents with a date less than or equal to this. Defaults to None.
 
         Returns:
             List[Tuple[List[str], List[str], List[Dict], List[float]]]: The closest results for each embedding.
@@ -168,7 +168,7 @@ class DbApiClient:
                 - date: str (ISO format date string, or None if no date is present)
         """
         batched_get_multiple_closest = batched_parallel(
-            function=self._get_multiple_closest,
+            function=self._get_closest_multiple,
             batch_size=batch_size,
             limit_parallel=limit_parallel,
             show_progress=show_progress,
@@ -177,13 +177,15 @@ class DbApiClient:
         return batched_get_multiple_closest(embeddings, n_results, start_date, end_date)
 
     def get_full_database(
-        self, start_date: Optional[date] = None, end_date: Optional[date] = None
+        self,
+        start_date: Optional[datetime.date] = None,
+        end_date: Optional[datetime.date] = None,
     ):
         """Get all documents in the database.
 
         Args:
-            start_date (date, optional): Only return documents with a date greater than or equal to this. Defaults to None.
-            end_date (date, optional): Only return documents with a date less than or equal to this. Defaults to None.
+            start_date (datetime.date, optional): Only return documents with a date greater than or equal to this. Defaults to None.
+            end_date (datetime.date, optional): Only return documents with a date less than or equal to this. Defaults to None.
 
         Returns:
             Tuple[List[str], List[str], List[Dict]]: (ids, documents, metadatas)
@@ -239,16 +241,19 @@ class DbApiClient:
         deleted_count = del_response["count"]
         return deleted_count
 
-    async def _store_in_database(
+    async def _store_multiple(
         self,
         chunks: List[str],
         embeddings: List[List[float]],
         language: str,
         filename: str,
+        dates: List[Optional[datetime.date]] = None,
     ) -> Tuple[List[int], List[int]]:
         documents = []
         n_chunks = len(chunks)
-        for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
+        for i, (chunk, embedding, doc_date) in enumerate(
+            zip(chunks, embeddings, dates)
+        ):
             documents.append(
                 {
                     "text": chunk,
@@ -258,6 +263,7 @@ class DbApiClient:
                         "filename": filename,
                         "chunk_index": i,
                         "total_chunks": n_chunks,
+                        "date": doc_date.isoformat() if doc_date else None,
                     },
                 }
             )
@@ -277,12 +283,13 @@ class DbApiClient:
         n_added, n_skipped = add_response["added"], add_response["skipped"]
         return [n_added], [n_skipped]
 
-    def store_in_database(
+    def store_multiple(
         self,
         chunks: List[str],
         embeddings: List[List[float]],
         language: str,
         filename: str,
+        dates: List[Optional[datetime.date]] = None,
         batch_size: int = 20,
         limit_parallel: int = 10,
         show_progress: bool = False,
@@ -302,14 +309,14 @@ class DbApiClient:
             Tuple[int, int]: The number of documents added and skipped.
         """
 
-        batched_store_in_database = batched_parallel(
-            function=self._store_in_database,
+        batched_store_multiple = batched_parallel(
+            function=self._store_multiple,
             batch_size=batch_size,
             limit_parallel=limit_parallel,
             show_progress=show_progress,
             description="Storing in database",
         )
-        ns_added, ns_skipped = batched_store_in_database(
-            chunks, embeddings, language, filename
+        ns_added, ns_skipped = batched_store_multiple(
+            chunks, embeddings, language, filename, dates
         )
         return sum(ns_added), sum(ns_skipped)

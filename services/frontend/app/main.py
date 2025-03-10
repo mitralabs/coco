@@ -171,7 +171,7 @@ async def add_context(
                 print(f"Invalid end date format: {end_date}")
 
     # Get RAG context with date filters
-    contexts = await cc.rag.async_retrieve_chunks(
+    contexts = await cc.rag.async_retrieve_multiple(
         [user_message],
         5,
         start_date=start_date_obj,
@@ -207,7 +207,7 @@ async def call_rag(
 ):
     try:
         # Get RAG context with date filters
-        contexts = await cc.rag.async_retrieve_chunks(
+        contexts = await cc.rag.async_retrieve_multiple(
             [user_message],
             5,
             start_date=start_date,
@@ -366,7 +366,7 @@ def create_dataframe(query=None, start_date=None, end_date=None):
                 print(f"Invalid end date format: {end_date}")
 
     if query:
-        query_answers = cc.rag.retrieve_chunks(
+        query_answers = cc.rag.retrieve_multiple(
             query_texts=[query], start_date=start_date_obj, end_date=end_date_obj
         )
         ids, documents, metadata, distances = query_answers[0]

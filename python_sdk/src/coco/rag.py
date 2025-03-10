@@ -42,7 +42,7 @@ class RagClient:
         self.db_api = db_api
         self.lm = lm
 
-    async def _retrieve_chunks(
+    async def _retrieve_multiple(
         self,
         query_texts,
         n_results,
@@ -51,11 +51,11 @@ class RagClient:
         end_date=None,
     ):
         embeddings = await self.lm._embed_multiple(query_texts, model)
-        return await self.db_api._get_multiple_closest(
+        return await self.db_api._get_closest_multiple(
             embeddings, n_results, start_date, end_date
         )
 
-    def retrieve_chunks(
+    def retrieve_multiple(
         self,
         query_texts: List[str],
         n_results: int = 5,
@@ -81,7 +81,7 @@ class RagClient:
             List[Tuple[List[str], List[str], List[Dict], List[float]]]: The retrieved chunks.
         """
         batched_retrieve_chunks = batched_parallel(
-            function=self._retrieve_chunks,
+            function=self._retrieve_multiple,
             batch_size=batch_size,
             limit_parallel=limit_parallel,
             show_progress=show_progress,
@@ -91,7 +91,7 @@ class RagClient:
             query_texts, n_results, model, start_date, end_date
         )
 
-    async def async_retrieve_chunks(
+    async def async_retrieve_multiple(
         self,
         query_texts: List[str],
         n_results: int = 5,
@@ -117,7 +117,7 @@ class RagClient:
             List[Tuple[List[str], List[str], List[Dict], List[float]]]: The retrieved chunks.
         """
         batched_retrieve_chunks = batched_parallel(
-            function=self._retrieve_chunks,
+            function=self._retrieve_multiple,
             batch_size=batch_size,
             limit_parallel=limit_parallel,
             show_progress=show_progress,
@@ -147,7 +147,7 @@ class RagClient:
             context="\n-----\n".join(context_chunks), query=query
         )
 
-    async def _generate_answers(
+    async def _answer_multiple(
         self,
         queries: List[str],
         context_chunks: List[List[str]],
@@ -163,7 +163,7 @@ class RagClient:
             prompts, model=model, temperature=temperature
         )
 
-    def generate_answers(
+    def answer_multiple(
         self,
         queries: List[str],
         context_chunks: List[List[str]],
@@ -181,7 +181,7 @@ class RagClient:
             queries (List[str]): The queries to generate answers for.
             context_chunks (List[List[str]]): The context chunks to use for the generation.
             prompt_template (str | None, optional): The prompt template to use for the generation. Defaults to None.
-            ollama_model (_type_, optional): The ollama model to use for the generation. Defaults to "llama3.2:1b".
+            model (str, optional): The model to use for the generation. Defaults to "llama3.2:1b".
             pull_model (bool, optional): Whether to pull the ollama model. Defaults to False.
             batch_size (int, optional): The batch size to use for the generation. Defaults to 20.
             limit_parallel (int, optional): The maximum number of parallel tasks / batches. Defaults to 10.
@@ -198,7 +198,7 @@ class RagClient:
                 logger.info(f"Pulled model {model}")
 
         batched_generate_answers = batched_parallel(
-            function=self._generate_answers,
+            function=self._answer_multiple,
             batch_size=batch_size,
             limit_parallel=limit_parallel,
             show_progress=show_progress,

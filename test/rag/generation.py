@@ -91,7 +91,7 @@ def get_answers(
                 chunks["documents"][: cfg.generation.get_answers.top_k]
             )
 
-        generated_answers, tok_ss = cc.rag.generate_answers(
+        generated_answers, tok_ss = cc.rag.answer_multiple(
             queries=queries,
             context_chunks=context_chunks,
             prompt_template=cfg.generation.get_answers.prompt_template,

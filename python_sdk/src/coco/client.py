@@ -1,6 +1,7 @@
+import datetime
 import os
 import httpx
-from typing import List, Literal
+from typing import List, Literal, Optional
 import logging
 
 from .async_utils import batched_parallel
@@ -124,20 +125,26 @@ class CocoClient:
                 if raise_on_error:
                     raise e
 
-    async def _embed_and_store(
-        self, chunks, language, filename, model="nomic-embed-text"
-    ):
-        embeddings = await self.lm._embed_multiple(chunks, model)
-        ns_added, ns_skipped = await self.db_api._store_in_database(
-            chunks, embeddings, language, filename
-        )
-        return ns_added, ns_skipped
-
-    def embed_and_store(
+    async def _embed_and_store_multiple(
         self,
         chunks: List[str],
         language: str,
         filename: str,
+        dates: List[Optional[datetime.date]],
+        model: str = "nomic-embed-text",
+    ):
+        embeddings = await self.lm._embed_multiple(chunks, model)
+        ns_added, ns_skipped = await self.db_api._store_multiple(
+            chunks, embeddings, language, filename, dates
+        )
+        return ns_added, ns_skipped
+
+    def embed_and_store_multiple(
+        self,
+        chunks: List[str],
+        language: str,
+        filename: str,
+        dates: List[Optional[datetime.date]],
         model: str = "nomic-embed-text",
         batch_size: int = 20,
         limit_parallel: int = 10,
@@ -150,6 +157,7 @@ class CocoClient:
             chunks (List[str]): The chunks to embed and store.
             language (str): The language of the chunks.
             filename (str): The filename of the chunks.
+            dates (List[Optional[datetime.date]]): The dates of the chunks.
             batch_size (int, optional): The size of each batch. Defaults to 20.
             limit_parallel (int, optional): The maximum number of parallel tasks / batches. Defaults to 10.
             show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to True.
@@ -158,18 +166,42 @@ class CocoClient:
             Tuple[int, int]: The number of documents added and skipped.
         """
         batched_embed_and_store = batched_parallel(
-            function=self._embed_and_store,
+            function=self._embed_and_store_multiple,
             batch_size=batch_size,
             limit_parallel=limit_parallel,
             show_progress=show_progress,
             description="Embedding and storing",
         )
-        n_added, n_skipped = batched_embed_and_store(chunks, language, filename, model)
+        n_added, n_skipped = batched_embed_and_store(
+            chunks, language, filename, dates, model
+        )
         return sum(n_added), sum(n_skipped)
+
+    def async_embed_and_store_multiple(
+        self,
+        chunks: List[str],
+        language: str,
+        filename: str,
+        dates: List[Optional[datetime.date]],
+        model: str = "nomic-embed-text",
+        batch_size: int = 20,
+        limit_parallel: int = 10,
+        show_progress: bool = True,
+    ):
+        async_batched_embed_and_store = batched_parallel(
+            function=self._embed_and_store_multiple,
+            batch_size=batch_size,
+            limit_parallel=limit_parallel,
+            show_progress=show_progress,
+            description="Embedding and storing",
+            return_async_wrapper=True,
+        )
+        return async_batched_embed_and_store(chunks, language, filename, dates, model)
 
     def transcribe_and_store(
         self,
         audio_file: str,
+        date: Optional[datetime.date] = None,
         batch_size: int = 20,
         limit_parallel: int = 10,
         show_progress: bool = True,
@@ -179,10 +211,11 @@ class CocoClient:
 
         Args:
             audio_file (str): The audio file to transcribe.
+            date (Optional[datetime.date], optional): The date of the audio file. Defaults to None.
             batch_size (int, optional): The size of each batch. Defaults to 20.
             limit_parallel (int, optional): The maximum number of parallel tasks / batches. Defaults to 10.
             show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to True.
-
+            embedding_model (str, optional): The model to use for embedding. Defaults to "nomic-embed-text".
         Returns:
             Tuple[int, int]: The number of documents added and skipped.
         """
@@ -193,10 +226,11 @@ class CocoClient:
             f.write(text)
 
         chunks = self.chunking.chunk_text(text=text)
-        return self.embed_and_store(
+        return self.embed_and_store_multiple(
             chunks=chunks,
             language=language,
             filename=filename,
+            dates=[date] * len(chunks),
             model=embedding_model,
             batch_size=batch_size,
             limit_parallel=limit_parallel,

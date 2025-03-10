@@ -33,7 +33,7 @@ def get_top_chunks(cc: CocoClient, cfg: DictConfig, ds: Dataset):
         # obtain from db
         top_chunks = {}
         queries = [sample["question"] for sample in ds]
-        results = cc.rag.retrieve_chunks(
+        results = cc.rag.retrieve_multiple(
             query_texts=queries,
             n_results=cfg.retrieval.get_top_chunks.top_k,
             model=cfg.retrieval.embedding_model[0],
