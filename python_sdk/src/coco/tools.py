@@ -10,7 +10,7 @@ from typing import (
 )
 import logging
 import functools
-from datetime import date, datetime
+import datetime
 import json
 
 from .db_api import DbApiClient
@@ -235,100 +235,41 @@ class ToolsClient:
         return tool.method(**converted_kwargs)
 
     @tool(
-        description="Search for relevant information in the database based on a query"
+        description="Search for relevant information in the database based on a query. The query can be filtered by a start and end date."
     )
-    def semantic_query(self, query: str, num_results: int = 5) -> List[Dict[str, Any]]:
+    def semantic_query(
+        self,
+        query_text: str,
+        num_results: int = 5,
+        start_date_iso: Optional[str] = None,
+        end_date_iso: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
         """
         Search for relevant information in the database based on a natural language query.
 
         Args:
-            query: The natural language query to search for
+            query_text: The natural language query to search for
             num_results: The number of results to return
+            start_date_iso: The start date of the query in ISO format
+            end_date_iso: The end date of the query in ISO format
 
         Returns:
             A list of matching documents with their content and metadata
         """
-        embedding = self.lm.embed(query)
-        ids, documents, metadatas, distances = self.db_api.get_closest(
-            embedding=embedding, n_results=num_results
-        )
-        return {
-            "documents": documents,
-            "metadata": metadatas,
-            "timestamp": datetime.now().isoformat(),
-            "message": f"These are the top {num_results} results (documents and metadata) for the query: {query}",
-        }
-
-    @tool(
-        description="Search for relevant information in the database with date filtering"
-    )
-    def date_filtered_query(
-        self,
-        query: str,
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None,
-        top_k: int = 5,
-    ) -> List[Dict[str, Any]]:
-        """
-        Search for relevant information in the database based on a natural language query
-        with optional date filtering.
-
-        Args:
-            query: The natural language query to search for
-            start_date: The start date for filtering in YYYY-MM-DD format
-            end_date: The end date for filtering in YYYY-MM-DD format
-            top_k: The number of results to return
-
-        Returns:
-            A list of dictionaries containing matching documents with their content and metadata
-        """
-        embedding = self.lm.embed(query)
-
-        start_date_obj = None
-        end_date_obj = None
-        if start_date:
-            start_date_obj = date.fromisoformat(start_date)
-        if end_date:
-            end_date_obj = date.fromisoformat(end_date)
-
+        embedding = self.lm.embed(query_text)
         ids, documents, metadatas, distances = self.db_api.get_closest(
             embedding=embedding,
-            n_results=top_k,
-            start_date=start_date_obj,
-            end_date=end_date_obj,
+            n_results=num_results,
+            start_date=(
+                datetime.date.fromisoformat(start_date_iso) if start_date_iso else None
+            ),
+            end_date=(
+                datetime.date.fromisoformat(end_date_iso) if end_date_iso else None
+            ),
         )
-
         return {
             "documents": documents,
             "metadata": metadatas,
-            "timestamp": datetime.now().isoformat(),
-            "message": f"These are the top {top_k} results (documents and metadata) for the query: {query} with filter {start_date_obj} to {end_date_obj}",
-        }
-
-    @tool(description="Get the secret word")
-    def get_secret_word(self) -> Dict[str, Any]:
-        """
-        Returns the secret word.
-
-        Returns:
-            A dictionary containing the secret word and additional information
-        """
-        secret_word = "iPod"
-
-        return {
-            "secret_word": secret_word,
-            "timestamp": datetime.now().isoformat(),
-            "message": "This is the secret word",
-        }
-
-    @tool(description="Obtain formatted secret sentence")
-    def get_secret_sentence(self, insertion: str = "") -> Dict[str, Any]:
-        """
-        Returns the secret sentence.
-        """
-        secret_sentence = f"Steve Jobs invented the {insertion}"
-        return {
-            "secret_sentence": secret_sentence,
-            "timestamp": datetime.now().isoformat(),
-            "message": "This is the secret sentence with inserted word",
+            "timestamp": datetime.datetime.now().isoformat(),
+            "message": f"Das sind die relevantesten Information aus der Datenbank zu deiner Anfrage. Das erste Array enthält ids, das zweite die Dokumente (den Inhalt deines Wissens) und das dritte die Metadaten. Das vierte Array enthält die semantischen Distanzen der Dokumente zu der Anfrage.",
         }

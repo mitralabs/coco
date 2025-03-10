@@ -24,10 +24,10 @@ def main():
         openai_base="https://openai.inference.de-txl.ionos.com/v1",
         api_key="test",
         embedding_api="openai",
-        llm_api="ollama",
+        llm_api="openai",
     )
-    # model = "meta-llama/Llama-3.3-70B-Instruct"
-    model = "mistral-nemo"
+    model = "meta-llama/Llama-3.3-70B-Instruct"
+    # model = "mistral-nemo"
 
     # Perform a health check to ensure all services are running
     logger.info("Performing health check...")
@@ -37,17 +37,6 @@ def main():
         logger.warning(f"Health check encountered issues: {e}")
         logger.warning("Continuing with the test despite health check issues...")
 
-    logger.info("Testing direct tool execution...")
-    result = cc._tools_client.execute_tool(
-        ToolCall(
-            id="tool_call_1",
-            name="get_secret_word",
-            arguments={},
-        )
-    )
-    logger.info(f"Secret word result (direct):\n{json.dumps(result, indent=2)}")
-
-    # Print available tools for debugging
     logger.info("Available tools:")
     tools = cc.agent.tools_client.get_tools()
     logger.info(f"{json.dumps(tools, indent=2)}")
@@ -56,7 +45,7 @@ def main():
     messages = [
         {
             "role": "user",
-            "content": "Finde das geheime Wort.",
+            "content": "Hallo.",
         }
     ]
 
@@ -68,18 +57,7 @@ def main():
     messages = agent_result["conversation_history"] + [
         {
             "role": "user",
-            "content": "Kannst du es in den geheimen Satz einsetzen?",
-        }
-    ]
-    agent_result = cc.agent.chat(
-        messages=messages,
-        model=model,
-        max_iterations=3,
-    )
-    messages = agent_result["conversation_history"] + [
-        {
-            "role": "user",
-            "content": "Ich weiß nicht, ob sich die Geheimnisse nicht ändern. Kannst du bitte nochmal nachschauen?",
+            "content": "Sage mir einen beliebigen Fakt den du weißt.",
         }
     ]
     agent_result = cc.agent.chat(
