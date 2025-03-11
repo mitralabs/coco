@@ -26,7 +26,7 @@ From **this directory**:
 ```
 nohup python -m uvicorn transcription.app.main:app --host 0.0.0.0 --port 8000 --reload --log-level debug > transcription/uvicorn.log 2>&1 &
 ```
->Note: To show all background tasks, run `ps aux | grep uvicorn`. <br> 
+>Note: To show all background tasks, run `ps aux | grep uvicorn` <br> 
 And to stop it: `kill <PID>`
 
 This will run the whisper in a hidden process in the background on port 8000 of your machine, and further save the logs to /transcription/uvicorn.log
