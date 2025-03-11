@@ -23,6 +23,7 @@ System Critical Tasks: 18-24
 Never use priority 25 (reserved for system tasks)
 
 ## ToDo
+- [ ] Understand why device stops recording after Xmins and crashes. (This might be an issue with the Battery Monitoring Task, and the script running on a device without a battery attached)
 - [ ] Überarbeite Setup and Init (maybe find a routine for initial boot or boot from complete power loss).
 - [ ] Check if there is a possibility that audio queue get's lost on the SD card. E.g. when the new one is being written and the device loses power.
 - [ ] Move persistent time saving to SD and away from flash (since the latter degrades)
@@ -32,6 +33,10 @@ Never use priority 25 (reserved for system tasks)
 - [ ] Rewrite logging. It's currently pretty wild.
 - [ ] Include WiFiMulti, so that multiple Networks are known. Secondly, Scan for known Location, by checking SSIDs, and connect then.
 - [ ] Integrate WiFi, Timezone, and Timestamp optionally on SD Card (although this poses security risks, if device is lost, and card inspected.)
+- [ ] Disable Bluetooth
+- [ ] Look into File Compression like LZ77H (common in HTTP headers)
+- [ ] Revive WifiDisconnected Function. And introduce BackendDisconnected in that regard.
+
 
 ---
 

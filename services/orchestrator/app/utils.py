@@ -5,7 +5,7 @@ import sys
 import datetime
 from typing import Dict, Optional, Tuple, List
 
-ROOT_PATH = Path(os.getenv("AUDIO_ROOT_PATH", "/data/audio"))
+ROOT_PATH = Path(os.getenv("AUDIO_ROOT_PATH", "/data"))
 
 # Directory structure constants
 DIR_RAW = "raw"
@@ -255,15 +255,3 @@ def parse_coco_filename(
 
 # Initialize the path manager
 PathManager = AudioPathManager(ROOT_PATH)
-
-
-# For backward compatibility
-def get_path(root: Path = ROOT_PATH, filename: str = "") -> Optional[Path]:
-    """Legacy function for backward compatibility"""
-    return path_manager.get_raw_path(filename)
-
-
-# For backward compatibility
-def process_transcription(transcription: str, audio_path: str) -> str:
-    """Legacy function for backward compatibility"""
-    return path_manager.save_transcription(transcription, audio_path)

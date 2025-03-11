@@ -52,9 +52,9 @@
 #define HTTP_TIMEOUT 10000  // microseconds timeout for HTTP requests
 #define UPLOAD_CHECK_INTERVAL 2000 // Check every 2 seconds
 
-/**********************************
- *       GLOBAL VARIABLES         *
- **********************************/
+/***********************************************
+ *     GLOBAL VARIABLES AND DATA STRUCTURES    *
+ ***********************************************/
 Preferences preferences;
 I2SClass i2s;
 
@@ -72,12 +72,11 @@ int resolution = 8;  // Resolution in bits (1-16)
 
 time_t storedTime = 0;
 
-unsigned long nextWifiScanTime = 0;                   // Next time to scan for networks
+unsigned long nextWifiScanTime = 0; // Next time to scan for networks
 unsigned long currentScanInterval = MIN_SCAN_INTERVAL; // Current backoff interval
+unsigned long nextBackendCheckTime = 0; // Next time to check backend availability
+unsigned long currentBackendInterval = MIN_SCAN_INTERVAL; // Current backoff interval
 
-/**********************************
- *        DATA STRUCTURES         *
- **********************************/
 enum AudioChunkType { START, MIDDLE, END };
 
 struct AudioBuffer {
@@ -96,10 +95,12 @@ struct UploadBuffer {
 volatile bool isRecording = false;  // Flag to indicate recording state
 volatile bool recordingRequested = false;  // Flag to indicate recording state
 volatile bool WIFIconnected = false;  // Flag to indicate WiFi connection state
+volatile bool backendReachable = false; // Flag indicating if backend is available
 volatile bool wavFilesAvailable = false;
 volatile bool uploadInProgress = false;
 
 volatile bool externalWakeTriggered = false;
+volatile bool readyForDeepSleep = false;
 volatile int externalWakeValid = -1;  // -1: not determined, 0: invalid (accidental), 1: valid wake
 
 SemaphoreHandle_t ledMutex; // Global mutex for the LED
@@ -171,6 +172,9 @@ void wifiConnectionTask(void *parameter);
 void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info);
 void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info);
 //void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info);
+bool checkBackendReachability();
+void backendReachabilityTask(void *parameter);
+
 
 /**********************************
  *     INTERRUPT & CALLBACKS      *
@@ -202,19 +206,18 @@ void buttonTimerCallback(TimerHandle_t xTimer) {
   } else {
     // Normal operation: toggle recording state.
     if (digitalRead(BUTTON_PIN) == LOW) {
+      // If we're currently recording, stopping will trigger deep sleep
+      if (recordingRequested) {
+        readyForDeepSleep = true;
+        log("Recording stop requested; will enter deep sleep when safe");
+      }
       recordingRequested = !recordingRequested;
       log(recordingRequested ? "Recording start requested" : "Recording stop requested");
     }
   }
   // Update the LED state.
   if (xSemaphoreTake(ledMutex, portMAX_DELAY) == pdPASS) {
-    // use ledcWrite(ledChannel, 20); instead of digital Write
-
-
-    // digitalWrite(LED_PIN, recordingRequested ? HIGH : LOW);
-
     ledcWrite(LED_PIN, recordingRequested ? 255 : 0);  // 255 is full brightness, 20 is very low brightness
-
     xSemaphoreGive(ledMutex);
   }
 }
@@ -267,8 +270,6 @@ void setup() {
       setup_from_timer();
       break;
     case ESP_SLEEP_WAKEUP_EXT0:
-      externalWakeTriggered = true;
-      xTimerStart(buttonTimer, 0);
       setup_from_external();
       break;      
     default:
@@ -291,25 +292,28 @@ void setup_from_timer() {
 
 void setup_from_external() {
   // If the wake was external, we need to wait for the button press to confirm the wake.
-  if (externalWakeTriggered) {
-    // Wait until externalWakeValid is updated (avoid indefinite wait with a timeout if needed)
-    while (externalWakeValid == -1) {
-      delay(10);  // Small pause allowing timer callback to run.
+  externalWakeTriggered = true;
+  xTimerStart(buttonTimer, 0);
+
+  // Wait until externalWakeValid is updated (avoid indefinite wait with a timeout)
+  unsigned long startTime = millis();
+  while (externalWakeValid == -1 && (millis() - startTime < 2000)) {
+    delay(10);  // Small pause allowing timer callback to run.
+  }
+
+  // If decision was valid, proceed with boot.
+  if (externalWakeValid == 1) {
+    log("Valid external wake, proceeding with boot.");
+    setup_from_boot();
+  } else {
+    // Write to log and enter deep sleep again.
+    logFile = SD.open("/device.log", FILE_APPEND);
+    if (logFile) {
+      logFile.println("Invalid external wake, entering deep sleep again.");
+      logFile.flush();
+      logFile.close();
     }
-    // If decision was valid, proceed with boot.
-    if (externalWakeValid == 1) {
-      log("Valid external wake, proceeding with boot.");
-      setup_from_boot();
-    } else {
-      // Write to log and enter deep sleep again.
-      logFile = SD.open("/device.log", FILE_APPEND);
-      if (logFile) {
-        logFile.println("Invalid external wake, entering deep sleep again.");
-        logFile.flush();
-        logFile.close();
-      }
-      initDeepSleep();
-    }
+    initDeepSleep();
   }
 }
 
@@ -365,6 +369,12 @@ void setup_from_boot() {
     log("Failed to create wifiConnection task!");
     ErrorBlinkLED(100);
   }
+
+  if(xTaskCreatePinnedToCore(backendReachabilityTask, "Backend Check", 4096, NULL, 1, NULL, 0) != pdPASS ) {
+    log("Failed to create backendReachabilityTask!");
+    ErrorBlinkLED(100);
+  }
+
   if(xTaskCreatePinnedToCore(batteryMonitorTask, "Battery Monitor", 4096, NULL, 1, &batteryMonitorTaskHandle, 0) != pdPASS ) {
     log("Failed to create batteryMonitor task!");
     ErrorBlinkLED(100);
@@ -504,6 +514,21 @@ void audioFileTask(void *parameter) {
       }
       free(audio.buffer);
     }
+
+    // Check if we should enter deep sleep
+    if (readyForDeepSleep && 
+      !recordingRequested && 
+      !isRecording &&
+      uxQueueMessagesWaiting(audioQueue) == 0) {
+    
+      // Make sure log queue is also empty before sleep
+      if (uxQueueMessagesWaiting(logQueue) == 0) {
+        log("Recording stopped and all data processed. Entering deep sleep.");
+        vTaskDelay(pdMS_TO_TICKS(500)); // Short delay to allow log to be written
+        initDeepSleep();
+      }
+    }
+
     vTaskDelay(pdMS_TO_TICKS(10));
   }
 }
@@ -611,7 +636,7 @@ void fileUploadTask(void *parameter) {
   
   while (true) {
     // Only proceed if WiFi is connected
-    if (WIFIconnected) {
+    if (WIFIconnected && backendReachable) {
       // Check if we're already uploading
       if (xSemaphoreTake(uploadMutex, 0) == pdTRUE) {
         uploadInProgress = true;
@@ -804,23 +829,6 @@ void logFlushTask(void *parameter) {
         xSemaphoreGive(sdMutex);
       }
     }
-
-    // Check if recording has stopped and both queues are empty.
-    /*
-    if (!isRecording && 
-        (uxQueueMessagesWaiting(audioQueue) == 0) && 
-        (uxQueueMessagesWaiting(logQueue) == 0)) {
-      // Write directly to log file, since the queue won't be processed anymore
-      logFile = SD.open("/device.log", FILE_APPEND);
-      if (logFile) {
-        logFile.println("Recording stopped and queues emptied. Entering deep sleep.");
-        logFile.flush();
-        logFile.close();
-      }
-      initDeepSleep();
-      Serial.println("This will never be printed");
-    }*/
-
     vTaskDelay(pdMS_TO_TICKS(10));
   }
 }
@@ -1113,6 +1121,10 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info) {
   currentScanInterval = MIN_SCAN_INTERVAL;
   WIFIconnected = true;
   
+  // Reset backend check parameters
+  nextBackendCheckTime = 0; // Check immediately
+  currentBackendInterval = MIN_SCAN_INTERVAL;
+
   // Update time as soon as we get an IP address
   if (updateTimeFromNTP()) {
     log("Time synchronized with NTP successfully");
@@ -1157,3 +1169,55 @@ void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info) {
   log("Disconnected from WiFi. Reason: " + String(info.wifi_sta_disconnected.reason));
   nextWifiScanTime = 0; // Force a scan on next wifiConnectionTask iteration
 }*/
+
+/**********************************
+ *     BACKEND REACHABILITY       *
+ **********************************/
+
+ bool checkBackendReachability() {
+  if (!WIFIconnected) {
+    return false;
+  }
+  
+  HTTPClient http;
+  http.setTimeout(HTTP_TIMEOUT);
+  http.begin(TEST_ENDPOINT);
+
+  http.addHeader("X-API-Key",
+    API_KEY);  // Add the API key as a custom header
+
+  int httpResponseCode = http.GET();
+  log("Backend check response: " + String(httpResponseCode));
+  
+  http.end();
+  return httpResponseCode == 200;
+}
+
+void backendReachabilityTask(void *parameter) {
+  while (true) {
+    unsigned long currentTime = millis();
+    
+    // Only check backend if WiFi is connected and it's time to check
+    if (WIFIconnected && currentTime >= nextBackendCheckTime) {
+      log("Checking backend reachability...");
+      
+      if (checkBackendReachability()) {
+        log("Backend is reachable");
+        backendReachable = true;
+        // Reset backoff on success
+        currentBackendInterval = MIN_SCAN_INTERVAL;
+      } else {
+        log("Backend is not reachable");
+        backendReachable = false;
+        
+        // Apply exponential backoff for next check
+        currentBackendInterval = std::min(currentBackendInterval * 2UL, (unsigned long)MAX_SCAN_INTERVAL);
+        log("Next backend check in " + String(currentBackendInterval / 1000) + " seconds");
+      }
+      
+      nextBackendCheckTime = currentTime + currentBackendInterval;
+    }
+    
+    vTaskDelay(pdMS_TO_TICKS(5000)); // Check every 5 seconds
+  }
+}
