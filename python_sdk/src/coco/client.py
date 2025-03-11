@@ -247,17 +247,23 @@ class CocoClient:
         text: str,
         language: str = "",
         filename: str = "",
+        date: Optional[datetime.date] = None,
         batch_size: int = 20,
         limit_parallel: int = 10,
         show_progress: bool = True,
+        embedding_model: str = "nomic-embed-text",
     ):
         """Chunk, embed and store.
 
         Args:
             text (str): The text to chunk, embed and store.
+            language (str, optional): The language of the text. Defaults to "".
+            filename (str, optional): The filename of the text. Defaults to "".
+            date (Optional[datetime.date], optional): The date of the text. Defaults to None.
             batch_size (int, optional): The size of each batch. Defaults to 20.
             limit_parallel (int, optional): The maximum number of parallel tasks / batches. Defaults to 10.
             show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to True.
+            embedding_model (str, optional): Model to use for embeddings. Defaults to "nomic-embed-text".
 
         Returns:
             Tuple[int, int]: The number of documents added and skipped.
@@ -265,10 +271,12 @@ class CocoClient:
 
         chunks = self.chunking.chunk_text(text=text)
 
-        return self.embed_and_store(
+        return self.embed_and_store_multiple(
             chunks=chunks,
             language=language,
             filename=filename,
+            dates=[date] * len(chunks),
+            model=embedding_model,
             batch_size=batch_size,
             limit_parallel=limit_parallel,
             show_progress=show_progress,

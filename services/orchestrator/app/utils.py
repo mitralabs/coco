@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import logging
 import sys
+import datetime
 from typing import Dict, Optional, Tuple, List
 
 ROOT_PATH = Path(os.getenv("AUDIO_ROOT_PATH", "/data/audio"))
@@ -163,6 +164,53 @@ class AudioPathManager:
             return transcript_content
         except Exception as e:
             logger.error(f"Failed to read previous transcript: {str(e)}")
+            return None
+
+    def get_date(self, audio_path: str) -> Optional[datetime.datetime]:
+        """
+        Extract date and time from an audio file path and return as datetime object
+
+        Args:
+            audio_path: Path to the audio file
+
+        Returns:
+            datetime.datetime object or None if parsing fails
+        """
+        # Extract filename from path
+        audio_filename = os.path.basename(audio_path)
+
+        # Parse the filename to get components
+        parsed = parse_coco_filename(audio_filename)
+        if not parsed:
+            logger.error(f"Invalid filename format: {audio_filename}")
+            return None
+
+        # Extract date and time components
+        try:
+            # Parse date (YY-DD-MM format per filename convention)
+            date_parts = parsed["file_date"].split("-")
+            if len(date_parts) != 3:
+                raise ValueError(f"Invalid date format: {parsed['file_date']}")
+
+            year = int("20" + date_parts[0])  # Assuming 20YY format
+            day = int(date_parts[1])
+            month = int(date_parts[2])
+
+            # Parse time (HH-MM-SS format)
+            time_parts = parsed["file_time"].split("-")
+            if len(time_parts) != 3:
+                raise ValueError(f"Invalid time format: {parsed['file_time']}")
+
+            hour = int(time_parts[0])
+            minute = int(time_parts[1])
+            second = int(time_parts[2])
+
+            # Create datetime object
+            date_obj = datetime.datetime(year, month, day, hour, minute, second)
+            logger.info(f"Successfully parsed date: {date_obj} from {audio_filename}")
+            return date_obj
+        except (ValueError, IndexError) as e:
+            logger.error(f"Failed to parse date/time from {audio_path}: {str(e)}")
             return None
 
 

@@ -9,6 +9,7 @@ import logging
 import os
 import sys
 
+import datetime
 import time
 import re
 
@@ -66,6 +67,10 @@ def kick_off_processing(audio_path: str, store_in_db: bool = True):
     if prompt:
         logger.info(f"Using previous transcript as context for {audio_path}")
 
+    # Get date.
+    date = PathManager.get_date(audio_path)
+    logger.info(f"Date: {date}, type: {type(date)}")
+
     # Transcribe the audio
     try:
         text, language, filename = cc.transcription.transcribe_audio(audio_path, prompt)
@@ -78,7 +83,7 @@ def kick_off_processing(audio_path: str, store_in_db: bool = True):
         PathManager.save_transcription(text, audio_path)
 
         if store_in_db:
-            cc.chunk_and_store(text, language, filename)
+            cc.chunk_and_store(text, language, filename, date)
             logger.info("Transcription saved successfully and stored in database.")
         else:
             logger.info("Transcription saved successfully.")

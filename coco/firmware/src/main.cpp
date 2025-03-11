@@ -22,8 +22,8 @@
 /**********************************
  *       MACRO DEFINITIONS        *
  **********************************/
-#define LED_PIN 1
-#define BUTTON_PIN GPIO_NUM_2
+#define LED_PIN 2
+#define BUTTON_PIN GPIO_NUM_1
 #define BATTERY_PIN 4
 
 #define RECORD_TIME 10       // seconds
