@@ -241,30 +241,33 @@ class ToolsClient:
         self,
         query_text: str,
         num_results: int = 5,
-        start_date_iso: Optional[str] = None,
-        end_date_iso: Optional[str] = None,
+        start_date_time_iso: Optional[str] = None,
+        end_date_time_iso: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        """
-        Search for relevant information in the database based on a natural language query.
+        """Search for relevant information in the database based on a query.
 
         Args:
-            query_text: The natural language query to search for
-            num_results: The number of results to return
-            start_date_iso: The start date of the query in ISO format
-            end_date_iso: The end date of the query in ISO format
+            query_text (str): The query text to search for.
+            num_results (int, optional): The number of results to return. Defaults to 5.
+            start_date_time_iso (Optional[str], optional): The start date in ISO format. Defaults to None.
+            end_date_time_iso (Optional[str], optional): The end date in ISO format. Defaults to None.
 
         Returns:
-            A list of matching documents with their content and metadata
+            List[Dict[str, Any]]: The search results.
         """
         embedding = self.lm.embed(query_text)
         ids, documents, metadatas, distances = self.db_api.get_closest(
             embedding=embedding,
             n_results=num_results,
-            start_date=(
-                datetime.date.fromisoformat(start_date_iso) if start_date_iso else None
+            start_date_time=(
+                datetime.datetime.fromisoformat(start_date_time_iso)
+                if start_date_time_iso
+                else None
             ),
-            end_date=(
-                datetime.date.fromisoformat(end_date_iso) if end_date_iso else None
+            end_date_time=(
+                datetime.datetime.fromisoformat(end_date_time_iso)
+                if end_date_time_iso
+                else None
             ),
         )
         knowledge = [

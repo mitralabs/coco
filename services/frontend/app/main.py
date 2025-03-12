@@ -142,40 +142,44 @@ async def add_context(
     start_date=None,
     end_date=None,
 ):
-    # Convert DateTime component output to date objects
-    start_date_obj = None
-    end_date_obj = None
+    # Convert DateTime component output to datetime objects
+    start_datetime_obj = None
+    end_datetime_obj = None
 
     if start_date:
         # Handle different possible formats from gr.DateTime
         if isinstance(start_date, datetime.datetime):
-            start_date_obj = start_date.date()
+            start_datetime_obj = start_date
         elif isinstance(start_date, date):
-            start_date_obj = start_date
+            # Convert date to datetime with time at start of day
+            start_datetime_obj = datetime.datetime.combine(
+                start_date, datetime.time.min
+            )
         elif isinstance(start_date, str) and start_date.strip():
             try:
-                start_date_obj = datetime.datetime.fromisoformat(start_date).date()
+                start_datetime_obj = datetime.datetime.fromisoformat(start_date)
             except ValueError:
                 print(f"Invalid start date format: {start_date}")
 
     if end_date:
         # Handle different possible formats from gr.DateTime
         if isinstance(end_date, datetime.datetime):
-            end_date_obj = end_date.date()
+            end_datetime_obj = end_date
         elif isinstance(end_date, date):
-            end_date_obj = end_date
+            # Convert date to datetime with time at end of day
+            end_datetime_obj = datetime.datetime.combine(end_date, datetime.time.max)
         elif isinstance(end_date, str) and end_date.strip():
             try:
-                end_date_obj = datetime.datetime.fromisoformat(end_date).date()
+                end_datetime_obj = datetime.datetime.fromisoformat(end_date)
             except ValueError:
                 print(f"Invalid end date format: {end_date}")
 
-    # Get RAG context with date filters
+    # Get RAG context with datetime filters
     contexts = await cc.rag.async_retrieve_multiple(
         [user_message],
         5,
-        start_date=start_date_obj,
-        end_date=end_date_obj,
+        start_date_time=start_datetime_obj,
+        end_date_time=end_datetime_obj,
         model=EMBEDDING_MODEL,
     )
     context_chunks = contexts[0][1]
@@ -205,48 +209,74 @@ async def call_rag(
     start_date=None,
     end_date=None,
 ):
-    try:
-        # Get RAG context with date filters
-        contexts = await cc.rag.async_retrieve_multiple(
-            [user_message],
-            5,
-            start_date=start_date,
-            end_date=end_date,
-            model=EMBEDDING_MODEL,
-        )
-        context_chunks = contexts[0][1]
-        rag_context = CONTEXT_FORMAT.format(context="\n-----\n".join(context_chunks))
+    # Convert DateTime component output to datetime objects
+    start_datetime_obj = None
+    end_datetime_obj = None
 
-        messages = []
-        # Add system message
-        if system_message == "":
-            system_message = system_message_default
-        messages.append({"role": "system", "content": system_message})
+    if start_date:
+        # Handle different possible formats from gr.DateTime
+        if isinstance(start_date, datetime.datetime):
+            start_datetime_obj = start_date
+        elif isinstance(start_date, date):
+            # Convert date to datetime with time at start of day
+            start_datetime_obj = datetime.datetime.combine(
+                start_date, datetime.time.min
+            )
+        elif isinstance(start_date, str) and start_date.strip():
+            try:
+                start_datetime_obj = datetime.datetime.fromisoformat(start_date)
+            except ValueError:
+                print(f"Invalid start date format: {start_date}")
 
-        # Add previous messages
-        for element in history:
-            messages.append({"role": element["role"], "content": element["content"]})
+    if end_date:
+        # Handle different possible formats from gr.DateTime
+        if isinstance(end_date, datetime.datetime):
+            end_datetime_obj = end_date
+        elif isinstance(end_date, date):
+            # Convert date to datetime with time at end of day
+            end_datetime_obj = datetime.datetime.combine(end_date, datetime.time.max)
+        elif isinstance(end_date, str) and end_date.strip():
+            try:
+                end_datetime_obj = datetime.datetime.fromisoformat(end_date)
+            except ValueError:
+                print(f"Invalid end date format: {end_date}")
 
-        if include_context == "Yes":
-            messages, history = await add_context(user_message, history, messages)
-        else:
-            messages.append({"role": "user", "content": user_message})
+    # Get RAG context with datetime filters
+    contexts = await cc.rag.async_retrieve_multiple(
+        [user_message],
+        5,
+        start_date_time=start_datetime_obj,
+        end_date_time=end_datetime_obj,
+        model=EMBEDDING_MODEL,
+    )
+    context_chunks = contexts[0][1]
+    rag_context = CONTEXT_FORMAT.format(context="\n-----\n".join(context_chunks))
 
-        responses, tok_ss = await cc.lm.async_chat_multiple(
-            messages_list=[messages],
-            model=selected_model,
-            batch_size=20,
-            limit_parallel=10,
-            show_progress=True,
-        )
-        reponse, tok_s = responses[0], tok_ss[0]
-        history.append(gr.ChatMessage(role="assistant", content=reponse))
-        yield history
+    messages = []
+    # Add system message
+    if system_message == "":
+        system_message = system_message_default
+    messages.append({"role": "system", "content": system_message})
 
-    except Exception as e:
-        history.append({"role": "assistant", "content": f"Error: {str(e)}"})
-        yield history
-        raise e
+    # Add previous messages
+    for element in history:
+        messages.append({"role": element["role"], "content": element["content"]})
+
+    if include_context == "Yes":
+        messages, history = await add_context(user_message, history, messages)
+    else:
+        messages.append({"role": "user", "content": user_message})
+
+    responses, tok_ss = await cc.lm.async_chat_multiple(
+        messages_list=[messages],
+        model=selected_model,
+        batch_size=20,
+        limit_parallel=10,
+        show_progress=True,
+    )
+    reponse, tok_s = responses[0], tok_ss[0]
+    history.append(gr.ChatMessage(role="assistant", content=reponse))
+    yield history
 
 
 async def call_rag_stream(
@@ -258,6 +288,38 @@ async def call_rag_stream(
     end_date,
     include_context,
 ):
+    # Convert DateTime component output to datetime objects
+    start_datetime_obj = None
+    end_datetime_obj = None
+
+    if start_date:
+        # Handle different possible formats from gr.DateTime
+        if isinstance(start_date, datetime.datetime):
+            start_datetime_obj = start_date
+        elif isinstance(start_date, date):
+            # Convert date to datetime with time at start of day
+            start_datetime_obj = datetime.datetime.combine(
+                start_date, datetime.time.min
+            )
+        elif isinstance(start_date, str) and start_date.strip():
+            try:
+                start_datetime_obj = datetime.datetime.fromisoformat(start_date)
+            except ValueError:
+                print(f"Invalid start date format: {start_date}")
+
+    if end_date:
+        # Handle different possible formats from gr.DateTime
+        if isinstance(end_date, datetime.datetime):
+            end_datetime_obj = end_date
+        elif isinstance(end_date, date):
+            # Convert date to datetime with time at end of day
+            end_datetime_obj = datetime.datetime.combine(end_date, datetime.time.max)
+        elif isinstance(end_date, str) and end_date.strip():
+            try:
+                end_datetime_obj = datetime.datetime.fromisoformat(end_date)
+            except ValueError:
+                print(f"Invalid end date format: {end_date}")
+
     messages = []
     # Add system message
     if system_message == "":
@@ -279,7 +341,7 @@ async def call_rag_stream(
                 actual_user_message = history[-1].get("content", "")
 
         messages, history = await add_context(
-            actual_user_message, history, messages, start_date, end_date
+            actual_user_message, history, messages, start_datetime_obj, end_datetime_obj
         )
     else:
         messages.append({"role": "user", "content": user_message})
@@ -337,37 +399,43 @@ def handle_audio_upload(file):
 
 
 def create_dataframe(query=None, start_date=None, end_date=None):
-    # Convert DateTime component output to date objects
-    start_date_obj = None
-    end_date_obj = None
+    # Convert DateTime component output to datetime objects
+    start_datetime_obj = None
+    end_datetime_obj = None
 
     if start_date:
         # Handle different possible formats from gr.DateTime
         if isinstance(start_date, datetime.datetime):
-            start_date_obj = start_date.date()
+            start_datetime_obj = start_date
         elif isinstance(start_date, date):
-            start_date_obj = start_date
+            # Convert date to datetime with time at start of day
+            start_datetime_obj = datetime.datetime.combine(
+                start_date, datetime.time.min
+            )
         elif isinstance(start_date, str) and start_date.strip():
             try:
-                start_date_obj = datetime.datetime.fromisoformat(start_date).date()
+                start_datetime_obj = datetime.datetime.fromisoformat(start_date)
             except ValueError:
                 print(f"Invalid start date format: {start_date}")
 
     if end_date:
         # Handle different possible formats from gr.DateTime
         if isinstance(end_date, datetime.datetime):
-            end_date_obj = end_date.date()
+            end_datetime_obj = end_date
         elif isinstance(end_date, date):
-            end_date_obj = end_date
+            # Convert date to datetime with time at end of day
+            end_datetime_obj = datetime.datetime.combine(end_date, datetime.time.max)
         elif isinstance(end_date, str) and end_date.strip():
             try:
-                end_date_obj = datetime.datetime.fromisoformat(end_date).date()
+                end_datetime_obj = datetime.datetime.fromisoformat(end_date)
             except ValueError:
                 print(f"Invalid end date format: {end_date}")
 
     if query:
         query_answers = cc.rag.retrieve_multiple(
-            query_texts=[query], start_date=start_date_obj, end_date=end_date_obj
+            query_texts=[query],
+            start_date_time=start_datetime_obj,
+            end_date_time=end_datetime_obj,
         )
         ids, documents, metadata, distances = query_answers[0]
         df = pd.DataFrame(
@@ -375,7 +443,7 @@ def create_dataframe(query=None, start_date=None, end_date=None):
                 "ids": ids,
                 "documents": documents,
                 "filename": [e["filename"] for e in metadata],
-                "date": [e.get("date", "N/A") for e in metadata],
+                "date_time": [e.get("date_time", "N/A") for e in metadata],
                 "distances": [round(e, 2) for e in distances],
             }
         )
@@ -385,15 +453,15 @@ def create_dataframe(query=None, start_date=None, end_date=None):
     else:
         # Get all documents, possibly filtered by date
         ids, documents, metadata = cc.db_api.get_full_database(
-            start_date_obj, end_date_obj
+            start_date_time=start_datetime_obj, end_date_time=end_datetime_obj
         )
         df = pd.DataFrame(
             {
                 "ids": ids,
                 "documents": documents,
                 "filename": [e["filename"] for e in metadata],
-                "date": [
-                    e.get("date", "N/A") for e in metadata
+                "date_time": [
+                    e.get("date_time", "N/A") for e in metadata
                 ],  # Include date in dataframe
             }
         )
@@ -401,8 +469,39 @@ def create_dataframe(query=None, start_date=None, end_date=None):
 
 
 def filter_by_date(start_date, end_date):
-    """Filter the database by date range without a query."""
-    return create_dataframe(query=None, start_date=start_date, end_date=end_date)
+    # Convert DateTime component output to datetime objects
+    start_datetime_obj = None
+    end_datetime_obj = None
+
+    if start_date:
+        # Handle different possible formats from gr.DateTime
+        if isinstance(start_date, datetime.datetime):
+            start_datetime_obj = start_date
+        elif isinstance(start_date, date):
+            # Convert date to datetime with time at start of day
+            start_datetime_obj = datetime.datetime.combine(
+                start_date, datetime.time.min
+            )
+        elif isinstance(start_date, str) and start_date.strip():
+            try:
+                start_datetime_obj = datetime.datetime.fromisoformat(start_date)
+            except ValueError:
+                print(f"Invalid start date format: {start_date}")
+
+    if end_date:
+        # Handle different possible formats from gr.DateTime
+        if isinstance(end_date, datetime.datetime):
+            end_datetime_obj = end_date
+        elif isinstance(end_date, date):
+            # Convert date to datetime with time at end of day
+            end_datetime_obj = datetime.datetime.combine(end_date, datetime.time.max)
+        elif isinstance(end_date, str) and end_date.strip():
+            try:
+                end_datetime_obj = datetime.datetime.fromisoformat(end_date)
+            except ValueError:
+                print(f"Invalid end date format: {end_date}")
+
+    return create_dataframe(None, start_datetime_obj, end_datetime_obj)
 
 
 with gr.Blocks(

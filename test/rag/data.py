@@ -104,6 +104,7 @@ def fill_database(cc: CocoClient, cfg: DictConfig, dataset: Dataset):
         chunks=texts,
         language=cfg.data.language,
         filename=cfg.data.name,
+        date_times=[None] * len(texts),
         model=cfg.retrieval.embedding_model[0],
         batch_size=cfg.data.fill_db.embed_and_store_batch_size,
         limit_parallel=cfg.data.fill_db.embed_and_store_limit_parallel,

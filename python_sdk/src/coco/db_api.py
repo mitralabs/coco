@@ -42,16 +42,16 @@ class DbApiClient:
         self,
         embedding: List[float],
         n_results: int = 5,
-        start_date: Optional[datetime.date] = None,
-        end_date: Optional[datetime.date] = None,
+        start_date_time: Optional[datetime.datetime] = None,
+        end_date_time: Optional[datetime.datetime] = None,
     ):
         """Retrieve the closest results from the database service.
 
         Args:
             embedding (List[float]): The embedding to search for.
             n_results (int, optional): The number of results to return. Defaults to 5.
-            start_date (datetime.date, optional): Only return documents with a date greater than or equal to this. Defaults to None.
-            end_date (datetime.date, optional): Only return documents with a date less than or equal to this. Defaults to None.
+            start_date_time (datetime.datetime, optional): Only return documents with a date greater than or equal to this. Defaults to None.
+            end_date_time (datetime.datetime, optional): Only return documents with a date less than or equal to this. Defaults to None.
 
         Returns:
             Tuple[List[str], List[str], List[Dict], List[float]]: (ids, documents, metadatas, distances)
@@ -60,14 +60,14 @@ class DbApiClient:
                 - filename: str (the audio filename the chunk was extracted from)
                 - chunk_index: int (the index of the chunk in the audio file)
                 - total_chunks: int (the total number of chunks of the audio file)
-                - date: str (ISO format date string, or None if no date is present)
+                - date_time: str (ISO format date string, or None if no date is present)
         """
         with httpx.Client() as client:
             request_data = {"embedding": embedding, "n_results": n_results}
-            if start_date:
-                request_data["start_date"] = start_date.isoformat()
-            if end_date:
-                request_data["end_date"] = end_date.isoformat()
+            if start_date_time:
+                request_data["start_date_time"] = start_date_time.isoformat()
+            if end_date_time:
+                request_data["end_date_time"] = end_date_time.isoformat()
 
             response = client.post(
                 f"{self.base_url}/get_closest",
@@ -92,26 +92,26 @@ class DbApiClient:
         self,
         embeddings: List[List[float]],
         n_results: int = 5,
-        start_date: Optional[datetime.date] = None,
-        end_date: Optional[datetime.date] = None,
+        start_date_time: Optional[datetime.datetime] = None,
+        end_date_time: Optional[datetime.datetime] = None,
     ):
         """Internal async method to get closest results from the database.
 
         Args:
             embeddings: List of embeddings to search for
             n_results: Number of results to return per embedding
-            start_date: Optional date object to filter results (inclusive)
-            end_date: Optional date object to filter results (inclusive)
+            start_date_time: Optional datetime object to filter results (inclusive)
+            end_date_time: Optional datetime object to filter results (inclusive)
 
         Note:
-            start_date and end_date must be date objects, not strings
+            start_date_time and end_date_time must be datetime objects, not strings
         """
         async with httpx.AsyncClient(timeout=300.0) as client:
             request_data = {"embeddings": embeddings, "n_results": n_results}
-            if start_date:
-                request_data["start_date"] = start_date.isoformat()
-            if end_date:
-                request_data["end_date"] = end_date.isoformat()
+            if start_date_time:
+                request_data["start_date_time"] = start_date_time.isoformat()
+            if end_date_time:
+                request_data["end_date_time"] = end_date_time.isoformat()
 
             response = await client.post(
                 f"{self.base_url}/get_multiple_closest",
@@ -144,8 +144,8 @@ class DbApiClient:
         batch_size: int = 20,
         limit_parallel: int = 10,
         show_progress: bool = True,
-        start_date: Optional[datetime.date] = None,
-        end_date: Optional[datetime.date] = None,
+        start_date_time: Optional[datetime.datetime] = None,
+        end_date_time: Optional[datetime.datetime] = None,
     ):
         """Get the closest results from the database service for multiple embeddings.
 
@@ -155,8 +155,8 @@ class DbApiClient:
             batch_size (int, optional): The size of each batch. Defaults to 20.
             limit_parallel (int, optional): The maximum number of parallel tasks / batches. Defaults to 10.
             show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to True.
-            start_date (datetime.date, optional): Only return documents with a date greater than or equal to this. Defaults to None.
-            end_date (datetime.date, optional): Only return documents with a date less than or equal to this. Defaults to None.
+            start_date_time (datetime.datetime, optional): Only return documents with a date greater than or equal to this. Defaults to None.
+            end_date_time (datetime.datetime, optional): Only return documents with a date less than or equal to this. Defaults to None.
 
         Returns:
             List[Tuple[List[str], List[str], List[Dict], List[float]]]: The closest results for each embedding.
@@ -165,7 +165,7 @@ class DbApiClient:
                 - filename: str (the audio filename the chunk was extracted from)
                 - chunk_index: int (the index of the chunk in the audio file)
                 - total_chunks: int (the total number of chunks of the audio file)
-                - date: str (ISO format date string, or None if no date is present)
+                - date_time: str (ISO format date string, or None if no date is present)
         """
         batched_get_multiple_closest = batched_parallel(
             function=self._get_closest_multiple,
@@ -174,18 +174,20 @@ class DbApiClient:
             show_progress=show_progress,
             description="Getting multiple closest",
         )
-        return batched_get_multiple_closest(embeddings, n_results, start_date, end_date)
+        return batched_get_multiple_closest(
+            embeddings, n_results, start_date_time, end_date_time
+        )
 
     def get_full_database(
         self,
-        start_date: Optional[datetime.date] = None,
-        end_date: Optional[datetime.date] = None,
+        start_date_time: Optional[datetime.datetime] = None,
+        end_date_time: Optional[datetime.datetime] = None,
     ):
         """Get all documents in the database.
 
         Args:
-            start_date (datetime.date, optional): Only return documents with a date greater than or equal to this. Defaults to None.
-            end_date (datetime.date, optional): Only return documents with a date less than or equal to this. Defaults to None.
+            start_date_time (datetime.datetime, optional): Only return documents with a date greater than or equal to this. Defaults to None.
+            end_date_time (datetime.datetime, optional): Only return documents with a date less than or equal to this. Defaults to None.
 
         Returns:
             Tuple[List[str], List[str], List[Dict]]: (ids, documents, metadatas)
@@ -194,14 +196,14 @@ class DbApiClient:
                 - filename: str (the audio filename the chunk was extracted from)
                 - chunk_index: int (the index of the chunk in the audio file)
                 - total_chunks: int (the total number of chunks of the audio file)
-                - date: str (ISO format date string, or None if no date is present)
+                - date_time: str (ISO format date string, or None if no date is present)
         """
         with httpx.Client() as client:
             params = {}
-            if start_date:
-                params["start_date"] = start_date.isoformat()
-            if end_date:
-                params["end_date"] = end_date.isoformat()
+            if start_date_time:
+                params["start_date_time"] = start_date_time.isoformat()
+            if end_date_time:
+                params["end_date_time"] = end_date_time.isoformat()
 
             response = client.get(
                 f"{self.base_url}/get_all",
@@ -247,12 +249,17 @@ class DbApiClient:
         embeddings: List[List[float]],
         language: str,
         filename: str,
-        dates: List[Optional[datetime.date]] = None,
+        date_times: List[Optional[datetime.datetime]] = None,
     ) -> Tuple[List[int], List[int]]:
         documents = []
         n_chunks = len(chunks)
-        for i, (chunk, embedding, doc_date) in enumerate(
-            zip(chunks, embeddings, dates)
+
+        # Handle the case when date_times is None
+        if date_times is None:
+            date_times = [None] * n_chunks
+
+        for i, (chunk, embedding, doc_date_time) in enumerate(
+            zip(chunks, embeddings, date_times)
         ):
             documents.append(
                 {
@@ -263,7 +270,9 @@ class DbApiClient:
                         "filename": filename,
                         "chunk_index": i,
                         "total_chunks": n_chunks,
-                        "date": doc_date.isoformat() if doc_date else None,
+                        "date_time": (
+                            doc_date_time.isoformat() if doc_date_time else None
+                        ),
                     },
                 }
             )
@@ -289,7 +298,7 @@ class DbApiClient:
         embeddings: List[List[float]],
         language: str,
         filename: str,
-        dates: List[Optional[datetime.date]] = None,
+        date_times: List[Optional[datetime.datetime]] = None,
         batch_size: int = 20,
         limit_parallel: int = 10,
         show_progress: bool = False,
@@ -301,6 +310,7 @@ class DbApiClient:
             embeddings (List[List[float]]): The embeddings of the chunks.
             language (str): The language of the chunks.
             filename (str): The filename of the chunks.
+            date_times (List[Optional[datetime.datetime]], optional): The dates of the chunks. Defaults to None.
             batch_size (int, optional): The size of each batch. Defaults to 20.
             limit_parallel (int, optional): The maximum number of parallel tasks / batches. Defaults to 10.
             show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to False.
@@ -317,6 +327,6 @@ class DbApiClient:
             description="Storing in database",
         )
         ns_added, ns_skipped = batched_store_multiple(
-            chunks, embeddings, language, filename, dates
+            chunks, embeddings, language, filename, date_times
         )
         return sum(ns_added), sum(ns_skipped)
