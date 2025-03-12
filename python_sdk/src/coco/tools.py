@@ -282,3 +282,11 @@ class ToolsClient:
             "tool_timestamp": datetime.datetime.now().isoformat(),
             "message": f"Hier sind die relevantesten Informationen aus der Datenbank zu deiner Anfrage.",
         }
+
+    @tool(description="Get the current date and time")
+    def get_current_date_time(self) -> str:
+        """Get the current date and time"""
+        return {
+            "date_time": datetime.datetime.now().isoformat(),
+            "message": f"Das ist die aktuelle Uhrzeit und der aktuelle Tag.",
+        }

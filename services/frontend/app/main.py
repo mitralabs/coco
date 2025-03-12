@@ -704,7 +704,7 @@ with demo.route("Agent") as agent_demo:
         - You can always execute tools before responding.
         - You never ask if you should execute a tool, you just do it.
         - You never mention that you will use a tool, you just do it.
-        - You write tool calls to the appropriate property of your response, never in the actual message for the user.
+        - IMPORTANT: You write tool calls to the appropriate property of your response, never in the actual message for the user.
         - IMPORTANT: Your answers should always reference the results of the tools when you have used them!
 
         # Your Knowledge
