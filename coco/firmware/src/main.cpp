@@ -52,6 +52,9 @@
 #define HTTP_TIMEOUT 10000  // microseconds timeout for HTTP requests
 #define UPLOAD_CHECK_INTERVAL 2000 // Check every 2 seconds
 
+#define LOG_FILE "/device.log"
+#define TIME_FILE "/time.txt"
+
 /***********************************************
  *     GLOBAL VARIABLES AND DATA STRUCTURES    *
  ***********************************************/
@@ -119,6 +122,7 @@ TaskHandle_t wifiConnectionTaskHandle = NULL;
 TaskHandle_t batteryMonitorTaskHandle = NULL;
 TaskHandle_t uploadTaskHandle = NULL;
 TaskHandle_t persistTimeTaskHandle = NULL;
+TaskHandle_t backendReachabilityTaskHandle = NULL;
 
 
 
@@ -252,7 +256,7 @@ void setup() {
 
   logQueue = xQueueCreate(LOG_QUEUE_SIZE, sizeof(char*)); // Create a queue with space for log messages.
   if (logQueue == NULL) {
-    logFile = SD.open("/device.log", FILE_APPEND);
+    logFile = SD.open("LOG_FILE", FILE_APPEND);
     if (logFile) {
       logFile.println("Failed to create log queue!");
       logFile.flush();
@@ -280,7 +284,7 @@ void setup() {
 
 void setup_from_timer() {
   // Write to log and enter deep sleep again.
-  logFile = SD.open("/device.log", FILE_APPEND);
+  logFile = SD.open("LOG_FILE", FILE_APPEND);
   if (logFile) {
     logFile.println("Woke from deep sleep (timer).");
     logFile.println("Timer wake up routine not yet implemented. Going back to sleep.");
@@ -307,7 +311,7 @@ void setup_from_external() {
     setup_from_boot();
   } else {
     // Write to log and enter deep sleep again.
-    logFile = SD.open("/device.log", FILE_APPEND);
+    logFile = SD.open("LOG_FILE", FILE_APPEND);
     if (logFile) {
       logFile.println("Invalid external wake, entering deep sleep again.");
       logFile.flush();
@@ -370,7 +374,7 @@ void setup_from_boot() {
     ErrorBlinkLED(100);
   }
 
-  if(xTaskCreatePinnedToCore(backendReachabilityTask, "Backend Check", 4096, NULL, 1, NULL, 0) != pdPASS ) {
+  if(xTaskCreatePinnedToCore(backendReachabilityTask, "Backend Check", 4096, NULL, 1, &backendReachabilityTaskHandle, 0) != pdPASS ) {
     log("Failed to create backendReachabilityTask!");
     ErrorBlinkLED(100);
   }
@@ -381,10 +385,10 @@ void setup_from_boot() {
   }
   
   // This task can be used to monitor the stack usage. It can be commented / uncommented as needed.
-  // if(xTaskCreatePinnedToCore(stackMonitorTask, "Stack Monitor", 4096, NULL, 1, NULL, 0) != pdPASS ) {
-  //   log("Failed to create stackMonitor task!");
-  //   ErrorBlinkLED(100);
-  // }
+  if(xTaskCreatePinnedToCore(stackMonitorTask, "Stack Monitor", 4096, NULL, 1, NULL, 0) != pdPASS ) {
+    log("Failed to create stackMonitor task!");
+    ErrorBlinkLED(100);
+  }
 }
 
 void loop() {
@@ -782,8 +786,8 @@ void initSD() {
 }
 
 void ensureLogFile() {
-  if (!SD.exists("/device.log")) {
-    File logFile = SD.open("/device.log", FILE_WRITE);
+  if (!SD.exists("LOG_FILE")) {
+    File logFile = SD.open("LOG_FILE", FILE_WRITE);
     if (logFile) {
       logFile.println("=== Device Log Started ===");
       logFile.flush();
@@ -810,7 +814,7 @@ void logFlushTask(void *parameter) {
   while (true) {
     if (uxQueueMessagesWaiting(logQueue) > 0) {
       if (xSemaphoreTake(sdMutex, portMAX_DELAY) == pdPASS) {
-        File logFile = SD.open("/device.log", FILE_APPEND);
+        File logFile = SD.open("LOG_FILE", FILE_APPEND);
         if (logFile) {
           char *pendingLog;
           while (xQueueReceive(logQueue, &pendingLog, 0) == pdTRUE) {
@@ -905,6 +909,7 @@ void stackMonitorTask(void *parameter) {
     // monitorStackUsage(batteryMonitorTaskHandle); //get's currently deleted, since it's not used. can be added back if needed.
     monitorStackUsage(uploadTaskHandle);
     monitorStackUsage(persistTimeTaskHandle);
+    monitorStackUsage(backendReachabilityTaskHandle);
     vTaskDelay(pdMS_TO_TICKS(10000)); // Check every 10 seconds
   }
 }
@@ -955,39 +960,53 @@ void initDeepSleep() {
  *         TIME MANAGEMENT    *
  **********************************/
 
-void initTime() {
-  preferences.begin("time", false);
-  long persistedTime = preferences.getLong("storedTime", 0);
-  
-  // Set timezone.
+ void initTime() {
+  // Set timezone
   setenv("TZ", TIMEZONE, 1);
   tzset();
   
   struct timeval tv;
   time_t currentRtcTime = time(NULL);
+  time_t persistedTime = 0;
+  
+  // Check if time file exists on SD card
+  if (xSemaphoreTake(sdMutex, portMAX_DELAY) == pdPASS) {
+    if (SD.exists(TIME_FILE)) {
+      File timeFile = SD.open(TIME_FILE, FILE_READ);
+      if (timeFile) {
+        String timeStr = timeFile.readStringUntil('\n');
+        timeFile.close();
+        persistedTime = (time_t)timeStr.toInt();
+        log("Read persisted time from SD card: " + String(persistedTime));
+      }
+    }
+    xSemaphoreGive(sdMutex);
+  }
 
+  // Determine which time source to use
   if (persistedTime == 0) {
-    // No persisted time: use default time.
+    // No persisted time: use default time
     tv.tv_sec = DEFAULT_TIME;
     tv.tv_usec = 0;
     settimeofday(&tv, NULL);
     storedTime = DEFAULT_TIME;
-    preferences.putLong("storedTime", storedTime);
     log("Default time set: " + String(storedTime));
   } else {
-    // Check if RTC has a valid updated time.
+    // Check if RTC has a valid updated time
     if (currentRtcTime > persistedTime) {
-        storedTime = currentRtcTime;
-        log("System time updated from RTC: " + String(storedTime));
+      storedTime = currentRtcTime;
+      log("System time updated from RTC: " + String(storedTime));
     } else {
-        storedTime = persistedTime;
-        log("System time updated from persisted time: " + String(storedTime));
+      storedTime = persistedTime;
+      log("System time updated from persisted time: " + String(storedTime));
     }
     tv.tv_sec = storedTime;
     tv.tv_usec = 0;
     settimeofday(&tv, NULL);
   }
-  preferences.end();
+  
+  // Store time immediately to SD card to ensure consistency
+  storeCurrentTime();
 }
 
 bool updateTimeFromNTP() {
@@ -1020,10 +1039,22 @@ void persistTimeTask(void *parameter) {
 
 void storeCurrentTime() {
   time_t current = time(NULL);
-  preferences.begin("time", false);
-  preferences.putLong("storedTime", current);
-  preferences.end();
-  log("Stored current time: " + String(current));
+  storedTime = current;
+  
+  // Store time to SD card
+  if (xSemaphoreTake(sdMutex, portMAX_DELAY) == pdPASS) {
+    File timeFile = SD.open(TIME_FILE, FILE_WRITE);
+    if (timeFile) {
+      timeFile.println(String(current));
+      timeFile.close();
+      log("Stored current time to SD card: " + String(current));
+    } else {
+      log("Failed to open time file for writing");
+    }
+    xSemaphoreGive(sdMutex);
+  } else {
+    log("Failed to take SD mutex for time storage");
+  }
 }
 
 String getTimestamp() {
