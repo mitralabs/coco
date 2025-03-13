@@ -43,7 +43,7 @@ def get_dataset(dataset_file: Path) -> dict:
 
                 assert len(chunks) == len(
                     chunk_datetimes
-                ), f"Row {i} has {len(chunks)} chunks and {len(chunk_datetimes)} chunk datetimes"
+                ), f"Row {i} of {dataset_file} has {len(chunks)} chunks and {len(chunk_datetimes)} chunk datetimes"
 
                 data["question"].append(question)
                 data["answer"].append(answer)
