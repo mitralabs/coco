@@ -28,6 +28,7 @@ class CocoClient:
         embedding_api: Literal["ollama", "openai"] = "ollama",
         llm_api: Literal["ollama", "openai"] = "ollama",
         api_key: str = None,
+        elevenlabs_api_key: str = None,
     ):
         self.chunking_base = chunking_base
         self.db_api_base = db_api_base
@@ -37,6 +38,7 @@ class CocoClient:
         self.embedding_api = embedding_api
         self.llm_api = llm_api
         self.api_key = api_key
+        self.elevenlabs_api_key = elevenlabs_api_key
 
         if not self.chunking_base:
             self.chunking_base = os.getenv("COCO_CHUNK_URL_BASE")
@@ -50,6 +52,8 @@ class CocoClient:
             self.openai_base = os.getenv("COCO_OPENAI_URL_BASE")
         if not self.api_key:
             self.api_key = os.getenv("COCO_API_KEY")
+        if not self.elevenlabs_api_key:
+            self.elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
 
         assert self.chunking_base, "Chunking base URL is not set"
         assert self.db_api_base, "DB API base URL is not set"
@@ -63,7 +67,7 @@ class CocoClient:
         # Initialize the clients in the correct order to avoid circular dependencies
         self.chunking = ChunkingClient(self.chunking_base, self.api_key)
         self.db_api = DbApiClient(self.db_api_base, self.api_key)
-        self.transcription = TranscriptionClient(self.transcription_base, self.api_key)
+        self.transcription = TranscriptionClient(self.transcription_base, self.api_key, self.elevenlabs_api_key)
         self.lm = LanguageModelClient(
             self.ollama_base, self.openai_base, self.embedding_api, self.llm_api
         )
@@ -222,7 +226,7 @@ class CocoClient:
         Returns:
             Tuple[int, int]: The number of documents added and skipped.
         """
-        text, language, filename = self.transcription.transcribe_audio(
+        text, language, filename = self.transcription.transcribe_audio_elevenlabs(
             audio_file, prompt=prompt
         )
 
