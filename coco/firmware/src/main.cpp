@@ -109,6 +109,7 @@ volatile int externalWakeValid = -1;  // -1: not determined, 0: invalid (acciden
 SemaphoreHandle_t ledMutex; // Global mutex for the LED
 SemaphoreHandle_t sdMutex; // Add a global SD card access mutex
 SemaphoreHandle_t uploadMutex = NULL;
+SemaphoreHandle_t httpMutex = NULL; // Mutex for HTTP operations
 
 QueueHandle_t audioQueue;    // For multiple audio buffers
 QueueHandle_t logQueue;      // For log messages
@@ -253,10 +254,11 @@ void setup() {
 
   ledMutex = xSemaphoreCreateMutex(); // Create the mutex
   sdMutex = xSemaphoreCreateMutex();   // Global mutex for SD card access
+  httpMutex = xSemaphoreCreateMutex(); // Create mutex for HTTP operations
 
   logQueue = xQueueCreate(LOG_QUEUE_SIZE, sizeof(char*)); // Create a queue with space for log messages.
   if (logQueue == NULL) {
-    logFile = SD.open("LOG_FILE", FILE_APPEND);
+    logFile = SD.open(LOG_FILE, FILE_APPEND);
     if (logFile) {
       logFile.println("Failed to create log queue!");
       logFile.flush();
@@ -284,7 +286,7 @@ void setup() {
 
 void setup_from_timer() {
   // Write to log and enter deep sleep again.
-  logFile = SD.open("LOG_FILE", FILE_APPEND);
+  logFile = SD.open(LOG_FILE, FILE_APPEND);
   if (logFile) {
     logFile.println("Woke from deep sleep (timer).");
     logFile.println("Timer wake up routine not yet implemented. Going back to sleep.");
@@ -311,7 +313,7 @@ void setup_from_external() {
     setup_from_boot();
   } else {
     // Write to log and enter deep sleep again.
-    logFile = SD.open("LOG_FILE", FILE_APPEND);
+    logFile = SD.open(LOG_FILE, FILE_APPEND);
     if (logFile) {
       logFile.println("Invalid external wake, entering deep sleep again.");
       logFile.flush();
@@ -374,21 +376,16 @@ void setup_from_boot() {
     ErrorBlinkLED(100);
   }
 
-  if(xTaskCreatePinnedToCore(backendReachabilityTask, "Backend Check", 4096, NULL, 1, &backendReachabilityTaskHandle, 0) != pdPASS ) {
-    log("Failed to create backendReachabilityTask!");
-    ErrorBlinkLED(100);
-  }
-
   if(xTaskCreatePinnedToCore(batteryMonitorTask, "Battery Monitor", 4096, NULL, 1, &batteryMonitorTaskHandle, 0) != pdPASS ) {
     log("Failed to create batteryMonitor task!");
     ErrorBlinkLED(100);
   }
   
   // This task can be used to monitor the stack usage. It can be commented / uncommented as needed.
-  if(xTaskCreatePinnedToCore(stackMonitorTask, "Stack Monitor", 4096, NULL, 1, NULL, 0) != pdPASS ) {
-    log("Failed to create stackMonitor task!");
-    ErrorBlinkLED(100);
-  }
+  // if(xTaskCreatePinnedToCore(stackMonitorTask, "Stack Monitor", 4096, NULL, 1, NULL, 0) != pdPASS ) {
+  //   log("Failed to create stackMonitor task!");
+  //   ErrorBlinkLED(100);
+  // }
 }
 
 void loop() {
@@ -732,6 +729,10 @@ bool uploadFileFromBuffer(uint8_t *buffer, size_t size, const String &filename) 
   if (!buffer || size == 0) {
     return false;
   }
+  if (xSemaphoreTake(httpMutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+    log("Could not get HTTP mutex for file upload");
+    return false;
+  }
   
   // Extract just the filename without the path for the request
   String bareFilename = filename.substring(filename.lastIndexOf('/') + 1);
@@ -764,10 +765,21 @@ bool uploadFileFromBuffer(uint8_t *buffer, size_t size, const String &filename) 
     String response = client.getString();
     log("Server response: " + response);
     client.end();
-    return (httpResponseCode == HTTP_CODE_OK || httpResponseCode == HTTP_CODE_CREATED);
+    bool success = (httpResponseCode == HTTP_CODE_OK || httpResponseCode == HTTP_CODE_CREATED);
+    if (!success) {
+      // If we get an HTTP error response, mark backend as unavailable
+      backendReachable = false;
+      nextBackendCheckTime = millis(); // Trigger an immediate recheck
+    }
+    xSemaphoreGive(httpMutex);
+    return success;
   } else {
     log("Error on HTTP request: " + String(client.errorToString(httpResponseCode).c_str()));
     client.end();
+    // Network error, mark backend as unavailable
+    backendReachable = false;
+    nextBackendCheckTime = millis(); // Trigger an immediate recheck
+    xSemaphoreGive(httpMutex);
     return false;
   }
 }
@@ -786,8 +798,8 @@ void initSD() {
 }
 
 void ensureLogFile() {
-  if (!SD.exists("LOG_FILE")) {
-    File logFile = SD.open("LOG_FILE", FILE_WRITE);
+  if (!SD.exists(LOG_FILE)) {
+    File logFile = SD.open(LOG_FILE, FILE_WRITE);
     if (logFile) {
       logFile.println("=== Device Log Started ===");
       logFile.flush();
@@ -814,7 +826,7 @@ void logFlushTask(void *parameter) {
   while (true) {
     if (uxQueueMessagesWaiting(logQueue) > 0) {
       if (xSemaphoreTake(sdMutex, portMAX_DELAY) == pdPASS) {
-        File logFile = SD.open("LOG_FILE", FILE_APPEND);
+        File logFile = SD.open(LOG_FILE, FILE_APPEND);
         if (logFile) {
           char *pendingLog;
           while (xQueueReceive(logQueue, &pendingLog, 0) == pdTRUE) {
@@ -1179,7 +1191,7 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info) {
     if(xTaskCreatePinnedToCore(
       fileUploadTask,
       "FileUpload",
-      4096,     // Stack size for HTTP operations
+      8192,     // Stack size for HTTP operations
       NULL,
       2,        // Low priority
       &uploadTaskHandle,
@@ -1188,6 +1200,21 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info) {
       log("Failed to create file upload task");
     }
   }
+
+  // Start backend reachability task when WiFi is connected
+  if (backendReachabilityTaskHandle == NULL) {
+    if(xTaskCreatePinnedToCore(
+      backendReachabilityTask,
+      "Backend Check", 
+      4096,
+      NULL,
+      1,        // Normal priority
+      &backendReachabilityTaskHandle,
+      0         // Run on Core 0
+    ) != pdPASS) {
+      log("Failed to create backend reachability task");
+    }
+  } 
 }
 
 void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info) {
@@ -1205,9 +1232,13 @@ void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info) {
  *     BACKEND REACHABILITY       *
  **********************************/
 
- bool checkBackendReachability() {
+bool checkBackendReachability() {
   if (!WIFIconnected) {
     return false;
+  }
+  if (xSemaphoreTake(httpMutex, pdMS_TO_TICKS(2000)) != pdTRUE) {
+    log("HTTP mutex busy, skipping backend check");
+    return backendReachable;  // Return current state
   }
   
   HTTPClient http;
@@ -1221,34 +1252,58 @@ void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info) {
   log("Backend check response: " + String(httpResponseCode));
   
   http.end();
+  xSemaphoreGive(httpMutex);
   return httpResponseCode == 200;
 }
 
 void backendReachabilityTask(void *parameter) {
+  const unsigned long RECHECK_INTERVAL = 600000; // Recheck every 10 minutes even when connected
+  unsigned long lastSuccessfulCheck = 0;
+  
   while (true) {
     unsigned long currentTime = millis();
+    bool shouldCheck = false;
     
-    // Only check backend if WiFi is connected and it's time to check
-    if (WIFIconnected && currentTime >= nextBackendCheckTime) {
-      log("Checking backend reachability...");
-      
-      if (checkBackendReachability()) {
-        log("Backend is reachable");
-        backendReachable = true;
-        // Reset backoff on success
-        currentBackendInterval = MIN_SCAN_INTERVAL;
-      } else {
-        log("Backend is not reachable");
-        backendReachable = false;
+    // Only check backend if WiFi is connected
+    if (WIFIconnected) {
+      // Check if:
+      // 1. Backend status is unknown (not reachable) OR
+      // 2. It's time for a periodic recheck when connected
+      if (!backendReachable || 
+          (backendReachable && (currentTime - lastSuccessfulCheck >= RECHECK_INTERVAL))) {
         
-        // Apply exponential backoff for next check
-        currentBackendInterval = std::min(currentBackendInterval * 2UL, (unsigned long)MAX_SCAN_INTERVAL);
-        log("Next backend check in " + String(currentBackendInterval / 1000) + " seconds");
+        // Check if it's time according to our backoff strategy
+        if (currentTime >= nextBackendCheckTime) {
+          shouldCheck = true;
+        }
       }
       
-      nextBackendCheckTime = currentTime + currentBackendInterval;
+      if (shouldCheck) {
+        log("Checking backend reachability...");
+        
+        if (checkBackendReachability()) {
+          log("Backend is reachable");
+          backendReachable = true;
+          // Reset backoff on success
+          currentBackendInterval = MIN_SCAN_INTERVAL;
+          // Record successful check time
+          lastSuccessfulCheck = currentTime;
+        } else {
+          log("Backend is not reachable");
+          backendReachable = false;
+          
+          // Apply exponential backoff for next check
+          currentBackendInterval = std::min(currentBackendInterval * 2UL, (unsigned long)MAX_SCAN_INTERVAL);
+          log("Next backend check in " + String(currentBackendInterval / 1000) + " seconds");
+        }
+        
+        nextBackendCheckTime = currentTime + currentBackendInterval;
+      }
+    } else {
+      // Reset status if WiFi disconnects
+      backendReachable = false;
     }
     
-    vTaskDelay(pdMS_TO_TICKS(5000)); // Check every 5 seconds
+    vTaskDelay(pdMS_TO_TICKS(5000)); // Task yield interval
   }
 }

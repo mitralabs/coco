@@ -23,19 +23,15 @@ System Critical Tasks: 18-24
 Never use priority 25 (reserved for system tasks)
 
 ## ToDo
-- [ ] Understand why device stops recording after Xmins and crashes. (This might be an issue with the Battery Monitoring Task, and the script running on a device without a battery attached)
-- [ ] Überarbeite Setup and Init (maybe find a routine for initial boot or boot from complete power loss).
+- [ ] Solve Device shutdown on FileUpload. Currently the device sometimes crashes when it tries to send the file...
+- [ ] Überarbeite Setup and Init (maybe find a routine for initial boot or boot from complete power loss). Consider removing the "if task creation fails" parts.
 - [ ] Check if there is a possibility that audio queue get's lost on the SD card. E.g. when the new one is being written and the device loses power.
-- [ ] Move persistent time saving to SD and away from flash (since the latter degrades)
-- [ ] Integrate /test endpoint to check whether coco backend is online. (inkluding backoff)
-- [ ] Reintegrate DeepSleep. And integrate Routine which brings device to deepsleep, when Voltage below a certain threshold.
+- [ ] Integrate Routine which brings device to deepsleep, when Voltage below a certain threshold.
 - [ ] Find a handle for SD Card Error to reset device utilizing the button. Factory Reset Button will mostlikely not be reachable, since inside of case.
 - [ ] Rewrite logging. It's currently pretty wild.
-- [ ] Include WiFiMulti, so that multiple Networks are known. Secondly, Scan for known Location, by checking SSIDs, and connect then.
-- [ ] Integrate WiFi, Timezone, and Timestamp optionally on SD Card (although this poses security risks, if device is lost, and card inspected.)
-- [ ] Disable Bluetooth
+- [ ] Include WiFiMulti, so that multiple Networks are known.
+- [ ] Integrate WiFi, and Timezone on SD Card (although this poses security risks, if device is lost, and card inspected.)
 - [ ] Look into File Compression like LZ77H (common in HTTP headers)
-- [ ] Revive WifiDisconnected Function. And introduce BackendDisconnected in that regard.
 
 
 ---
