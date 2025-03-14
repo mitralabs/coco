@@ -73,6 +73,7 @@ services:
     volumes:
       - ../python_sdk:/python_sdk
       - ./frontend/app:/app
+      - ./_data/audio_files:/app/audio
     env_file:
       - ".env"
     environment:
