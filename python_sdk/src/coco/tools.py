@@ -290,3 +290,65 @@ class ToolsClient:
             "date_time": datetime.datetime.now().isoformat(),
             "message": f"Das ist die aktuelle Uhrzeit und der aktuelle Tag.",
         }
+        
+    @tool(
+        description="Retrieve all chunks that belong to the same session as the first result from a semantic search."
+    )
+    def get_session_chunks(
+        self,
+        query_text: str,
+        sort_by_date: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        Find the first relevant chunk using semantic search and then retrieve all chunks
+        that share the same session_id.
+
+        Args:
+            query_text: The natural language query to find the initial chunk
+            sort_by_date: Whether to sort the results by date (default: True)
+
+        Returns:
+            A dictionary containing the session chunks and metadata
+        """
+        # First get the most relevant chunk to find the session_id
+        embedding = self.lm.embed(query_text)
+        ids, documents, metadatas, distances = self.db_api.get_closest(
+            embedding=embedding,
+            n_results=1,
+        )
+        
+        if not metadatas or "session_id" not in metadatas[0]:
+            return {
+                "knowledge": [],
+                "tool_timestamp": datetime.datetime.now().isoformat(),
+                "message": "No matching session found.",
+            }
+
+        # Get all chunks with the same session_id
+        session_id = str(metadatas[0]["session_id"])  # Convert to string for API call
+        response = self.db_api.get_by_session_id(session_id)
+        
+        if not response or not response.get("results"):
+            return {
+                "knowledge": [],
+                "tool_timestamp": datetime.datetime.now().isoformat(),
+                "message": "No chunks found for the session.",
+            }
+        
+        results = response["results"]
+        if sort_by_date:
+            results.sort(key=lambda x: x["metadata"]["date"] if x["metadata"]["date"] else "")
+        
+        knowledge = [
+            {
+                "content": result["document"],
+                "metadata": result["metadata"],
+            }
+            for result in results
+        ]
+
+        return {
+            "knowledge": knowledge,
+            "tool_timestamp": datetime.datetime.now().isoformat(),
+            "message": f"Found {len(knowledge)} chunks from the requested session.",
+        }

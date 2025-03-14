@@ -34,7 +34,7 @@ class DocumentMetadata(BaseModel):
     language: str
     filename: str
     chunk_index: int
-    total_chunks: int
+    session_id: int
     date_time: Optional[datetime.datetime] = None
 
 
@@ -154,7 +154,7 @@ def get_closest_from_embeddings(
                         "language": doc.language,
                         "filename": doc.filename,
                         "chunk_index": doc.chunk_index,
-                        "total_chunks": doc.total_chunks,
+                        "session_id": doc.session_id,
                         "date_time": (
                             doc.date_time.isoformat() if doc.date_time else None
                         ),
@@ -189,7 +189,7 @@ async def add(
             language=doc.metadata.language,
             filename=doc.metadata.filename,
             chunk_index=doc.metadata.chunk_index,
-            total_chunks=doc.metadata.total_chunks,
+            session_id=doc.metadata.session_id,
             date_time=doc.metadata.date_time,
         )
         db.add(db_doc)
@@ -269,7 +269,7 @@ async def get_all(
                     "language": result.language,
                     "filename": result.filename,
                     "chunk_index": result.chunk_index,
-                    "total_chunks": result.total_chunks,
+                    "session_id": result.session_id,
                     "date_time": (
                         result.date_time.isoformat() if result.date_time else None
                     ),
@@ -329,6 +329,39 @@ async def delete_by_date(
         "count": result.rowcount,
     }
 
+@app.post("/get_by_session_id")
+async def get_by_session_id(
+    session_id: str,
+    db: Session = Depends(get_db),
+    api_key: str = Depends(get_api_key),
+):
+    """
+    Retrieve all documents that match the given session_id.
+    """
+    query = select(DbDocument).where(DbDocument.session_id == session_id)
+    results = db.execute(query).scalars().all()
+    
+    formatted_results = []
+    for result in results:
+        formatted_results.append(
+            {
+                "id": result.id,
+                "document": result.text,
+                "metadata": {
+                    "language": result.language,
+                    "filename": result.filename,
+                    "chunk_index": result.chunk_index,
+                    "session_id": result.session_id,
+                    "date": result.date.isoformat() if result.date else None,
+                },
+            }
+        )
+
+    return {
+        "status": "success",
+        "count": len(formatted_results),
+        "results": formatted_results,
+    }
 
 @app.get("/test")
 async def test_endpoint(api_key: str = Depends(get_api_key)):

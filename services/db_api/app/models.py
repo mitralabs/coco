@@ -15,5 +15,5 @@ class Document(Base):
     language = Column(String, nullable=False)
     filename = Column(String, nullable=False)
     chunk_index = Column(Integer, nullable=False)
-    total_chunks = Column(Integer, nullable=False)
+    session_id = Column(Integer, nullable=False)
     date_time = Column(DateTime, nullable=True)

@@ -59,7 +59,7 @@ class DbApiClient:
                 - language: str (the chunk's language)
                 - filename: str (the audio filename the chunk was extracted from)
                 - chunk_index: int (the index of the chunk in the audio file)
-                - total_chunks: int (the total number of chunks of the audio file)
+                - session_id: int (the session ID)
                 - date_time: str (ISO format date string, or None if no date is present)
         """
         with httpx.Client() as client:
@@ -164,7 +164,7 @@ class DbApiClient:
                 - language: str (the chunk's language)
                 - filename: str (the audio filename the chunk was extracted from)
                 - chunk_index: int (the index of the chunk in the audio file)
-                - total_chunks: int (the total number of chunks of the audio file)
+                - session_id: int (the session ID)
                 - date_time: str (ISO format date string, or None if no date is present)
         """
         batched_get_multiple_closest = batched_parallel(
@@ -195,7 +195,7 @@ class DbApiClient:
                 - language: str (the chunk's language)
                 - filename: str (the audio filename the chunk was extracted from)
                 - chunk_index: int (the index of the chunk in the audio file)
-                - total_chunks: int (the total number of chunks of the audio file)
+                - session_id: int (the session ID)
                 - date_time: str (ISO format date string, or None if no date is present)
         """
         with httpx.Client() as client:
@@ -249,10 +249,10 @@ class DbApiClient:
         embeddings: List[List[float]],
         language: str,
         filename: str,
+        session_id: int,
         date_times: List[Optional[datetime.datetime]] = None,
     ) -> Tuple[List[int], List[int]]:
         documents = []
-        n_chunks = len(chunks)
 
         # Handle the case when date_times is None
         if date_times is None:
@@ -269,7 +269,7 @@ class DbApiClient:
                         "language": language,
                         "filename": filename,
                         "chunk_index": i,
-                        "total_chunks": n_chunks,
+                        "session_id": session_id,
                         "date_time": (
                             doc_date_time.isoformat() if doc_date_time else None
                         ),
@@ -330,3 +330,21 @@ class DbApiClient:
             chunks, embeddings, language, filename, date_times
         )
         return sum(ns_added), sum(ns_skipped)
+    
+    def get_by_session_id(self, session_id: str) -> dict:
+        """Get all documents that belong to a specific session.
+
+        Args:
+            session_id (str): The session ID to search for
+
+        Returns:
+            dict: Response containing the documents and their metadata
+        """
+        with httpx.Client() as client:
+            response = client.post(
+                f"{self.base_url}/get_by_session_id",
+                params={"session_id": session_id},
+                headers={"X-API-Key": self.api_key},
+            )
+            response.raise_for_status()
+            return response.json()
