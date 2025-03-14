@@ -656,6 +656,27 @@ with demo.route("Memory") as incrementer_demo:
         btn_clear_dates = gr.Button("Clear Date Filters")
         gr.Button("Clear Database (Not yet implemented)")
 
+    # Add audio player for selected files
+    with gr.Row():
+        selected_audio = gr.Audio(
+            label="Audio Player", type="filepath", interactive=False
+        )
+
+    # Function to handle row selection and play audio
+    def on_select_audio(evt: gr.SelectData, data):
+        selected_row = data.iloc[evt.index[0]]
+        filename = selected_row.get("filename")
+        session_id = filename.split("_")[0]
+        date = filename.split("_")[2]
+        directory = f"audio/recordings_{date}_{session_id}/raw"
+        # Prepend /data directory to the path
+        if filename:
+            filename = os.path.join(directory, os.path.basename(filename))
+        return filename
+
+    # Connect DataFrame selection to audio player
+    data_view.select(fn=on_select_audio, inputs=[data_view], outputs=[selected_audio])
+
     # Add file upload handler
     file_upload.upload(
         fn=handle_audio_upload,

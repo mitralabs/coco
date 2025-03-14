@@ -5,7 +5,7 @@ import sys
 import datetime
 from typing import Dict, Optional, Tuple, List
 
-ROOT_PATH = Path(os.getenv("AUDIO_ROOT_PATH", "/data/audio"))
+ROOT_PATH = Path(os.getenv("AUDIO_ROOT_PATH", "/data"))
 
 # Directory structure constants
 DIR_RAW = "raw"
@@ -187,14 +187,14 @@ class AudioPathManager:
 
         # Extract date and time components
         try:
-            # Parse date (YY-DD-MM format per filename convention)
+            # Parse date (YY-MM-DD format per filename convention)
             date_parts = parsed["file_date"].split("-")
             if len(date_parts) != 3:
                 raise ValueError(f"Invalid date format: {parsed['file_date']}")
 
             year = int("20" + date_parts[0])  # Assuming 20YY format
-            day = int(date_parts[1])
-            month = int(date_parts[2])
+            month = int(date_parts[1])
+            day = int(date_parts[2])
 
             # Parse time (HH-MM-SS format)
             time_parts = parsed["file_time"].split("-")
@@ -218,7 +218,7 @@ def parse_coco_filename(
     filename: str, is_transcript: bool = False
 ) -> Optional[Dict[str, str]]:
     """
-    Parse a filename following the format int_int_YY-DD-MM_HH-MM-SS_suffix.wav (or .txt)
+    Parse a filename following the format int_int_YY-MM-DD_HH-MM-SS_suffix.wav (or .txt)
     Returns a dictionary with the parsed components or None if invalid
 
     Args:
@@ -255,15 +255,3 @@ def parse_coco_filename(
 
 # Initialize the path manager
 PathManager = AudioPathManager(ROOT_PATH)
-
-
-# For backward compatibility
-def get_path(root: Path = ROOT_PATH, filename: str = "") -> Optional[Path]:
-    """Legacy function for backward compatibility"""
-    return path_manager.get_raw_path(filename)
-
-
-# For backward compatibility
-def process_transcription(transcription: str, audio_path: str) -> str:
-    """Legacy function for backward compatibility"""
-    return path_manager.save_transcription(transcription, audio_path)

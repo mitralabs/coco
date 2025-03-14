@@ -5,16 +5,19 @@ from fastapi import status, HTTPException
 
 import aiofiles
 import logging
+import threading
 
 import os
 import sys
 
-import datetime
-import time
-import re
 
 from coco import CocoClient
 from utils import PathManager
+
+# Add threading for thread-safe counter
+active_tasks = 0
+task_lock = threading.Lock()
+
 
 cc = CocoClient(
     chunking_base="http://chunking:8000",
@@ -60,30 +63,55 @@ def kick_off_processing(audio_path: str, store_in_db: bool = True):
     Args:
         session_id (str): ID of the session to process
     """
-    logger.info(f"Processing audio file: {audio_path}")
+    global active_tasks
 
-    # Get previous transcript as context if available
-    prompt = PathManager.get_prompt(audio_path)
-    if prompt:
-        logger.info(f"Using previous transcript as context for {audio_path}")
-
-    # Get date.
-    date = PathManager.get_date(audio_path)
-    logger.info(f"Date: {date}, type: {type(date)}")
-
-    # Transcribe the audio
     try:
-        text, language, filename = cc.transcription.transcribe_audio(audio_path, prompt)
+        with task_lock:
+            active_tasks += 1
+            current_tasks = active_tasks
 
-        if not text:
-            logger.info("No text returned from transcription.")
+        logger.info(
+            f"Processing audio file: {audio_path} (Active tasks: {current_tasks})"
+        )
+
+        # Get previous transcript as context if available
+        prompt = PathManager.get_prompt(audio_path)
+        if prompt:
+            logger.info(f"Using previous transcript as context for {audio_path}")
+
+        # Get date.
+        date = PathManager.get_date(audio_path)
+        logger.info(f"Date: {date}, type: {type(date)}")
+
+        # Transcribe the audio
+        try:
+            text, language, filename = cc.transcription.transcribe_audio(
+                audio_path, prompt
+            )
+
+            if not text:
+                logger.info("No text returned from transcription.")
+                return False
+
+            # Saves the transcription
+            PathManager.save_transcription(text, audio_path)
+
+            if store_in_db and text not in ["", " ", "."]:
+                cc.chunk_and_store(text, language, filename, date)
+                logger.info("Transcription saved successfully and stored in database.")
+            else:
+                logger.info("Transcription saved successfully.")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error processing session: {str(e)}")
             return False
 
         # Saves the transcription
         PathManager.save_transcription(text, audio_path)
 
         if store_in_db:
-            cc.chunk_and_store(text, language, filename, date)
+            cc.chunk_and_store(text, language, audio_path, date)
             logger.info("Transcription saved successfully and stored in database.")
         else:
             logger.info("Transcription saved successfully.")
@@ -93,12 +121,24 @@ def kick_off_processing(audio_path: str, store_in_db: bool = True):
         logger.error(f"Error processing session: {str(e)}")
         return False
 
+    finally:
+        # Always decrement counter when done
+        with task_lock:
+            active_tasks -= 1
+            logger.info(
+                f"Finished processing for {audio_path} (Active tasks: {active_tasks})"
+            )
+
 
 # Route to check if the server is running
 @app.get("/")
 async def read_root():
     print("Root path accessed. Server is running.")
     return {"status": "success", "message": "Server is running"}, 200
+
+
+# Add a constant for max concurrent tasks
+MAX_CONCURRENT_TASKS = 4
 
 
 # Route to upload audio data
@@ -109,6 +149,17 @@ async def upload_audio(
     api_key: str = Depends(get_api_key),
 ):
     try:
+        # Check if system is at capacity
+        with task_lock:
+            if active_tasks >= MAX_CONCURRENT_TASKS:
+                return JSONResponse(
+                    content={
+                        "status": "busy",
+                        "message": "Server is currently at capacity. Please try again later.",
+                    },
+                    status_code=503,  # Service Unavailable
+                )
+
         # Get the raw body content
         body = await request.body()
         logger.info("Audio file received")
@@ -149,10 +200,22 @@ async def upload_audio(
         )
 
 
-# Keep the test endpoint for basic connectivity testing
 @app.get("/test")
 async def test_endpoint(api_key: str = Depends(get_api_key)):
     return {
         "status": "success",
         "message": "Orchestrator service: Test endpoint accessed successfully",
+    }
+
+
+@app.get("/status")
+async def get_system_status(api_key: str = Depends(get_api_key)):
+    with task_lock:
+        current_tasks = active_tasks
+
+    return {
+        "status": "success",
+        "active_tasks": current_tasks,
+        "max_tasks": MAX_CONCURRENT_TASKS,
+        "available_capacity": MAX_CONCURRENT_TASKS - current_tasks,
     }
