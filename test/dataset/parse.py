@@ -38,12 +38,12 @@ def get_dataset(dataset_file: Path) -> dict:
                     ]
                 except Exception as e:
                     print(
-                        f"Error parsing datetime for row {i}: {e} of dataset: {dataset_file}"
+                        f"Error parsing datetime for row {i + 1}: {e} of dataset: {dataset_file}"
                     )
 
                 assert len(chunks) == len(
                     chunk_datetimes
-                ), f"Row {i} of {dataset_file} has {len(chunks)} chunks and {len(chunk_datetimes)} chunk datetimes"
+                ), f"Row {i + 1} of {dataset_file} has {len(chunks)} chunks and {len(chunk_datetimes)} chunk datetimes"
 
                 data["question"].append(question)
                 data["answer"].append(answer)
