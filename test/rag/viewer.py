@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 import hydra
 from omegaconf import DictConfig, OmegaConf
-from data import init_dataset
+from data import get_hf_dpr_dataset
 import sys
 from hydra.core.hydra_config import HydraConfig
 import traceback
@@ -34,7 +34,7 @@ def init_cached_dataset(_cfg: DictConfig):
     """Cached version of dataset initialization.
     Leading underscore tells Streamlit not to hash the config argument.
     """
-    return init_dataset(_cfg)
+    return get_hf_dpr_dataset(_cfg)
 
 
 def app(cfg: DictConfig):

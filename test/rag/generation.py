@@ -3,11 +3,10 @@ from sentence_transformers import SentenceTransformer
 import wandb
 from omegaconf import DictConfig
 from coco import CocoClient
-from typing import Dict, List, Any, Callable
+from typing import Dict, List, Any, Callable, Optional
 from pathlib import Path
 import json
 import logging
-from datasets import Dataset
 from evaluate import load
 from tqdm import tqdm
 from langchain_openai import ChatOpenAI
@@ -16,8 +15,8 @@ from ragas.metrics import Faithfulness
 from ragas.llms import LangchainLLMWrapper
 import random
 
-from data import unique_texts
-
+from retrieval import get_top_chunks
+from dataset import RAGDataset
 
 logger = logging.getLogger(__name__)
 
@@ -166,7 +165,7 @@ class SemScore:
 
 
 def groundedness(
-    ds: Dataset,
+    ds: RAGDataset,
     answers: Dict[str, Dict[str, Any]],
     top_chunks: Dict[str, Dict[str, List]],
     cfg: DictConfig,
@@ -181,111 +180,246 @@ def groundedness(
             )
         )
         ragas_faithfulness_metric = Faithfulness(llm=ragas_llm)
-    faithfulnesses = []
+
+    category_sample_metrics = {
+        cat: {"faithfulnesses": []} for cat in ds.unique_categories()
+    }
+    category_sample_metrics["full"] = {"faithfulnesses": []}
+
     for sample in tqdm(ds, desc="Computing groundedness metrics"):
-        query = sample["question"]
-        generated_answer = answers[query]
-        retrieved_chunks = top_chunks[query]["documents"][
+        generated_answer = answers[sample.query]
+        retrieved_chunks = top_chunks[sample.query]["documents"][
             : cfg.generation.get_answers.top_k
         ]
         if not cfg.generation.ragas.skip:
             ragas_sample = SingleTurnSample(
-                user_input=query,
+                user_input=sample.query,
                 response=generated_answer,
                 retrieved_contexts=retrieved_chunks,
             )
-            faithfulnesses.append(
+            category_sample_metrics[sample.category]["faithfulnesses"].append(
                 ragas_faithfulness_metric.single_turn_score(ragas_sample)
             )
-    metrics = {}
-    if not cfg.generation.ragas.skip:
-        metrics["ragas_faithfulness"] = np.mean(faithfulnesses)
-    wandb.log({f"{wandb_prefix}/groundedness/{k}": v for k, v in metrics.items()})
-    return metrics
+
+    # aggregate metrics across categories
+    for cat, sample_metrics in category_sample_metrics.items():
+        if cat == "full":
+            continue
+        category_sample_metrics["full"]["faithfulnesses"].extend(
+            sample_metrics["faithfulnesses"]
+        )
+
+    for cat, sample_metrics in category_sample_metrics.items():
+        metrics = {}
+        if not cfg.generation.ragas.skip:
+            metrics["ragas_faithfulness"] = np.mean(sample_metrics["faithfulnesses"])
+        wandb.log(
+            {f"{wandb_prefix}/{cat}/groundedness/{k}": v for k, v in metrics.items()}
+        )
 
 
-def relevance(ds: Dataset, answers: Dict[str, Dict[str, Any]]):
+def relevance(ds: RAGDataset, answers: Dict[str, Dict[str, Any]]):
     pass
 
 
-def correctness(ds: Dataset, answers: Dict[str, Dict[str, Any]], wandb_prefix: str):
+def correctness(ds: RAGDataset, answers: Dict[str, Dict[str, Any]], wandb_prefix: str):
     bertscore_metric = load("bertscore")
     rouge_metric = load("rouge")
     sacrebleu_metric = load("sacrebleu")
     semscore_metric = SemScore()
-    bertscore_precisions, bertscore_recalls, bertscore_f1s = [], [], []
-    rouge1s, rouge2s, rougeLs, rougeLsums = [], [], [], []
-    semscores_paper, semscores_multilingual = [], []
-    (
-        sacrebleu_scores,
-        sacrebleu_1gram_precisions,
-        sacrebleu_2gram_precisions,
-        sacrebleu_3gram_precisions,
-        sacrebleu_4gram_precisions,
-        sacrebleu_bp,
-    ) = ([], [], [], [], [], [])
+
+    category_sample_metrics = {
+        cat: {
+            "bertscore_precisions": [],
+            "bertscore_recalls": [],
+            "bertscore_f1s": [],
+            "rouge1s": [],
+            "rouge2s": [],
+            "rougeLs": [],
+            "rougeLsums": [],
+            "semscores_paper": [],
+            "semscores_multilingual": [],
+            "sacrebleu_scores": [],
+            "sacrebleu_1gram_precisions": [],
+            "sacrebleu_2gram_precisions": [],
+            "sacrebleu_3gram_precisions": [],
+            "sacrebleu_4gram_precisions": [],
+            "sacrebleu_bp": [],
+        }
+        for cat in ds.unique_categories()
+    }
+    category_sample_metrics["full"] = {
+        "bertscore_precisions": [],
+        "bertscore_recalls": [],
+        "bertscore_f1s": [],
+        "rouge1s": [],
+        "rouge2s": [],
+        "rougeLs": [],
+        "rougeLsums": [],
+        "semscores_paper": [],
+        "semscores_multilingual": [],
+        "sacrebleu_scores": [],
+        "sacrebleu_1gram_precisions": [],
+        "sacrebleu_2gram_precisions": [],
+        "sacrebleu_3gram_precisions": [],
+        "sacrebleu_4gram_precisions": [],
+        "sacrebleu_bp": [],
+    }
+
     for sample in tqdm(ds, desc="Computing answer correctness metrics"):
-        assert len(sample["answers"]) == 1
-        gt_answer = sample["answers"][0]
-        generated_answer = answers[sample["question"]]
+        assert len(sample.gt_answers) == 1
+        gt_answer = sample.gt_answers[0]
+        generated_answer = answers[sample.query]
+
         bertscore = bertscore_metric.compute(
             predictions=[generated_answer],
             references=[gt_answer],
             lang="de",
         )
-        bertscore_precisions.append(bertscore["precision"])
-        bertscore_recalls.append(bertscore["recall"])
-        bertscore_f1s.append(bertscore["f1"])
+        category_sample_metrics[sample.category]["bertscore_precisions"].append(
+            bertscore["precision"]
+        )
+        category_sample_metrics[sample.category]["bertscore_recalls"].append(
+            bertscore["recall"]
+        )
+        category_sample_metrics[sample.category]["bertscore_f1s"].append(
+            bertscore["f1"]
+        )
         rouge = rouge_metric.compute(
             predictions=[generated_answer],
             references=[gt_answer],
         )
-        rouge1s.append(rouge["rouge1"])
-        rouge2s.append(rouge["rouge2"])
-        rougeLs.append(rouge["rougeL"])
-        rougeLsums.append(rouge["rougeLsum"])
+        category_sample_metrics[sample.category]["rouge1s"].append(rouge["rouge1"])
+        category_sample_metrics[sample.category]["rouge2s"].append(rouge["rouge2"])
+        category_sample_metrics[sample.category]["rougeLs"].append(rouge["rougeL"])
+        category_sample_metrics[sample.category]["rougeLsums"].append(
+            rouge["rougeLsum"]
+        )
         sacrebleu = sacrebleu_metric.compute(
             predictions=[generated_answer],
             references=[gt_answer],
         )
-        sacrebleu_scores.append(sacrebleu["score"])
-        sacrebleu_1gram_precisions.append(sacrebleu["precisions"][0])
-        sacrebleu_2gram_precisions.append(sacrebleu["precisions"][1])
-        sacrebleu_3gram_precisions.append(sacrebleu["precisions"][2])
-        sacrebleu_4gram_precisions.append(sacrebleu["precisions"][3])
-        sacrebleu_bp.append(sacrebleu["bp"])
+        category_sample_metrics[sample.category]["sacrebleu_scores"].append(
+            sacrebleu["score"]
+        )
+        category_sample_metrics[sample.category]["sacrebleu_1gram_precisions"].append(
+            sacrebleu["precisions"][0]
+        )
+        category_sample_metrics[sample.category]["sacrebleu_2gram_precisions"].append(
+            sacrebleu["precisions"][1]
+        )
+        category_sample_metrics[sample.category]["sacrebleu_3gram_precisions"].append(
+            sacrebleu["precisions"][3]
+        )
+        category_sample_metrics[sample.category]["sacrebleu_bp"].append(sacrebleu["bp"])
         semscore_scores = semscore_metric(
             predictions=[generated_answer], references=[gt_answer]
         )
-        semscores_paper.append(semscore_scores["paper"])
-        semscores_multilingual.append(semscore_scores["multilingual"])
-    metrics = {
-        "bertscore_precision": np.mean(bertscore_precisions),
-        "bertscore_recall": np.mean(bertscore_recalls),
-        "bertscore_f1": np.mean(bertscore_f1s),
-        "rouge1": np.mean(rouge1s),
-        "rouge2": np.mean(rouge2s),
-        "rougeL": np.mean(rougeLs),
-        "rougeLsum": np.mean(rougeLsums),
-        "sacrebleu": np.mean(sacrebleu_scores),
-        "sacrebleu_precision1": np.mean(sacrebleu_1gram_precisions),
-        "sacrebleu_precision2": np.mean(sacrebleu_2gram_precisions),
-        "sacrebleu_precision3": np.mean(sacrebleu_3gram_precisions),
-        "sacrebleu_precision4": np.mean(sacrebleu_4gram_precisions),
-        "sacrebleu_brevity_penalty": np.mean(sacrebleu_bp),
-        "semscore": np.mean(semscores_paper),
-        "semscore_multilingual": np.mean(semscores_multilingual),
-    }
-    wandb.log({f"{wandb_prefix}/answer_correctness/{k}": v for k, v in metrics.items()})
-    return metrics
+        category_sample_metrics[sample.category]["semscores_paper"].append(
+            semscore_scores["paper"]
+        )
+        category_sample_metrics[sample.category]["semscores_multilingual"].append(
+            semscore_scores["multilingual"]
+        )
+
+    # aggregate metrics across categories
+    for cat, sample_metrics in category_sample_metrics.items():
+        if cat == "full":
+            continue
+        category_sample_metrics["full"]["bertscore_precisions"].extend(
+            sample_metrics["bertscore_precisions"]
+        )
+        category_sample_metrics["full"]["bertscore_recalls"].extend(
+            sample_metrics["bertscore_recalls"]
+        )
+        category_sample_metrics["full"]["bertscore_f1s"].extend(
+            sample_metrics["bertscore_f1s"]
+        )
+        category_sample_metrics["full"]["rouge1s"].extend(sample_metrics["rouge1s"])
+        category_sample_metrics["full"]["rouge2s"].extend(sample_metrics["rouge2s"])
+        category_sample_metrics["full"]["rougeLs"].extend(sample_metrics["rougeLs"])
+        category_sample_metrics["full"]["rougeLsums"].extend(
+            sample_metrics["rougeLsums"]
+        )
+        category_sample_metrics["full"]["sacrebleu_scores"].extend(
+            sample_metrics["sacrebleu_scores"]
+        )
+        category_sample_metrics["full"]["sacrebleu_1gram_precisions"].extend(
+            sample_metrics["sacrebleu_1gram_precisions"]
+        )
+        category_sample_metrics["full"]["sacrebleu_2gram_precisions"].extend(
+            sample_metrics["sacrebleu_2gram_precisions"]
+        )
+        category_sample_metrics["full"]["sacrebleu_3gram_precisions"].extend(
+            sample_metrics["sacrebleu_3gram_precisions"]
+        )
+        category_sample_metrics["full"]["sacrebleu_4gram_precisions"].extend(
+            sample_metrics["sacrebleu_4gram_precisions"]
+        )
+        category_sample_metrics["full"]["sacrebleu_bp"].extend(
+            sample_metrics["sacrebleu_bp"]
+        )
+        category_sample_metrics["full"]["semscores_paper"].extend(
+            sample_metrics["semscores_paper"]
+        )
+        category_sample_metrics["full"]["semscores_multilingual"].extend(
+            sample_metrics["semscores_multilingual"]
+        )
+
+    full_metrics = None
+    for cat, sample_metrics in category_sample_metrics.items():
+        metrics = {
+            "bertscore_precision": np.mean(sample_metrics["bertscore_precisions"]),
+            "bertscore_recall": np.mean(sample_metrics["bertscore_recalls"]),
+            "bertscore_f1": np.mean(sample_metrics["bertscore_f1s"]),
+            "rouge1": np.mean(sample_metrics["rouge1s"]),
+            "rouge2": np.mean(sample_metrics["rouge2s"]),
+            "rougeL": np.mean(sample_metrics["rougeLs"]),
+            "rougeLsum": np.mean(sample_metrics["rougeLsums"]),
+            "sacrebleu": np.mean(sample_metrics["sacrebleu_scores"]),
+            "sacrebleu_precision1": np.mean(
+                sample_metrics["sacrebleu_1gram_precisions"]
+            ),
+            "sacrebleu_precision2": np.mean(
+                sample_metrics["sacrebleu_2gram_precisions"]
+            ),
+            "sacrebleu_precision3": np.mean(
+                sample_metrics["sacrebleu_3gram_precisions"]
+            ),
+            "sacrebleu_precision4": np.mean(
+                sample_metrics["sacrebleu_4gram_precisions"]
+            ),
+            "sacrebleu_brevity_penalty": np.mean(sample_metrics["sacrebleu_bp"]),
+            "semscore": np.mean(sample_metrics["semscores_paper"]),
+            "semscore_multilingual": np.mean(sample_metrics["semscores_multilingual"]),
+        }
+        if cat == "full":
+            full_metrics = metrics
+        wandb.log(
+            {
+                f"{wandb_prefix}/{cat}/answer_correctness/{k}": v
+                for k, v in metrics.items()
+            }
+        )
+    assert full_metrics is not None, "Full metrics not found"
+    return full_metrics
 
 
 def generation_stage(
-    cc: CocoClient, cfg: DictConfig, top_chunks: Dict[str, Dict[str, List]], ds: Dataset
+    cc: CocoClient,
+    cfg: DictConfig,
+    ds: RAGDataset,
+    top_chunks: Optional[Dict[str, Dict[str, List]]] = None,
 ) -> None:
     if cfg.generation.skip:
         logger.info("Generation stage skipped")
         return
+
+    if top_chunks is None:
+        logger.info(
+            "Top chunks not available because retrieval stage was skipped. Obtaining now."
+        )
+        top_chunks = get_top_chunks(cc, cfg, ds)
 
     logger.info("Starting generation stage for retrieved chunks")
     answers_ret = get_answers(

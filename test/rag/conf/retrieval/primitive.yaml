@@ -1,4 +1,4 @@
-skip: false
+skip: false # attention: set get top chunks parameters even if skipping retrieval metrics!
 embedding_model: ["BAAI/bge-m3", "openai"] # (model name, coco embedding_api)
 get_top_chunks:
   load_from_file: false
