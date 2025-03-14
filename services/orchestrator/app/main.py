@@ -78,9 +78,11 @@ def kick_off_processing(audio_path: str, store_in_db: bool = True):
         prompt = PathManager.get_prompt(audio_path)
         if prompt:
             logger.info(f"Using previous transcript as context for {audio_path}")
+        prompt = None
 
         # Get date.
         date = PathManager.get_date(audio_path)
+        session_id, index = PathManager.get_session_id_and_index(audio_path)
         logger.info(f"Date: {date}, type: {type(date)}")
 
         # Transcribe the audio
@@ -97,7 +99,13 @@ def kick_off_processing(audio_path: str, store_in_db: bool = True):
             PathManager.save_transcription(text, audio_path)
 
             if store_in_db and text not in ["", " ", "."]:
-                cc.chunk_and_store(text, language, filename, date)
+                cc.store_chunk(
+                    text=text,
+                    filename=filename,
+                    date_time=date,
+                    session_id=session_id,
+                    chunk_index=index,
+                )
                 logger.info("Transcription saved successfully and stored in database.")
             else:
                 logger.info("Transcription saved successfully.")
@@ -138,7 +146,7 @@ async def read_root():
 
 
 # Add a constant for max concurrent tasks
-MAX_CONCURRENT_TASKS = 4
+MAX_CONCURRENT_TASKS = 2
 
 
 # Route to upload audio data

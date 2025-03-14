@@ -64,6 +64,7 @@ class GetClosestRequest(BaseModel):
     n_results: int = 5
     start_date_time: datetime.datetime = None
     end_date_time: datetime.datetime = None
+    session_id: Optional[int] = None
 
     @field_validator("embedding", mode="before")
     @classmethod
@@ -82,6 +83,7 @@ class GetMultipleClosestRequest(BaseModel):
     n_results: int = 5
     start_date_time: datetime.datetime = None
     end_date_time: datetime.datetime = None
+    session_id: Optional[int] = None
 
     @field_validator("embeddings", mode="before")
     @classmethod
@@ -115,6 +117,7 @@ def get_closest_from_embeddings(
     n_results: int,
     start_date_time: Optional[datetime.datetime] = None,
     end_date_time: Optional[datetime.datetime] = None,
+    session_id: Optional[int] = None,
 ):
     all_formatted_results = []
     for embedding in embeddings:
@@ -138,6 +141,8 @@ def get_closest_from_embeddings(
                     DbDocument.date_time == None,
                 )
             )
+        if session_id is not None:
+            query = query.where(DbDocument.session_id == session_id)
 
         query = query.order_by(DbDocument.embedding.cosine_distance(embedding)).limit(
             n_results
@@ -211,6 +216,7 @@ async def get_closest(
         n_results=request.n_results,
         start_date_time=request.start_date_time,
         end_date_time=request.end_date_time,
+        session_id=request.session_id,
     )[0]
     return {
         "status": "success",
@@ -231,6 +237,7 @@ async def get_multiple_closest(
         n_results=request.n_results,
         start_date_time=request.start_date_time,
         end_date_time=request.end_date_time,
+        session_id=request.session_id,
     )
     assert len(all_formatted_results) > 0
     return {
@@ -238,6 +245,88 @@ async def get_multiple_closest(
         "embedding_count": len(all_formatted_results),
         "docs_per_embedding_count": len(all_formatted_results[0]),
         "results": all_formatted_results,
+    }
+
+
+@app.post("/get_by_session_id")
+async def get_by_session_id(
+    session_id: str,
+    db: Session = Depends(get_db),
+    api_key: str = Depends(get_api_key),
+):
+    """
+    Retrieve all documents that match the given session_id.
+    """
+    query = select(DbDocument).where(DbDocument.session_id == session_id)
+    results = db.execute(query).scalars().all()
+
+    formatted_results = []
+    for result in results:
+        formatted_results.append(
+            {
+                "id": result.id,
+                "document": result.text,
+                "metadata": {
+                    "language": result.language,
+                    "filename": result.filename,
+                    "chunk_index": result.chunk_index,
+                    "session_id": result.session_id,
+                    "date_time": (
+                        result.date_time.isoformat() if result.date_time else None
+                    ),
+                },
+            }
+        )
+
+    return {
+        "status": "success",
+        "count": len(formatted_results),
+        "results": formatted_results,
+    }
+
+
+@app.post("/get_by_date")
+async def get_by_date(
+    start_date_time: Optional[datetime.datetime] = None,
+    end_date_time: Optional[datetime.datetime] = None,
+    db: Session = Depends(get_db),
+    api_key: str = Depends(get_api_key),
+):
+    """
+    Retrieve all documents within the specified date range.
+    If no dates are provided, all documents will be retrieved.
+    """
+    query = select(DbDocument)
+
+    if start_date_time:
+        query = query.where(DbDocument.date_time >= start_date_time)
+    if end_date_time:
+        query = query.where(DbDocument.date_time <= end_date_time)
+
+    results = db.execute(query).scalars().all()
+
+    formatted_results = []
+    for result in results:
+        formatted_results.append(
+            {
+                "id": result.id,
+                "document": result.text,
+                "metadata": {
+                    "language": result.language,
+                    "filename": result.filename,
+                    "chunk_index": result.chunk_index,
+                    "session_id": result.session_id,
+                    "date_time": (
+                        result.date_time.isoformat() if result.date_time else None
+                    ),
+                },
+            }
+        )
+
+    return {
+        "status": "success",
+        "count": len(formatted_results),
+        "results": formatted_results,
     }
 
 
@@ -296,11 +385,23 @@ async def delete_all(
     }
 
 
-@app.get("/max_embedding_dim")
-async def max_embedding_dim(api_key: str = Depends(get_api_key)):
+@app.delete("/delete_by_session_id")
+async def delete_by_session_id(
+    session_id: int,
+    db: Session = Depends(get_db),
+    api_key: str = Depends(get_api_key),
+):
+    """
+    Delete all documents with the specified session_id.
+    """
+    query = delete(DbDocument).where(DbDocument.session_id == session_id)
+
+    result = db.execute(query)
+    db.commit()
+
     return {
         "status": "success",
-        "max_embedding_dim": EMBEDDING_DIM,
+        "count": result.rowcount,
     }
 
 
@@ -329,39 +430,14 @@ async def delete_by_date(
         "count": result.rowcount,
     }
 
-@app.post("/get_by_session_id")
-async def get_by_session_id(
-    session_id: str,
-    db: Session = Depends(get_db),
-    api_key: str = Depends(get_api_key),
-):
-    """
-    Retrieve all documents that match the given session_id.
-    """
-    query = select(DbDocument).where(DbDocument.session_id == session_id)
-    results = db.execute(query).scalars().all()
-    
-    formatted_results = []
-    for result in results:
-        formatted_results.append(
-            {
-                "id": result.id,
-                "document": result.text,
-                "metadata": {
-                    "language": result.language,
-                    "filename": result.filename,
-                    "chunk_index": result.chunk_index,
-                    "session_id": result.session_id,
-                    "date": result.date.isoformat() if result.date else None,
-                },
-            }
-        )
 
+@app.get("/max_embedding_dim")
+async def max_embedding_dim(api_key: str = Depends(get_api_key)):
     return {
         "status": "success",
-        "count": len(formatted_results),
-        "results": formatted_results,
+        "max_embedding_dim": EMBEDDING_DIM,
     }
+
 
 @app.get("/test")
 async def test_endpoint(api_key: str = Depends(get_api_key)):
