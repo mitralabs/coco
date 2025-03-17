@@ -74,16 +74,23 @@ def kick_off_processing(audio_path: str, store_in_db: bool = True):
             f"Processing audio file: {audio_path} (Active tasks: {current_tasks})"
         )
 
+        # Try to combine this audio file with adjacent ones
+        snippet_path = PathManager.combine_audio_files(audio_path)
+        audio_path = snippet_path
+
+        if not audio_path:
+            return False
+
         # Get previous transcript as context if available
         prompt = PathManager.get_prompt(audio_path)
         if prompt:
             logger.info(f"Using previous transcript as context for {audio_path}")
+        # Hard coded as long as the transcription quality is too low
         prompt = None
 
         # Get date.
-        date = PathManager.get_date(audio_path)
+        date_time = PathManager.get_datetime(audio_path)
         session_id, index = PathManager.get_session_id_and_index(audio_path)
-        logger.info(f"Date: {date}, type: {type(date)}")
 
         # Transcribe the audio
         try:
@@ -99,10 +106,10 @@ def kick_off_processing(audio_path: str, store_in_db: bool = True):
             PathManager.save_transcription(text, audio_path)
 
             if store_in_db and text not in ["", " ", "."]:
-                cc.store_chunk(
+                cc.embed_and_store(
                     text=text,
                     filename=filename,
-                    date_time=date,
+                    date_time=date_time,
                     session_id=session_id,
                     chunk_index=index,
                 )

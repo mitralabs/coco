@@ -265,7 +265,7 @@ class CocoClient:
             chunk_indices=chunk_indices,
         )
 
-    def store_chunk(
+    def embed_and_store(
         self,
         text: str,
         language: str = "",

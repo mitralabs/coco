@@ -4,13 +4,15 @@ import logging
 import sys
 import datetime
 from typing import Dict, Optional, Tuple, List
+from pydub import AudioSegment
 
 ROOT_PATH = Path(os.getenv("AUDIO_ROOT_PATH", "/data"))
 
 # Directory structure constants
 DIR_RAW = "raw"
 DIR_TRANSCRIPTS = "transcripts"
-SUBDIRECTORIES = [DIR_RAW, DIR_TRANSCRIPTS]
+DIR_SNIPPETS = "snippets"
+SUBDIRECTORIES = [DIR_RAW, DIR_TRANSCRIPTS, DIR_SNIPPETS]
 
 # Configure logging
 logging.basicConfig(
@@ -69,9 +71,18 @@ class AudioPathManager:
         """Convert audio path to transcript path"""
         # Ensure we're working with a string
         audio_path_str = str(audio_path)
-        return audio_path_str.replace(f"/{DIR_RAW}/", f"/{DIR_TRANSCRIPTS}/").replace(
-            ".wav", ".txt"
-        )
+
+        # Handle both raw and snippet paths
+        if f"/{DIR_RAW}/" in audio_path_str:
+            return audio_path_str.replace(
+                f"/{DIR_RAW}/", f"/{DIR_TRANSCRIPTS}/"
+            ).replace(".wav", ".txt")
+        elif f"/{DIR_SNIPPETS}/" in audio_path_str:
+            return audio_path_str.replace(
+                f"/{DIR_SNIPPETS}/", f"/{DIR_TRANSCRIPTS}/"
+            ).replace(".wav", ".txt")
+        else:
+            raise ValueError(f"Invalid audio path: {audio_path}")
 
     def save_transcription(self, transcription: str, audio_path: str) -> str:
         """
@@ -166,7 +177,7 @@ class AudioPathManager:
             logger.error(f"Failed to read previous transcript: {str(e)}")
             return None
 
-    def get_date(self, audio_path: str) -> Optional[datetime.datetime]:
+    def get_datetime(self, audio_path: str) -> Optional[datetime.datetime]:
         """
         Extract date and time from an audio file path and return as datetime object
 
@@ -233,6 +244,150 @@ class AudioPathManager:
             return None
 
         return (parsed["session_id"], parsed["file_index"])
+
+    def find_previous_files(self, audio_path: str, max_files: int = 2) -> List[str]:
+        """
+        Find up to 'max_files' previous files in the same session before the current file.
+
+        Args:
+            audio_path: Path to the current audio file
+            max_files: Maximum number of previous files to return
+
+        Returns:
+            List of paths to previous files in sequential order (most recent files)
+        """
+        # Extract filename and directory from path
+        audio_dir = os.path.dirname(audio_path)
+        audio_filename = os.path.basename(audio_path)
+
+        # Parse the current filename
+        parsed = parse_coco_filename(audio_filename)
+        if not parsed:
+            logger.error(f"Invalid filename format: {audio_filename}")
+            return []
+
+        # Extract key components
+        session_id = parsed["session_id"]
+        current_index = int(parsed["file_index"])
+
+        # Find all raw files in the directory
+        raw_files = [f for f in os.listdir(audio_dir) if f.endswith(".wav")]
+
+        # Find all previous files in the same session
+        previous_files = []
+        for filename in raw_files:
+            file_parsed = parse_coco_filename(filename)
+            if not file_parsed:
+                continue
+
+            if (
+                file_parsed["session_id"] == session_id
+                and int(file_parsed["file_index"]) < current_index
+            ):
+                previous_files.append(
+                    (int(file_parsed["file_index"]), os.path.join(audio_dir, filename))
+                )
+
+        # Sort by index to ensure correct ordering and take only the most recent files
+        previous_files.sort(
+            reverse=True
+        )  # Sort in reverse order to get most recent first
+        previous_files = previous_files[:max_files]  # Take only up to max_files
+        previous_files.sort()  # Re-sort in ascending order for proper sequencing
+
+        return [file_path for _, file_path in previous_files]
+
+    def combine_audio_files(
+        self, audio_path: str, files_to_include: int = 3
+    ) -> Optional[str]:
+        """
+        Combine an audio file with previous files to create a sequence of exactly
+        'files_to_include' total files.
+
+        Args:
+            audio_path: Path to the current audio file
+            files_to_include: Total number of files to include in the combination (including current)
+
+        Returns:
+            Path to the combined snippet or None if combination isn't possible
+        """
+        try:
+            # Parse current filename
+            audio_path_str = str(audio_path)
+            audio_filename = os.path.basename(audio_path_str)
+            audio_filename = os.path.basename(audio_path)
+            parsed = parse_coco_filename(audio_filename)
+            if not parsed:
+                logger.error(f"Invalid filename format: {audio_filename}")
+                return None
+
+            # Extract file index
+            current_index = int(parsed["file_index"])
+
+            # For files with index <= 1, no combination is needed as there aren't enough previous files
+            if current_index <= 1:
+                logger.info(
+                    f"File with index {current_index} has insufficient history for combination"
+                )
+                return None
+
+            # Calculate how many previous files we need
+            prev_files_needed = files_to_include - 1
+
+            # Find the required number of previous files
+            previous_files = self.find_previous_files(
+                audio_path_str, max_files=prev_files_needed
+            )
+
+            # If we couldn't find enough previous files, return None
+            if len(previous_files) < prev_files_needed:
+                logger.warning(
+                    f"Found only {len(previous_files)} previous files, needed {prev_files_needed}"
+                )
+                return None
+
+            # Get the first file in the sequence for naming
+            first_file_path = previous_files[0]
+            first_file_name = os.path.basename(first_file_path)
+
+            # Files to combine in order: previous files + current
+            files_to_combine = previous_files + [audio_path]
+
+            # Log what we're combining
+            logger.info(
+                f"Combining {len(files_to_combine)} files for index {current_index}: {audio_filename}"
+            )
+
+            # Create snippet name based on the first file we're using
+            snippet_name = first_file_name
+
+            # Get the directory path for snippets
+            audio_dir = os.path.dirname(audio_path_str)
+            parent_dir = os.path.dirname(audio_dir)
+            snippet_dir = os.path.join(parent_dir, DIR_SNIPPETS)
+            snippet_path = os.path.join(snippet_dir, snippet_name)
+
+            # Ensure snippet directory exists
+            if not os.path.exists(snippet_dir):
+                os.makedirs(snippet_dir)
+
+            # Combine audio files
+            combined = AudioSegment.empty()
+            for file_path in files_to_combine:
+                audio = AudioSegment.from_wav(file_path)
+                combined += audio
+
+            # Export the combined audio
+            combined.export(snippet_path, format="wav")
+            logger.info(
+                f"Combined audio saved to: {snippet_path}, contains {len(files_to_combine)} files"
+            )
+
+            return snippet_path
+
+        except Exception as e:
+            logger.error(f"Error combining audio files: {str(e)}")
+            return None
 
 
 def parse_coco_filename(
