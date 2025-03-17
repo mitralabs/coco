@@ -668,7 +668,7 @@ with demo.route("Memory") as incrementer_demo:
         filename = selected_row.get("filename")
         session_id = filename.split("_")[0]
         date = filename.split("_")[2]
-        directory = f"audio/recordings_{date}_{session_id}/raw"
+        directory = f"audio/recordings_{date}_{session_id}/snippets"
         # Prepend /data directory to the path
         if filename:
             filename = os.path.join(directory, os.path.basename(filename))
