@@ -13,6 +13,7 @@ logging.basicConfig(level=logging.INFO)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("absl").setLevel(logging.WARNING)
 logging.getLogger("sentence_transformers.SentenceTransformer").setLevel(logging.WARNING)
+logging.getLogger("coco.tools").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 

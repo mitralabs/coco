@@ -35,7 +35,7 @@ def mock_top_chunks(ds: RAGDataset, cfg: DictConfig) -> Dict[str, Dict[str, List
         Dict[str, Dict[str, List]]: Mocked top chunks
     """
     random.seed(cfg.general.random_seed)
-    top_k = cfg.generation.get_answers.top_k
+    top_k = cfg.generation.get_answers.rag_top_k
     top_chunks = {}
 
     all_chunks, _ = ds.unique_chunks()
@@ -81,29 +81,45 @@ def get_answers(
         logger.info(f"Loaded answers from {answers_file}")
     else:
         # generate using lm
-        queries, context_chunks = [], []
-        for query, chunks in top_chunks.items():
-            queries.append(query)
-            context_chunks.append(
-                chunks["documents"][: cfg.generation.get_answers.top_k]
+        if cfg.generation.get_answers.mode == "rag":
+            queries, context_chunks = [], []
+            for query, chunks in top_chunks.items():
+                queries.append(query)
+                context_chunks.append(
+                    chunks["documents"][: cfg.generation.get_answers.rag_top_k]
+                )
+
+            generated_answers, tok_ss = cc.rag.answer_multiple(
+                queries=queries,
+                context_chunks=context_chunks,
+                prompt_template=cfg.generation.get_answers.rag_prompt_template,
+                model=cfg.generation.llm_model[0],
+                temperature=0.0,
+                pull_model=False,
+                batch_size=cfg.generation.get_answers.rag_generate_answers_batch_size,
+                limit_parallel=cfg.generation.get_answers.rag_generate_answers_limit_parallel,
+                show_progress=True,
             )
-
-        generated_answers, tok_ss = cc.rag.answer_multiple(
-            queries=queries,
-            context_chunks=context_chunks,
-            prompt_template=cfg.generation.get_answers.prompt_template,
-            model=cfg.generation.llm_model[0],
-            temperature=0.0,
-            pull_model=False,
-            batch_size=cfg.generation.get_answers.generate_answers_batch_size,
-            limit_parallel=cfg.generation.get_answers.generate_answers_limit_parallel,
-            show_progress=True,
-        )
-        m_tok_s = np.nanmean(np.array(tok_ss))
-        answers = {q: a for q, a in zip(queries, generated_answers)}
-        wandb.log({f"{wandb_prefix}/m_tok_s": m_tok_s})
-        logger.info(f"Generated answers with mean tok_s {m_tok_s}")
-
+            m_tok_s = np.nanmean(np.array(tok_ss))
+            answers = {q: a for q, a in zip(queries, generated_answers)}
+            wandb.log({f"{wandb_prefix}/m_tok_s": m_tok_s})
+            logger.info(f"Generated answers with mean tok_s {m_tok_s}")
+        else:
+            queries = list(top_chunks.keys())
+            generated_answers = cc.agent.chat_multiple(
+                queries=queries,
+                system_prompt=cfg.generation.get_answers.agent_system_prompt,
+                model=cfg.generation.llm_model[0],
+                max_tool_calls=cfg.generation.get_answers.agent_max_tool_calls,
+                max_iterations=cfg.generation.get_answers.agent_max_iterations,
+                temperature=0.0,
+                pull_model=False,
+                batch_size=cfg.generation.get_answers.agent_generate_answers_batch_size,
+                limit_parallel=cfg.generation.get_answers.agent_generate_answers_limit_parallel,
+                show_progress=True,
+            )
+            answers = {q: a for q, a in zip(queries, generated_answers)}
+            logger.info(f"Generated answers with agent")
     # save to file
     output_file = Path(output_file_name)
     output_file.parent.mkdir(parents=True, exist_ok=True)
@@ -187,7 +203,7 @@ def groundedness(
     for sample in tqdm(ds, desc="Computing groundedness metrics"):
         generated_answer = answers[sample.query]
         retrieved_chunks = top_chunks[sample.query]["documents"][
-            : cfg.generation.get_answers.top_k
+            : cfg.generation.get_answers.rag_top_k
         ]
         if not cfg.generation.ragas.skip:
             ragas_sample = SingleTurnSample(

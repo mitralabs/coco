@@ -235,7 +235,7 @@ class ToolsClient:
         return tool.method(**converted_kwargs)
 
     @tool(
-        description="Search for relevant information in the database based on a query. The query can be filtered by a start and end date."
+        description="Search for relevant information in the database based on a query by comparing the query string's embedding to the database chunks' embeddings. Searched chunks can be filtered by a start and end date before the search."
     )
     def semantic_query(
         self,

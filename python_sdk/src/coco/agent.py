@@ -208,6 +208,7 @@ class AgentClient:
     async def _chat_multiple(
         self,
         queries: List[str],
+        system_prompt: str = None,
         model: str = "llama3.2:1b",
         max_tool_calls: int = 10,
         max_iterations: int = 5,
@@ -217,6 +218,7 @@ class AgentClient:
 
         Args:
             queries (List[str]): List of user queries
+            system_prompt (str, optional): System prompt for the agent. Defaults to None.
             model (str, optional): Model to use for chat completion. Defaults to "llama3.2:1b".
             max_tool_calls (int, optional): Maximum number of tool calls. Defaults to 10.
             max_iterations (int, optional): Maximum number of iterations for tool calling. Defaults to 5.
@@ -225,11 +227,10 @@ class AgentClient:
         Returns:
             Dict[str, Dict[str, Any]]: Dictionary mapping queries to their chat results
         """
-        results = {}
-
-        async def process_query(query):
+        answers = []
+        for query in queries:
             messages = [
-                {"role": "system", "content": self.system_prompt},
+                {"role": "system", "content": system_prompt or self.system_prompt},
                 {"role": "user", "content": query},
             ]
 
@@ -241,22 +242,14 @@ class AgentClient:
                 temperature=temperature,
                 stream=False,
             )
+            answers.append(result["content"])
 
-            return query, result
-
-        # Create a task for each query and execute them concurrently
-        tasks = [process_query(query) for query in queries]
-        completed_results = await asyncio.gather(*tasks)
-
-        # Convert results back to dictionary
-        for query, result in completed_results:
-            results[query] = result
-
-        return results
+        return answers
 
     def chat_multiple(
         self,
         queries: List[str],
+        system_prompt: str = None,
         model: str = "llama3.2:1b",
         max_tool_calls: int = 10,
         max_iterations: int = 5,
@@ -294,11 +287,12 @@ class AgentClient:
             batch_size=batch_size,
             limit_parallel=limit_parallel,
             show_progress=show_progress,
-            description="Processing chat queries",
+            description="Generating answers with agent",
         )
 
         return batched_chat(
             queries=queries,
+            system_prompt=system_prompt,
             model=model,
             max_tool_calls=max_tool_calls,
             max_iterations=max_iterations,
