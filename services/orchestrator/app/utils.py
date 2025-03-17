@@ -213,6 +213,27 @@ class AudioPathManager:
             logger.error(f"Failed to parse date/time from {audio_path}: {str(e)}")
             return None
 
+    def get_session_id_and_index(self, audio_path: str) -> Optional[Tuple[str, str]]:
+        """
+        Extract the session ID and file index from an audio file path
+
+        Args:
+            audio_path: Path to the audio file
+
+        Returns:
+            Tuple of (session_id, file_index) or None if parsing fails
+        """
+        # Extract filename from path
+        audio_filename = os.path.basename(audio_path)
+
+        # Parse the filename to get components
+        parsed = parse_coco_filename(audio_filename)
+        if not parsed:
+            logger.error(f"Invalid filename format: {audio_filename}")
+            return None
+
+        return (parsed["session_id"], parsed["file_index"])
+
 
 def parse_coco_filename(
     filename: str, is_transcript: bool = False
@@ -245,8 +266,8 @@ def parse_coco_filename(
         return None
 
     return {
-        "session_id": session_id,
-        "file_index": index,
+        "session_id": int(session_id),
+        "file_index": int(index),
         "file_date": ymd,
         "file_time": hms,
         "suffix": suffix,

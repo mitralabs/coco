@@ -132,10 +132,18 @@ class CocoClient:
         filename: str,
         date_times: List[Optional[datetime.datetime]] = None,
         model: str = "nomic-embed-text",
+        session_id: Optional[int] = None,
+        chunk_indices: List[int] = None,
     ):
         embeddings = await self.lm._embed_multiple(chunks, model)
         ns_added, ns_skipped = await self.db_api._store_multiple(
-            chunks, embeddings, language, filename, date_times
+            chunks,
+            embeddings,
+            language,
+            filename,
+            session_id,
+            date_times,
+            chunk_indices,
         )
         return ns_added, ns_skipped
 
@@ -149,6 +157,8 @@ class CocoClient:
         batch_size: int = 20,
         limit_parallel: int = 10,
         show_progress: bool = True,
+        session_id: Optional[int] = None,
+        chunk_indices: List[int] = None,
     ):
         """Util function to embed and store chunks in the database.
         Just a wrapper around the `embedding.create_embeddings` and `db_api._store_in_database` functions.
@@ -162,6 +172,8 @@ class CocoClient:
             batch_size (int, optional): The size of each batch. Defaults to 20.
             limit_parallel (int, optional): The maximum number of parallel tasks / batches. Defaults to 10.
             show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to True.
+            session_id (Optional[int], optional): The session ID to associate with the chunks. Defaults to None.
+            chunk_indices (List[int], optional): The indices of the chunks. Defaults to None (will use array indices).
 
         Returns:
             Tuple[int, int]: The number of documents added and skipped.
@@ -174,7 +186,7 @@ class CocoClient:
             description="Embedding and storing",
         )
         n_added, n_skipped = batched_embed_and_store(
-            chunks, language, filename, date_times, model
+            chunks, language, filename, date_times, model, session_id, chunk_indices
         )
         return sum(n_added), sum(n_skipped)
 
@@ -188,6 +200,8 @@ class CocoClient:
         batch_size: int = 20,
         limit_parallel: int = 10,
         show_progress: bool = True,
+        session_id: Optional[int] = None,
+        chunk_indices: List[int] = None,
     ):
         async_batched_embed_and_store = batched_parallel(
             function=self._embed_and_store_multiple,
@@ -198,7 +212,7 @@ class CocoClient:
             return_async_wrapper=True,
         )
         return async_batched_embed_and_store(
-            chunks, language, filename, date_times, model
+            chunks, language, filename, date_times, model, session_id, chunk_indices
         )
 
     def transcribe_and_store(
@@ -210,6 +224,8 @@ class CocoClient:
         limit_parallel: int = 10,
         show_progress: bool = True,
         embedding_model: str = "nomic-embed-text",
+        session_id: Optional[int] = None,
+        chunk_indices: List[int] = None,
     ):
         """Transcribe an audio file and store the chunks in the database.
 
@@ -221,6 +237,8 @@ class CocoClient:
             limit_parallel (int, optional): The maximum number of parallel tasks / batches. Defaults to 10.
             show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to True.
             embedding_model (str, optional): The embedding model to use. Defaults to "nomic-embed-text".
+            session_id (Optional[int], optional): The session ID to associate with the chunks. Defaults to None.
+            chunk_indices (List[int], optional): The indices of the chunks. Defaults to None (will use array indices).
 
         Returns:
             Tuple[int, int]: The number of documents added and skipped.
@@ -243,18 +261,19 @@ class CocoClient:
             batch_size=batch_size,
             limit_parallel=limit_parallel,
             show_progress=show_progress,
+            session_id=session_id,
+            chunk_indices=chunk_indices,
         )
 
-    def chunk_and_store(
+    def store_chunk(
         self,
         text: str,
         language: str = "",
         filename: str = "",
         date_time: Optional[datetime.datetime] = None,
-        batch_size: int = 20,
-        limit_parallel: int = 10,
-        show_progress: bool = True,
         embedding_model: str = "nomic-embed-text",
+        session_id: Optional[int] = None,
+        chunk_index: int = None,
     ):
         """Chunk a text and store the chunks in the database.
 
@@ -267,20 +286,19 @@ class CocoClient:
             limit_parallel (int, optional): The maximum number of parallel tasks / batches. Defaults to 10.
             show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to True.
             embedding_model (str, optional): The embedding model to use. Defaults to "nomic-embed-text".
+            session_id (Optional[int], optional): The session ID to associate with the chunks. Defaults to None.
+            chunk_index (int, optional): The indices of the chunks. Defaults to None (will use array indices).
 
         Returns:
             Tuple[int, int]: The number of documents added and skipped.
         """
 
-        chunks = self.chunking.chunk_text(text=text)
-
         return self.embed_and_store_multiple(
-            chunks=chunks,
+            chunks=[text],
             language=language,
             filename=filename,
-            date_times=[date_time] * len(chunks),
+            date_times=[date_time],
             model=embedding_model,
-            batch_size=batch_size,
-            limit_parallel=limit_parallel,
-            show_progress=show_progress,
+            session_id=session_id,
+            chunk_indices=[chunk_index],
         )
