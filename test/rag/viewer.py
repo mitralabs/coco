@@ -10,6 +10,10 @@ import traceback
 import wandb  # NEW: Import wandb to retrieve run links
 import re
 
+sys.path.append("../dataset")
+import parse  # type: ignore
+from dataset import RAGDataset
+
 
 def normalize_text(txt: str) -> str:
     """Normalize text for robust comparison."""
@@ -23,9 +27,28 @@ def normalize_text(txt: str) -> str:
 def load_run_data(run_dir: str):
     """Load retrieved chunks and generated answers for a run."""
     run_path = Path(run_dir)
-    retrieved_chunks = json.load((run_path / "retrieved_chunks.json").open())
-    answers_ret = json.load((run_path / "generated_answers_ret.json").open())
-    answers_gt = json.load((run_path / "generated_answers_gt.json").open())
+
+    # Initialize with empty dictionaries
+    retrieved_chunks = {}
+    answers_ret = {}
+    answers_gt = {}
+
+    # Load files if they exist
+    if (run_path / "retrieved_chunks.json").exists():
+        retrieved_chunks = json.load((run_path / "retrieved_chunks.json").open())
+    else:
+        st.warning(f"File not found: {run_path}/retrieved_chunks.json")
+
+    if (run_path / "generated_answers_ret.json").exists():
+        answers_ret = json.load((run_path / "generated_answers_ret.json").open())
+    else:
+        st.warning(f"File not found: {run_path}/generated_answers_ret.json")
+
+    if (run_path / "generated_answers_gt.json").exists():
+        answers_gt = json.load((run_path / "generated_answers_gt.json").open())
+    else:
+        st.warning(f"File not found: {run_path}/generated_answers_gt.json")
+
     return retrieved_chunks, answers_ret, answers_gt
 
 
@@ -34,7 +57,15 @@ def init_cached_dataset(_cfg: DictConfig):
     """Cached version of dataset initialization.
     Leading underscore tells Streamlit not to hash the config argument.
     """
-    return get_hf_dpr_dataset(_cfg)
+    if _cfg.data.type == "hf_dpr":
+        hf_dpr_dataset = get_hf_dpr_dataset(_cfg)
+        return RAGDataset.from_dpr_dataset(hf_dpr_dataset)
+    elif _cfg.data.type == "custom":
+        custom_datasets = parse.get_datasets(samples_path=_cfg.data.custom_samples_root)
+        return RAGDataset.from_custom_datasets(custom_datasets)
+    else:
+        st.error(f"Invalid dataset type: {_cfg.data.type}")
+        return None
 
 
 def app(cfg: DictConfig):
@@ -87,6 +118,14 @@ def app(cfg: DictConfig):
                         return
 
                     ds = init_cached_dataset(cfg)
+
+                    # Debug sample structure
+                    if len(ds) > 0:
+                        st.session_state.sample_debug = {
+                            "type": str(type(ds[0])),
+                            "dir": str(dir(ds[0])),
+                        }
+
                     retrieved_chunks, answers_ret, answers_gt = load_run_data(run_dir)
                     st.session_state.data = {
                         "ds": ds,
@@ -115,23 +154,17 @@ def app(cfg: DictConfig):
                 # Get current sample data using the selected sample_idx
                 ds = st.session_state.data["ds"]
                 sample = ds[sample_idx]
-                query = sample["question"]
-                gt_answer = sample["answers"][0]
+
+                # Access sample properties
+                query = sample.query
+                gt_answer = sample.gt_answers[0] if sample.gt_answers else ""
+
                 retrieved_chunks = st.session_state.data["retrieved_chunks"]
                 answers_ret = st.session_state.data["answers_ret"]
                 answers_gt = st.session_state.data["answers_gt"]
 
-                # Handle ground truth chunks
-                gt_chunks = []
-                if "positive_ctxs" in sample:
-                    if (
-                        isinstance(sample["positive_ctxs"], dict)
-                        and "text" in sample["positive_ctxs"]
-                    ):
-                        if isinstance(sample["positive_ctxs"]["text"], list):
-                            gt_chunks = sample["positive_ctxs"]["text"]
-                        else:
-                            gt_chunks = [sample["positive_ctxs"]["text"]]
+                # Ground truth chunks from the sample
+                gt_chunks = sample.pos_chunks
 
                 # Display content
                 st.subheader("Query")
@@ -153,6 +186,8 @@ def app(cfg: DictConfig):
                             st.markdown(
                                 f"*Token Speed: {answers_ret[query]['token_speed']:.2f} tokens/s*"
                             )
+                    else:
+                        st.info("No retrieved answer available")
 
                 with answer_cols[2]:
                     st.subheader("Generated (GT)")
@@ -165,6 +200,19 @@ def app(cfg: DictConfig):
                             st.markdown(
                                 f"*Token Speed: {answers_gt[query]['token_speed']:.2f} tokens/s*"
                             )
+                    else:
+                        st.info("No ground truth answer available")
+
+                # Debug information
+                with st.expander("Debug Information"):
+                    if "sample_debug" in st.session_state:
+                        st.write("Sample type:", st.session_state.sample_debug["type"])
+                        st.write(
+                            "Sample attributes:", st.session_state.sample_debug["dir"]
+                        )
+
+                    # Current sample inspection
+                    st.write("Current sample:", sample)
 
                 st.markdown("---")
                 chunk_cols = st.columns(2)
@@ -185,11 +233,14 @@ def app(cfg: DictConfig):
                     if gt_chunks:
                         header_text += " ✅" if all_found else " ❌"
                     st.subheader(header_text)
-                    # Display only the top 5 retrieved chunks for brevity
-                    for i, chunk in enumerate(ret_docs_full[:5]):
-                        st.markdown(f"**Chunk {i+1}**")
-                        st.write(chunk)
-                        st.markdown("---")
+                    if ret_docs_full:
+                        # Display only the top 5 retrieved chunks for brevity
+                        for i, chunk in enumerate(ret_docs_full[:5]):
+                            st.markdown(f"**Chunk {i+1}**")
+                            st.write(chunk)
+                            st.markdown("---")
+                    else:
+                        st.info("No retrieved chunks available")
 
                 with chunk_cols[1]:
                     st.subheader("Ground Truth Chunks")

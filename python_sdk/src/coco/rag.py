@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 import logging
+import json
 
 from .async_utils import batched_parallel
 from .db_api import DbApiClient
@@ -147,13 +148,18 @@ class RagClient:
         )
 
     def format_prompt(
-        self, query: str, context_chunks: List[str], prompt_template: str | None = None
+        self,
+        query: str,
+        context_chunks: List[str],
+        context_metadata: List[Dict[str, Any]] = None,
+        prompt_template: str | None = None,
     ) -> str:
         """Format a prompt from context and query.
 
         Args:
             query (str): The question.
             context_chunks (List[str]): The context chunks.
+            context_metadata (List[Dict[str, Any]]): The context metadata.
             prompt_template (str): The prompt template.
 
         Returns:
@@ -161,21 +167,34 @@ class RagClient:
         """
         if prompt_template is None:
             prompt_template = PROMPT
-        return prompt_template.format(
-            context="\n-----\n".join(context_chunks), query=query
-        )
+
+        if context_metadata is None:
+            context_metadata = [None] * len(context_chunks)
+
+        context_str = ""
+        for i, (chunk, metadata) in enumerate(zip(context_chunks, context_metadata)):
+            context_str += f"#### Text:\n{chunk}\n\n"
+            if metadata is not None:
+                context_str += f"#### Metadata:\n{json.dumps(metadata, indent=2)}\n\n"
+            if i < len(context_chunks) - 1:
+                context_str += "-----\n\n"
+
+        return prompt_template.format(context=context_str, query=query)
 
     async def _answer_multiple(
         self,
         queries: List[str],
         context_chunks: List[List[str]],
+        context_metadata: List[List[Dict[str, Any]]] = None,
         prompt_template: str | None = None,
         model: str | None = "llama3.2:1b",
         temperature: float = 0.0,
     ) -> Dict[str, Dict[str, Any]]:
+        if not context_metadata:
+            context_metadata = [None] * len(context_chunks)
         prompts = [
-            self.format_prompt(q, c, prompt_template)
-            for q, c in zip(queries, context_chunks)
+            self.format_prompt(q, c, m, prompt_template)
+            for q, c, m in zip(queries, context_chunks, context_metadata)
         ]
         return await self.lm._generate_multiple(
             prompts, model=model, temperature=temperature
@@ -185,6 +204,7 @@ class RagClient:
         self,
         queries: List[str],
         context_chunks: List[List[str]],
+        context_metadata: List[List[Dict[str, Any]]] = None,
         prompt_template: str | None = None,
         model: str = "llama3.2:1b",
         temperature: float = 0.0,
@@ -198,6 +218,7 @@ class RagClient:
         Args:
             queries (List[str]): The queries to generate answers for.
             context_chunks (List[List[str]]): The context chunks to use for the generation.
+            context_metadata (List[List[Dict[str, Any]]], optional): The context metadata to use for the generation. Defaults to None.
             prompt_template (str | None, optional): The prompt template to use for the generation. Defaults to None.
             model (str, optional): The model to use for the generation. Defaults to "llama3.2:1b".
             pull_model (bool, optional): Whether to pull the ollama model. Defaults to False.
@@ -225,6 +246,7 @@ class RagClient:
         return batched_generate_answers(
             queries=queries,
             context_chunks=context_chunks,
+            context_metadata=context_metadata,
             prompt_template=prompt_template,
             model=model,
             temperature=temperature,

@@ -424,7 +424,7 @@ def generation_stage(
         top_chunks=top_chunks,
         cc=cc,
         cfg=cfg,
-        wandb_prefix="generation_ret",
+        wandb_prefix="generation",
         load_from_file=cfg.generation.get_answers.load_from_file,
         load_file_name=cfg.generation.get_answers.load_file_name_ret,
         output_file_name=cfg.generation.get_answers.output_file_name_ret,
@@ -434,13 +434,13 @@ def generation_stage(
         answers=answers_ret,
         top_chunks=top_chunks,
         cfg=cfg,
-        wandb_prefix="generation_ret",
+        wandb_prefix="generation",
     )
     relevance(ds=ds, answers=answers_ret)
     ret_corr_metrics = correctness(
         ds=ds,
         answers=answers_ret,
-        wandb_prefix="generation_ret",
+        wandb_prefix="generation",
     )
     logger.info("Generation stage for retrieved chunks completed")
 
@@ -451,28 +451,29 @@ def generation_stage(
     )
     wandb.log({"optimization_target": optimization_target})
 
-    logger.info("Starting generation stage for ground truth chunks")
-    mocked_top_chunks = mock_top_chunks(ds=ds, cfg=cfg)
-    answers_gt = get_answers(
-        top_chunks=mocked_top_chunks,
-        cc=cc,
-        cfg=cfg,
-        wandb_prefix="generation_gt",
-        load_from_file=cfg.generation.get_answers.load_from_file,
-        load_file_name=cfg.generation.get_answers.load_file_name_gt,
-        output_file_name=cfg.generation.get_answers.output_file_name_gt,
-    )
-    groundedness(
-        ds=ds,
-        answers=answers_gt,
-        top_chunks=mocked_top_chunks,
-        cfg=cfg,
-        wandb_prefix="generation_gt",
-    )
-    relevance(ds=ds, answers=answers_gt)
-    correctness(
-        ds=ds,
-        answers=answers_gt,
-        wandb_prefix="generation_gt",
-    )
-    logger.info("Generation stage for ground truth chunks completed")
+    if not cfg.data.type == "custom":  # our dataset does not have gt chunks
+        logger.info("Starting generation stage for ground truth chunks")
+        mocked_top_chunks = mock_top_chunks(ds=ds, cfg=cfg)
+        answers_gt = get_answers(
+            top_chunks=mocked_top_chunks,
+            cc=cc,
+            cfg=cfg,
+            wandb_prefix="generation_gt",
+            load_from_file=cfg.generation.get_answers.load_from_file,
+            load_file_name=cfg.generation.get_answers.load_file_name_gt,
+            output_file_name=cfg.generation.get_answers.output_file_name_gt,
+        )
+        groundedness(
+            ds=ds,
+            answers=answers_gt,
+            top_chunks=mocked_top_chunks,
+            cfg=cfg,
+            wandb_prefix="generation_gt",
+        )
+        relevance(ds=ds, answers=answers_gt)
+        correctness(
+            ds=ds,
+            answers=answers_gt,
+            wandb_prefix="generation_gt",
+        )
+        logger.info("Generation stage for ground truth chunks completed")
