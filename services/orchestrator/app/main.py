@@ -153,7 +153,7 @@ async def read_root():
 
 
 # Add a constant for max concurrent tasks
-MAX_CONCURRENT_TASKS = 2
+MAX_CONCURRENT_TASKS = 1
 
 
 # Route to upload audio data
