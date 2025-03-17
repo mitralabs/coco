@@ -37,7 +37,7 @@ def main(cfg: DictConfig) -> None:
 
     ds = data_stage(cc, cfg)
     top_chunks = retrieval_stage(cc, cfg, ds)
-    generation_stage(cc, cfg, top_chunks, ds)
+    generation_stage(cc, cfg, ds, top_chunks)
 
     wandb.finish()
 

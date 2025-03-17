@@ -184,26 +184,23 @@ def relevance(top_chunks: Dict[str, Dict[str, Any]], cfg: DictConfig, ds: RAGDat
         m_rr = mean_reciprocal_rank(sample_metrics["ranks"])
         m_ap = mean_average_precision(sample_metrics["aps"])
 
-        sample_metrics = {
+        metrics = {
             "mr": m_r,
             "mrr": m_rr,
             "map": m_ap,
         }
         for k in cfg.retrieval.metric_ks:
-            sample_metrics[f"precision@{str(k).zfill(4)}"] = np.nanmean(
+            metrics[f"precision@{str(k).zfill(4)}"] = np.nanmean(
                 np.array(sample_metrics["precs"][k])
             )
-            sample_metrics[f"recall@{str(k).zfill(4)}"] = np.nanmean(
+            metrics[f"recall@{str(k).zfill(4)}"] = np.nanmean(
                 np.array(sample_metrics["recs"][k])
             )
-            sample_metrics[f"f1@{str(k).zfill(4)}"] = np.nanmean(
+            metrics[f"f1@{str(k).zfill(4)}"] = np.nanmean(
                 np.array(sample_metrics["f1s"][k])
             )
         wandb.log(
-            {
-                f"retrieval/{cat}/context_relevance/{k}": v
-                for k, v in sample_metrics.items()
-            }
+            {f"retrieval/{cat}/context_relevance/{k}": v for k, v in metrics.items()}
         )
 
 

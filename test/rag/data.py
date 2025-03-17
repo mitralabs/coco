@@ -5,8 +5,11 @@ import logging
 import wandb
 import shutil
 from coco import CocoClient
+import sys
 
-from ..dataset import parse
+sys.path.append("../dataset")
+
+import parse  # type: ignore
 from dataset import RAGDataset
 
 logger = logging.getLogger(__name__)

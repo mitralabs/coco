@@ -21,7 +21,7 @@ from dataset import RAGDataset
 logger = logging.getLogger(__name__)
 
 
-def mock_top_chunks(ds: Dataset, cfg: DictConfig) -> Dict[str, Dict[str, List]]:
+def mock_top_chunks(ds: RAGDataset, cfg: DictConfig) -> Dict[str, Dict[str, List]]:
     """Mock top chunks using gt data and hard negatives.
     Since only the documents are used, metadata etc. is left as None.
     Distances are set to 0.0 for gt documents, 0.2 for hard negatives,
@@ -36,20 +36,18 @@ def mock_top_chunks(ds: Dataset, cfg: DictConfig) -> Dict[str, Dict[str, List]]:
     """
     random.seed(cfg.general.random_seed)
     top_k = cfg.generation.get_answers.top_k
-    all_documents = [text for text, _ in unique_texts(ds)]
     top_chunks = {}
-    for sample in ds:
-        query = sample["question"]
-        gt_documents = sample["positive_ctxs"]["text"]
-        hn_documents = sample["hard_negative_ctxs"]["text"]
 
-        documents = gt_documents + hn_documents
-        distances = ([0.0] * len(gt_documents)) + ([0.2] * len(hn_documents))
+    all_chunks, _ = ds.unique_chunks()
+
+    for sample in ds:
+        documents = sample.pos_chunks + sample.hn_chunks
+        distances = ([0.0] * len(sample.pos_chunks)) + ([0.2] * len(sample.hn_chunks))
 
         # if gt and hard negatives are not enough, add random documents
         delta_to_top_k = top_k - len(documents)
         if delta_to_top_k > 0:
-            documents += random.sample(population=all_documents, k=delta_to_top_k)
+            documents += random.sample(population=all_chunks, k=delta_to_top_k)
             distances += [0.5] * delta_to_top_k
 
         # if gt and hard negatives are too many, remove some hard negatives
@@ -57,7 +55,7 @@ def mock_top_chunks(ds: Dataset, cfg: DictConfig) -> Dict[str, Dict[str, List]]:
             documents = documents[:top_k]
             distances = distances[:top_k]
 
-        top_chunks[query] = {
+        top_chunks[sample.query] = {
             "ids": [None] * len(documents),
             "documents": documents,
             "metadatas": [None] * len(documents),

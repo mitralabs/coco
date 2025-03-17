@@ -1,6 +1,6 @@
 import datetime
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional, Tuple
 
 logger = logging.getLogger(__name__)
@@ -22,17 +22,15 @@ class Sample:
     category: str
     query: str
     gt_answers: List[str]
-    pos_chunks: List[str]  # List of text chunks
-    neg_chunks: Optional[List[str]] = None  # List of text chunks
-    hn_chunks: Optional[List[str]] = None  # List of text chunks
+    pos_chunks: List[str]
+    neg_chunks: List[str] = field(default_factory=list)
+    hn_chunks: List[str] = field(default_factory=list)
 
     def all_chunks(self) -> List[str]:
         """Get all chunks (positive, hard negative, and negative) in that order."""
         chunks = self.pos_chunks.copy()
-        if self.hn_chunks:
-            chunks.extend(self.hn_chunks)
-        if self.neg_chunks:
-            chunks.extend(self.neg_chunks)
+        chunks.extend(self.hn_chunks)
+        chunks.extend(self.neg_chunks)
         return chunks
 
 
@@ -47,8 +45,8 @@ class RAGDataset:
         self,
         samples: List[Sample],
         supports_retrieval: bool,
-        additional_chunks: Optional[List[str]] = None,
-        additional_chunk_datetimes: Optional[List[datetime.datetime]] = None,
+        additional_chunks: Optional[List[str]] = [],
+        additional_chunk_datetimes: Optional[List[datetime.datetime]] = [],
     ):
         """Initialize a dataset with a list of samples."""
         self.samples = samples
@@ -71,7 +69,12 @@ class RAGDataset:
             Dataset: If idx is a slice, returns a new dataset with the sliced samples
         """
         if isinstance(idx, slice):
-            return RAGDataset(self.samples[idx])
+            return RAGDataset(
+                self.samples[idx],
+                self.supports_retrieval,
+                self.additional_chunks,
+                self.additional_chunk_datetimes,
+            )
         return self.samples[idx]
 
     def __iter__(self):
@@ -112,29 +115,13 @@ class RAGDataset:
         samples = []
 
         for dpr_sample in dpr_dataset:
-            pos_chunks = dpr_sample["positive_ctxs"]["text"]
-
-            neg_chunks = None
-            if (
-                "negative_ctxs" in dpr_sample
-                and len(dpr_sample["negative_ctxs"]["text"]) > 0
-            ):
-                neg_chunks = dpr_sample["negative_ctxs"]["text"]
-
-            hn_chunks = None
-            if (
-                "hard_negative_ctxs" in dpr_sample
-                and len(dpr_sample["hard_negative_ctxs"]["text"]) > 0
-            ):
-                hn_chunks = dpr_sample["hard_negative_ctxs"]["text"]
-
             sample = Sample(
                 category="default",
                 query=dpr_sample["question"],
                 gt_answers=dpr_sample["answers"],
-                pos_chunks=pos_chunks,
-                neg_chunks=neg_chunks,
-                hn_chunks=hn_chunks,
+                pos_chunks=dpr_sample["positive_ctxs"]["text"],
+                neg_chunks=dpr_sample["negative_ctxs"]["text"],
+                hn_chunks=dpr_sample["hard_negative_ctxs"]["text"],
             )
             samples.append(sample)
 
@@ -158,9 +145,9 @@ class RAGDataset:
                         category=category,
                         query=q,
                         gt_answers=[a],
-                        pos_chunks=None,
-                        neg_chunks=None,
-                        hn_chunks=None,
+                        pos_chunks=[],
+                        neg_chunks=[],
+                        hn_chunks=[],
                     )
                 )
                 all_chunks.extend(chunks)
