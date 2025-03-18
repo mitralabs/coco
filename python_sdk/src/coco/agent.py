@@ -225,9 +225,10 @@ class AgentClient:
             temperature (float, optional): Temperature for chat completion. Defaults to 0.0.
 
         Returns:
-            Dict[str, Dict[str, Any]]: Dictionary mapping queries to their chat results
+            (answers, n_toolcalls): Tuple[List[str], List[int]]: List of answers and list of number of tool calls
         """
         answers = []
+        n_toolcalls = []
         for query in queries:
             messages = [
                 {"role": "system", "content": system_prompt or self.system_prompt},
@@ -243,8 +244,9 @@ class AgentClient:
                 stream=False,
             )
             answers.append(result["content"])
+            n_toolcalls.append(len(result["tool_calls"]))
 
-        return answers
+        return answers, n_toolcalls
 
     def chat_multiple(
         self,
