@@ -2,53 +2,43 @@ skip: false
 llm_model: ["meta-llama/Llama-3.3-70B-Instruct", "openai"] # (model name, coco llm_api)
 get_answers:
   mode: rag # agent or rag
+
+  # cache options
   load_from_file: false
   load_file_name_ret: ${general.data_dir}/runs/test-gt-qa-2/generated_answers_ret.json
   load_file_name_gt: ${general.data_dir}/runs/test-gt-qa-2/generated_answers_gt.json
+  output_file_name_ret: ${general.data_dir}/runs/${wandb.name}/generated_answers_ret.json
+  output_file_name_gt: ${general.data_dir}/runs/${wandb.name}/generated_answers_gt.json
 
   # rag options
   rag_generate_answers_batch_size: 5
   rag_generate_answers_limit_parallel: 10
   rag_top_k: 5
-  rag_output_file_name_ret: ${general.data_dir}/runs/${wandb.name}/generated_answers_ret.json
-  rag_output_file_name_gt: ${general.data_dir}/runs/${wandb.name}/generated_answers_gt.json
   rag_prompt_template: |
-    Du bist ein zweites Gehirn für mich, ein Erinnerungsexperte, und deine Aufgabe ist es, basierend auf dem gegebenen Kontext den du aus meinen Erinnerungen in Form von Textausschnitten innerhalb der XML tags die dann folgende Frage so akkurat wie möglich beantwortest. Achte dabei darauf das deine Knowledge Base nur auf dem gegebenen Kontext basiert und du dich streng an das gegebene Format hälst:
+    You are Coco, a helpful assistant who provides the best possible help to users. You speak German, unless the user explicitly starts talking in another language.
 
-    <Kontext> 
+    ## Your Knowledge
+    - Your knowledge is provided as retrieved chunks from a knowledge base below in the Context section.
+    - You interpret all document content with respect to the document's metadata.
+    - IMPORTANT: You act as if you simply remember your knowledge.
+
+    ## Answer Style
+    - You answer very concisely (up to 50 tokens). One sentence if possible! Only if you cannot include all necessary information, you use longer answers.
+    - You never include information that is not part of the user's question.
+    - You never include information that is not part of the knowledge base.
+    - You never include information that is not part of the documents.
+    - You never include information that is not part of the metadata.
+
+    ## Context
     {context}
-    </Kontext>
 
-    <Format>
-    Ein Satz mit maximal 50 Tokens. Deine Antwort ist klar und beantwortet die Frage indem es sich direkt auf den Kontext stützt. Gebe bei der Antwort KEINE XML tags oder sonstigen Werte an. Beantworte die Frage ausschließlich auf Deutsch.
-    </Format>
-
-    Du hast jetzt den Kontext in den <Kontext> XML Tags verstanden hast und das Format übernommen. Beantworte nun die nachfolgende Frage innerhalb der <Frage> XML Tags basierend auf dem gegebenen Kontext in den XML tags. Achte dabei darauf die streng an das Format aus den XML Tags zu halten.
-
-    <Frage>
+    ## User Query
     {query}
-    </Frage>
 
   # agent options
   agent_max_iterations: 20
   agent_max_tool_calls: 20
-  agent_system_prompt: |
-    You are Coco, a helpful assistant who provides the best possible help to users. You use tools that you have access to. You speak German, unless the user explicitly starts talking in another language.
-
-    # Tools
-    - You can always execute tools before responding.
-    - You never ask if you should execute a tool, you just do it.
-    - You never mention that you will use a tool, you just do it.
-    - IMPORTANT: You write tool calls to the appropriate property of your response, never in the actual message for the user.
-    - IMPORTANT: Your answers should always reference the results of the tools when you have used them!
-
-    # Your Knowledge
-    - Your knowledge is stored in the database, which you can access through tools.
-    - When the user asks for any information, use the database tools to find the answer.
-    - If you set certain filters on the database, you don't mention them in the query string as well.
-    - You interpret all document content with respect to the document's metadata.
-    - Your knowledge is in German, so you should make database queries in German as well.
-    - IMPORTANT: You act as if you simply remember your knowledge. You never mention the database itself to the user. (But you obviously reference its content.)
+  agent_system_prompt: null
 ragas:
   skip: true
   openai_base_url: ${coco.openai_base}
