@@ -243,6 +243,7 @@ class ToolsClient:
         num_results: int = 5,
         start_date_time_iso: Optional[str] = None,
         end_date_time_iso: Optional[str] = None,
+        contains_substring: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """Search for relevant information in the database based on a query.
 
@@ -251,7 +252,7 @@ class ToolsClient:
             num_results (int, optional): The number of chunks to return for the query. If not set, defaults to 5.
             start_date_time_iso (Optional[str], optional): The start date in ISO format. If provided, only chunks dated after this date will be considered. If not set, all knowledge chunks will be considered.
             end_date_time_iso (Optional[str], optional): The end date in ISO format. If provided, only chunks dated before this date will be considered. If not set, all knowledge chunks will be considered.
-
+            contains_substring (Optional[str], optional): Only consider chunks that contain this substring (case insensitive). If not set, all knowledge chunks will be considered.
         Returns:
             List[Dict[str, Any]]: The search results.
         """
@@ -276,6 +277,7 @@ class ToolsClient:
             n_results=num_results,
             start_date_time=start,
             end_date_time=end,
+            contains_substring=contains_substring,
         )
         knowledge = [
             {
@@ -285,7 +287,7 @@ class ToolsClient:
             for document, metadata in zip(documents, metadatas)
         ]
         return {
-            "message": f"Here",
+            "message": f"Here are your knowledge chunks and their metadata for the query '{query_text}'.",
             "knowledge": knowledge,
             "tool_timestamp": datetime.datetime.now().isoformat(),
         }

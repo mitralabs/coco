@@ -64,6 +64,7 @@ class GetClosestRequest(BaseModel):
     n_results: int = 5
     start_date_time: datetime.datetime = None
     end_date_time: datetime.datetime = None
+    contains_substring: str = None
 
     @field_validator("embedding", mode="before")
     @classmethod
@@ -115,6 +116,7 @@ def get_closest_from_embeddings(
     n_results: int,
     start_date_time: Optional[datetime.datetime] = None,
     end_date_time: Optional[datetime.datetime] = None,
+    contains_substring: Optional[str] = None,
 ):
     all_formatted_results = []
     for embedding in embeddings:
@@ -138,6 +140,8 @@ def get_closest_from_embeddings(
                     DbDocument.date_time == None,
                 )
             )
+        if contains_substring:
+            query = query.where(DbDocument.text.ilike(f"%{contains_substring}%"))
 
         query = query.order_by(DbDocument.embedding.cosine_distance(embedding)).limit(
             n_results
@@ -211,6 +215,7 @@ async def get_closest(
         n_results=request.n_results,
         start_date_time=request.start_date_time,
         end_date_time=request.end_date_time,
+        contains_substring=request.contains_substring,
     )[0]
     return {
         "status": "success",

@@ -15,6 +15,8 @@ from ragas.metrics import Faithfulness
 from ragas.llms import LangchainLLMWrapper
 import random
 
+# from deepeval.metrics import GEval
+
 from retrieval import get_top_chunks
 from dataset import RAGDataset
 
@@ -106,7 +108,7 @@ def get_answers(
             logger.info(f"Generated answers with mean tok_s {m_tok_s}")
         else:
             queries = list(top_chunks.keys())
-            generated_answers = cc.agent.chat_multiple(
+            generated_answers, n_toolcalls = cc.agent.chat_multiple(
                 queries=queries,
                 system_prompt=cfg.generation.get_answers.agent_system_prompt,
                 model=cfg.generation.llm_model[0],
@@ -119,6 +121,9 @@ def get_answers(
                 show_progress=True,
             )
             answers = {q: a for q, a in zip(queries, generated_answers)}
+            wandb.log(
+                {f"{wandb_prefix}/m_n_toolcalls": np.nanmean(np.array(n_toolcalls))}
+            )
             logger.info(f"Generated answers with agent")
     # save to file
     output_file = Path(output_file_name)
@@ -241,6 +246,7 @@ def correctness(ds: RAGDataset, answers: Dict[str, Dict[str, Any]], wandb_prefix
     rouge_metric = load("rouge")
     sacrebleu_metric = load("sacrebleu")
     semscore_metric = SemScore()
+    # geval_metric = GEval()
 
     category_sample_metrics = {
         cat: {
