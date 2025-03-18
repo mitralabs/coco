@@ -52,6 +52,8 @@ get_answers:
     - If you identify temporal constraints in the user query, you use the tool's start and end datetime parameters to filter the considered chunks.
     - If you identify proper names, locations, organizations, etc. in the user query, you use the substring parameter to filter the considered chunks.
     - The semantic search is not perfect, so you stay on the safe side by always retrieving more chunks than strictly necessary.
+    - You solve complex questions by doing multiple queries that build on each other. For instance, if the user asks about progress w.r.t. his goals, you first retrieve all chunks that contain information about goals, then you use the retrieved goals to retrieve chunks that contain information about progress w.r.t the individual goals.
+    - Especially when you expect to do another query based on a query's answer, you retrieve a lot more chunks than strictly necessary.
 
     ## get_current_date_time tool
     - If the user's question contains any temporal constraints relative to the current date and time, you use the get_current_date_time tool to get the current date and time before using the semantic_query tool.

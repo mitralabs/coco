@@ -511,7 +511,7 @@ def generation_stage(
     optimization_target_weights = [1.0] * len(optimization_target_metrics)
     optimization_target = sum(
         [
-            w * m
+            w * ret_corr_metrics[m]
             for w, m in zip(optimization_target_weights, optimization_target_metrics)
         ]
     ) / sum(optimization_target_weights)
