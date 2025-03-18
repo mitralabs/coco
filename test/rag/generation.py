@@ -14,8 +14,8 @@ from ragas.dataset_schema import SingleTurnSample
 from ragas.metrics import Faithfulness
 from ragas.llms import LangchainLLMWrapper
 import random
-
-# from deepeval.metrics import GEval
+from deepeval.metrics import GEval
+from deepeval.test_case import LLMTestCase, LLMTestCaseParams
 
 from retrieval import get_top_chunks
 from dataset import RAGDataset
@@ -240,12 +240,26 @@ def relevance(ds: RAGDataset, answers: Dict[str, Dict[str, Any]]):
     pass
 
 
-def correctness(ds: RAGDataset, answers: Dict[str, Dict[str, Any]], wandb_prefix: str):
+def correctness(
+    ds: RAGDataset,
+    answers: Dict[str, Dict[str, Any]],
+    wandb_prefix: str,
+    cfg: DictConfig,
+):
     bertscore_metric = load("bertscore")
     rouge_metric = load("rouge")
     sacrebleu_metric = load("sacrebleu")
     semscore_metric = SemScore()
-    # geval_metric = GEval()
+    if not cfg.generation.geval.skip:
+        geval_correctness_metric = GEval(
+            name="correctness",
+            criteria="Determine whether the actual output is factually correct based on the expected output.",
+            evaluation_params=[
+                LLMTestCaseParams.INPUT,
+                LLMTestCaseParams.ACTUAL_OUTPUT,
+                LLMTestCaseParams.EXPECTED_OUTPUT,
+            ],
+        )
 
     category_sample_metrics = {
         cat: {
@@ -264,6 +278,7 @@ def correctness(ds: RAGDataset, answers: Dict[str, Dict[str, Any]], wandb_prefix
             "sacrebleu_3gram_precisions": [],
             "sacrebleu_4gram_precisions": [],
             "sacrebleu_bp": [],
+            "geval_correctness": [],
         }
         for cat in ds.unique_categories()
     }
@@ -283,6 +298,7 @@ def correctness(ds: RAGDataset, answers: Dict[str, Dict[str, Any]], wandb_prefix
         "sacrebleu_3gram_precisions": [],
         "sacrebleu_4gram_precisions": [],
         "sacrebleu_bp": [],
+        "geval_correctness": [],
     }
 
     for sample in tqdm(ds, desc="Computing answer correctness metrics"):
@@ -340,6 +356,17 @@ def correctness(ds: RAGDataset, answers: Dict[str, Dict[str, Any]], wandb_prefix
         category_sample_metrics[sample.category]["semscores_multilingual"].append(
             semscore_scores["multilingual"]
         )
+        if not cfg.generation.geval.skip:
+            geval_correctness_metric.measure(
+                LLMTestCase(
+                    input=sample.query,
+                    actual_output=generated_answer,
+                    expected_output=gt_answer,
+                )
+            )
+            category_sample_metrics[sample.category]["geval_correctness"].append(
+                geval_correctness_metric.score
+            )
 
     # aggregate metrics across categories
     for cat, sample_metrics in category_sample_metrics.items():
@@ -384,6 +411,9 @@ def correctness(ds: RAGDataset, answers: Dict[str, Dict[str, Any]], wandb_prefix
         category_sample_metrics["full"]["semscores_multilingual"].extend(
             sample_metrics["semscores_multilingual"]
         )
+        category_sample_metrics["full"]["geval_correctness"].extend(
+            sample_metrics["geval_correctness"]
+        )
 
     full_metrics = None
     for cat, sample_metrics in category_sample_metrics.items():
@@ -414,6 +444,8 @@ def correctness(ds: RAGDataset, answers: Dict[str, Dict[str, Any]], wandb_prefix
             "semscore": np.mean(sample_metrics["semscores_paper"]),
             "semscore_multilingual": np.mean(sample_metrics["semscores_multilingual"]),
         }
+        if not cfg.generation.geval.skip:
+            metrics["geval_correctness"] = np.mean(sample_metrics["geval_correctness"])
         if cat == "full":
             full_metrics = metrics
         wandb.log(
@@ -464,14 +496,25 @@ def generation_stage(
         ds=ds,
         answers=answers_ret,
         wandb_prefix="generation",
+        cfg=cfg,
     )
     logger.info("Generation stage for retrieved chunks completed")
 
     # optimization target for wandb sweeps
-    optimization_target = (
-        0.5 * ret_corr_metrics["bertscore_f1"]
-        + 0.5 * ret_corr_metrics["semscore_multilingual"]
-    )
+    optimization_target_metrics = [
+        "bertscore_f1",
+        "semscore_multilingual",
+        "rougeLsum",
+        "sacrebleu",
+        "geval_correctness",
+    ]
+    optimization_target_weights = [1.0] * len(optimization_target_metrics)
+    optimization_target = sum(
+        [
+            w * m
+            for w, m in zip(optimization_target_weights, optimization_target_metrics)
+        ]
+    ) / sum(optimization_target_weights)
     wandb.log({"optimization_target": optimization_target})
 
     if not cfg.data.type == "custom":  # our dataset does not have gt chunks
@@ -498,5 +541,6 @@ def generation_stage(
             ds=ds,
             answers=answers_gt,
             wandb_prefix="generation_gt",
+            cfg=cfg,
         )
         logger.info("Generation stage for ground truth chunks completed")

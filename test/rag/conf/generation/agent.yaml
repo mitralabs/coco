@@ -60,3 +60,5 @@ ragas:
   skip: true
   openai_base_url: ${coco.openai_base}
   openai_llm_model: meta-llama/Llama-3.3-70B-Instruct
+geval:
+  skip: false
