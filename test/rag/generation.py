@@ -36,7 +36,6 @@ def mock_top_chunks(ds: RAGDataset, cfg: DictConfig) -> Dict[str, Dict[str, List
     Returns:
         Dict[str, Dict[str, List]]: Mocked top chunks
     """
-    random.seed(cfg.general.random_seed)
     top_k = cfg.generation.get_answers.rag_top_k
     top_chunks = {}
 
@@ -392,24 +391,26 @@ def correctness(ds: RAGDataset, answers: Dict[str, Dict[str, Any]], wandb_prefix
             "bertscore_precision": np.mean(sample_metrics["bertscore_precisions"]),
             "bertscore_recall": np.mean(sample_metrics["bertscore_recalls"]),
             "bertscore_f1": np.mean(sample_metrics["bertscore_f1s"]),
-            "rouge1": np.mean(sample_metrics["rouge1s"]),
-            "rouge2": np.mean(sample_metrics["rouge2s"]),
-            "rougeL": np.mean(sample_metrics["rougeLs"]),
-            "rougeLsum": np.mean(sample_metrics["rougeLsums"]),
-            "sacrebleu": np.mean(sample_metrics["sacrebleu_scores"]),
-            "sacrebleu_precision1": np.mean(
-                sample_metrics["sacrebleu_1gram_precisions"]
+            "rouge1": np.nanmean(np.array(sample_metrics["rouge1s"])),
+            "rouge2": np.nanmean(np.array(sample_metrics["rouge2s"])),
+            "rougeL": np.nanmean(np.array(sample_metrics["rougeLs"])),
+            "rougeLsum": np.nanmean(np.array(sample_metrics["rougeLsums"])),
+            "sacrebleu": np.nanmean(np.array(sample_metrics["sacrebleu_scores"])),
+            "sacrebleu_precision1": np.nanmean(
+                np.array(sample_metrics["sacrebleu_1gram_precisions"])
             ),
-            "sacrebleu_precision2": np.mean(
-                sample_metrics["sacrebleu_2gram_precisions"]
+            "sacrebleu_precision2": np.nanmean(
+                np.array(sample_metrics["sacrebleu_2gram_precisions"])
             ),
-            "sacrebleu_precision3": np.mean(
-                sample_metrics["sacrebleu_3gram_precisions"]
+            "sacrebleu_precision3": np.nanmean(
+                np.array(sample_metrics["sacrebleu_3gram_precisions"])
             ),
-            "sacrebleu_precision4": np.mean(
-                sample_metrics["sacrebleu_4gram_precisions"]
+            "sacrebleu_precision4": np.nanmean(
+                np.array(sample_metrics["sacrebleu_4gram_precisions"])
             ),
-            "sacrebleu_brevity_penalty": np.mean(sample_metrics["sacrebleu_bp"]),
+            "sacrebleu_brevity_penalty": np.nanmean(
+                np.array(sample_metrics["sacrebleu_bp"])
+            ),
             "semscore": np.mean(sample_metrics["semscores_paper"]),
             "semscore_multilingual": np.mean(sample_metrics["semscores_multilingual"]),
         }

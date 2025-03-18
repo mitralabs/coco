@@ -13,7 +13,7 @@ get_answers:
   # rag options
   rag_generate_answers_batch_size: 5
   rag_generate_answers_limit_parallel: 10
-  rag_top_k: 5
+  rag_top_k: 25
   rag_prompt_template: |
     You are Coco, a helpful assistant who provides the best possible help to users. You speak German, unless the user explicitly starts talking in another language.
 

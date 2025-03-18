@@ -6,6 +6,8 @@ import wandb
 import shutil
 from coco import CocoClient
 import sys
+import random
+import datetime
 
 sys.path.append("../dataset")
 
@@ -60,6 +62,15 @@ def clear_database(cc: CocoClient, cfg: DictConfig):
     logger.info(f"Cleared database: {deleted_count} chunks")
 
 
+def random_dt(
+    from_dt: datetime.datetime = datetime.datetime(2021, 1, 1, 0, 0, 0),
+    to_dt: datetime.datetime = datetime.datetime(2025, 12, 31, 23, 59, 59),
+) -> datetime.datetime:
+    return datetime.datetime.fromtimestamp(
+        random.uniform(from_dt.timestamp(), to_dt.timestamp())
+    )
+
+
 def fill_database(cc: CocoClient, cfg: DictConfig, dataset: RAGDataset):
     if cfg.data.fill_db.skip:
         logger.info(f"Skipping {cfg.data.name} to db")
@@ -70,6 +81,8 @@ def fill_database(cc: CocoClient, cfg: DictConfig, dataset: RAGDataset):
         model_emb_dim <= db_emb_dim
     ), f"Embedding model {cfg.retrieval.embedding_model[0]} has dimension {model_emb_dim} which is greater than the maximum supported dimension {db_emb_dim}"
     chunks, chunk_datetimes = dataset.unique_chunks()
+    if cfg.data.random_datetimes_if_missing:
+        chunk_datetimes = [dt or random_dt() for dt in chunk_datetimes]
     added, skipped = cc.embed_and_store_multiple(
         chunks=chunks,
         language=cfg.data.language,

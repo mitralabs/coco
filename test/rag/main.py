@@ -3,6 +3,8 @@ from omegaconf import DictConfig, OmegaConf
 import wandb
 import logging
 from coco import CocoClient
+import random
+import numpy as np
 
 from data import data_stage
 from retrieval import retrieval_stage
@@ -20,6 +22,9 @@ logger = logging.getLogger(__name__)
 @hydra.main(config_path="conf", config_name="config", version_base="1.3")
 def main(cfg: DictConfig) -> None:
     logger.info(f"Config:\n{OmegaConf.to_yaml(cfg)}")
+
+    random.seed(cfg.general.random_seed)
+    np.random.seed(cfg.general.random_seed)
 
     wandb.init(
         entity=cfg.wandb.entity,
