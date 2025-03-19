@@ -1,9 +1,9 @@
-name: germandpr
-type: hf_dpr # custom / hf_dpr
+name: mitra
+type: custom # hf_dpr / custom
 language: de
 
 limit_samples: null
-random_datetimes_if_missing: true
+random_datetimes_if_missing: false
 backup_db: false
 clear_db: false
 fill_db:
@@ -12,9 +12,9 @@ fill_db:
   embed_and_store_limit_parallel: 10
 
 # hf_dpr settings
-hf_name: deepset/germandpr
+hf_name: null
 use_train: true
 use_test: false
 
 # custom settings
-custom_samples_root: null
+custom_samples_root: ../dataset/datasets_by_category

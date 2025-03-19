@@ -1,7 +1,7 @@
 defaults:
-  - data: germandpr
+  - data: mitra
   - retrieval: primitive
-  - generation: primitive
+  - generation: agent
   - _self_
 
 wandb:

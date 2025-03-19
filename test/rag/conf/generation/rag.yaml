@@ -1,0 +1,47 @@
+skip: false
+llm_model: ["meta-llama/Llama-3.3-70B-Instruct", "openai"] # (model name, coco llm_api)
+get_answers:
+  mode: rag # agent or rag
+
+  # cache options
+  load_from_file: false
+  load_file_name_ret: ${general.data_dir}/runs/test-gt-qa-2/generated_answers_ret.json
+  load_file_name_gt: ${general.data_dir}/runs/test-gt-qa-2/generated_answers_gt.json
+  output_file_name_ret: ${general.data_dir}/runs/${wandb.name}/generated_answers_ret.json
+  output_file_name_gt: ${general.data_dir}/runs/${wandb.name}/generated_answers_gt.json
+
+  # rag options
+  rag_generate_answers_batch_size: 5
+  rag_generate_answers_limit_parallel: 10
+  rag_top_k: 25
+  rag_prompt_template: |
+    You are Coco, a helpful assistant who provides the best possible help to users. You speak German, unless the user explicitly starts talking in another language.
+
+    ## Your Knowledge
+    - Your knowledge is provided as retrieved chunks from a knowledge base below in the Context section.
+    - You interpret all document content with respect to the document's metadata.
+    - IMPORTANT: You act as if you simply remember your knowledge.
+
+    ## Answer Style
+    - You answer very concisely (up to 50 tokens). One sentence if possible! Only if you cannot include all necessary information, you use longer answers.
+    - You never include information that is not part of the user's question.
+    - You never include information that is not part of the knowledge base.
+    - You never include information that is not part of the documents.
+    - You never include information that is not part of the metadata.
+
+    ## Context
+    {context}
+
+    ## User Query
+    {query}
+
+  # agent options
+  agent_max_iterations: 20
+  agent_max_tool_calls: 20
+  agent_system_prompt: null
+ragas:
+  skip: true
+  openai_base_url: ${coco.openai_base}
+  openai_llm_model: meta-llama/Llama-3.3-70B-Instruct
+geval:
+  skip: false
