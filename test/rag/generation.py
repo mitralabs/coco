@@ -408,8 +408,11 @@ def correctness(
                 "sacrebleu_bp": float(sacrebleu["bp"]),
                 "semscore_paper": float(semscore_scores["paper"]),
                 "semscore_multilingual": float(semscore_scores["multilingual"]),
-                "geval_correctness": float(geval_correctness_metric.score),
             }
+            if not cfg.generation.geval.skip:
+                agent_conversations[sample.query]["metrics"]["geval_correctness"] = (
+                    float(geval_correctness_metric.score)
+                )
 
     # save agent conversations json file if exists
     if agent_conversations is not None:
