@@ -295,17 +295,62 @@ def format_conversation_card(
     run2_answer=None,
     run1_history=None,
     run2_history=None,
+    run1_metrics=None,
+    run2_metrics=None,
+    category=None,
 ):
     """Create a formatted HTML card for a single conversation comparison"""
 
     # Use "Ground truth not found" when ground truth is not available
     gt_display = gt_answer if gt_answer else "Ground truth not found"
 
+    # Format metrics section if available
+    def format_metrics(metrics, run_name):
+        if not metrics:
+            return ""
+
+        metrics_html = f"""
+        <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+            <h4 style="margin-top: 0;">{run_name} Metrics:</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
+        """
+
+        # Group metrics by category
+        metric_categories = {
+            "BERTScore": ["bertscore_precision", "bertscore_recall", "bertscore_f1"],
+            "ROUGE": ["rouge1", "rouge2", "rougeL", "rougeLsum"],
+            "SacreBLEU": [
+                "sacrebleu_score",
+                "sacrebleu_precision1",
+                "sacrebleu_precision2",
+                "sacrebleu_precision3",
+                "sacrebleu_bp",
+            ],
+            "SemScore": ["semscore_paper", "semscore_multilingual"],
+            "Other": ["geval_correctness"],
+        }
+
+        for category, metric_keys in metric_categories.items():
+            metrics_html += f'<div style="background: white; padding: 8px; border-radius: 4px;"><strong>{category}:</strong><br>'
+            for key in metric_keys:
+                if key in metrics:
+                    value = metrics[key]
+                    # Format the metric name to be more readable
+                    display_name = key.replace("_", " ").title()
+                    metrics_html += f"{display_name}: {value:.4f}<br>"
+            metrics_html += "</div>"
+
+        metrics_html += "</div></div>"
+        return metrics_html
+
     # Single run mode
     if run2_name is None or run2_answer is None:
         return f"""
         <div style="border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 5px; background-color: white;">
-            <h3 style="margin-top: 0;">Query: {query}</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 style="margin-top: 0;">Query: {query}</h3>
+                <span style="background: #e9ecef; padding: 4px 8px; border-radius: 4px; font-size: 0.9em;">Category: {category}</span>
+            </div>
             <div style="background: #f5f5f5; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
                 <h4 style="margin-top: 0;">Ground Truth:</h4>
                 <p>{gt_display}</p>
@@ -316,6 +361,8 @@ def format_conversation_card(
                 <p>{run1_answer}</p>
             </div>
             
+            {format_metrics(run1_metrics, run1_name)}
+            
             <div style="padding: 10px; max-height: 600px; overflow-y: auto; border-radius: 5px;">
                 <h4 style="margin-top: 0;">Conversation:</h4>
                 <div>{run1_history}</div>
@@ -323,10 +370,13 @@ def format_conversation_card(
         </div>
         """
 
-    # Two-run comparison mode (original)
+    # Two-run comparison mode
     return f"""
     <div style="border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 5px; background-color: white;">
-        <h3 style="margin-top: 0;">Query: {query}</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3 style="margin-top: 0;">Query: {query}</h3>
+            <span style="background: #e9ecef; padding: 4px 8px; border-radius: 4px; font-size: 0.9em;">Category: {category}</span>
+        </div>
         <div style="background: #f5f5f5; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
             <h4 style="margin-top: 0;">Ground Truth:</h4>
             <p>{gt_display}</p>
@@ -340,6 +390,15 @@ def format_conversation_card(
             <div style="flex: 1; padding: 10px; margin-left: 5px; background: #fff0f5; border-radius: 5px;">
                 <h4 style="margin-top: 0;">Run 2 ({run2_name}) Answer:</h4>
                 <p>{run2_answer}</p>
+            </div>
+        </div>
+        
+        <div style="display: flex; margin-bottom: 15px;">
+            <div style="flex: 1; margin-right: 5px;">
+                {format_metrics(run1_metrics, run1_name)}
+            </div>
+            <div style="flex: 1; margin-left: 5px;">
+                {format_metrics(run2_metrics, run2_name)}
             </div>
         </div>
         
@@ -423,6 +482,20 @@ def agent_viewer_ui():
                     "message": "No matching queries found between the two runs.",
                 }
 
+        # Create a map of query to category for faster lookups
+        query_to_category = {}
+        if dataset:
+            for sample in dataset.samples:
+                query_to_category[sample.query] = sample.category
+
+        # Get all unique categories
+        all_categories = set()
+        if dataset:
+            all_categories = set(dataset.unique_categories())
+
+        # Add "Unknown" category for queries not found in the dataset
+        all_categories.add("Unknown")
+
         # Prepare data for all conversations
         conversations = []
         for query in shared_queries:
@@ -454,6 +527,21 @@ def agent_viewer_ui():
                 else None
             )
 
+            # Get metrics for each run
+            run1_metrics = (
+                run1_conversations[query].get("metrics", {})
+                if query in run1_conversations
+                else {}
+            )
+            run2_metrics = (
+                run2_conversations[query].get("metrics", {})
+                if query in run2_conversations and run2_name
+                else {}
+            )
+
+            # Get category for this query
+            category = query_to_category.get(query, "Unknown")
+
             conversations.append(
                 {
                     "query": query,
@@ -462,6 +550,9 @@ def agent_viewer_ui():
                     "run2_answer": run2_answer,
                     "run1_history": run1_history,
                     "run2_history": run2_history,
+                    "run1_metrics": run1_metrics,
+                    "run2_metrics": run2_metrics,
+                    "category": category,
                 }
             )
 
@@ -471,9 +562,15 @@ def agent_viewer_ui():
             "run1_name": run1_name,
             "run2_name": run2_name,
             "single_run_mode": run2_name is None,
+            "categories": sorted(list(all_categories)),
         }
 
-    def update_ui(load_result, search_query="", current_index=0):
+    def update_ui(
+        load_result,
+        search_query="",
+        current_index=0,
+        selected_category="All Categories",
+    ):
         """Update the UI based on loaded data and current index"""
         if not load_result or not load_result.get("success", False):
             message = (
@@ -488,19 +585,28 @@ def agent_viewer_ui():
                 0,
                 0,
                 "",
+                gr.Dropdown(choices=["All Categories"]),
             )
 
         conversations = load_result.get("conversations", [])
         run1_name = load_result.get("run1_name", "Run 1")
         run2_name = load_result.get("run2_name", "Run 2")
         single_run_mode = load_result.get("single_run_mode", False)
+        categories = load_result.get("categories", ["All Categories"])
 
-        # Filter conversations based on search query if provided
-        if search_query:
-            search_query = search_query.lower()
-            filtered_conversations = []
-            for conv in conversations:
-                # Search in query text and both answers (or just run1 if single mode)
+        # Filter conversations based on search query and category
+        filtered_conversations = []
+        for conv in conversations:
+            # Check category filter
+            if (
+                selected_category != "All Categories"
+                and conv["category"] != selected_category
+            ):
+                continue
+
+            # Check search query
+            if search_query:
+                search_query = search_query.lower()
                 if single_run_mode:
                     if (
                         search_query in conv["query"].lower()
@@ -517,8 +623,8 @@ def agent_viewer_ui():
                         )
                     ):
                         filtered_conversations.append(conv)
-        else:
-            filtered_conversations = conversations
+            else:
+                filtered_conversations.append(conv)
 
         if not filtered_conversations:
             return (
@@ -528,6 +634,7 @@ def agent_viewer_ui():
                 0,
                 0,
                 "",
+                gr.Dropdown(choices=["All Categories"] + categories),
             )
 
         # Special case for single result to avoid math domain error
@@ -552,6 +659,9 @@ def agent_viewer_ui():
             current_conv["run2_answer"],
             current_conv["run1_history"],
             current_conv["run2_history"],
+            current_conv["run1_metrics"],
+            current_conv["run2_metrics"],
+            current_conv["category"],
         )
 
         # Navigation text
@@ -570,6 +680,7 @@ def agent_viewer_ui():
             current_index,
             len(filtered_conversations),
             current_conv["query"],
+            gr.Dropdown(choices=["All Categories"] + categories),
         )
 
     def go_to_next(current_idx, total):
@@ -580,7 +691,7 @@ def agent_viewer_ui():
 
     def clear_search(loaded_result):
         """Clear the search and show all conversations"""
-        return "", update_ui(loaded_result, "", 0)
+        return "", update_ui(loaded_result, "", 0, "All Categories")
 
     with gr.Blocks(title="Agent Conversation Viewer") as demo:
         gr.Markdown("# Agent Conversation Viewer")
@@ -612,11 +723,17 @@ def agent_viewer_ui():
         total_items = gr.State(0)
         current_query = gr.State("")
 
-        # Search functionality
+        # Search and filter functionality
         with gr.Row():
             search_input = gr.Textbox(
                 label="Search by query text or answers",
                 placeholder="Enter search terms...",
+                interactive=True,
+            )
+            category_filter = gr.Dropdown(
+                label="Filter by Category",
+                choices=["All Categories"],
+                value="All Categories",
                 interactive=True,
             )
             search_button = gr.Button("Search")
@@ -640,7 +757,7 @@ def agent_viewer_ui():
             fn=load_runs, inputs=[run1_name, run2_name, data_dir], outputs=[loaded_data]
         ).then(
             fn=update_ui,
-            inputs=[loaded_data, search_input, current_idx],
+            inputs=[loaded_data, search_input, current_idx, category_filter],
             outputs=[
                 conversation_display,
                 idx_slider,
@@ -648,13 +765,14 @@ def agent_viewer_ui():
                 current_idx,
                 total_items,
                 current_query,
+                category_filter,
             ],
         )
 
         # Search functionality
         search_button.click(
-            fn=lambda data, query: update_ui(data, query, 0),
-            inputs=[loaded_data, search_input],
+            fn=lambda data, query, cat: update_ui(data, query, 0, cat),
+            inputs=[loaded_data, search_input, category_filter],
             outputs=[
                 conversation_display,
                 idx_slider,
@@ -662,13 +780,14 @@ def agent_viewer_ui():
                 current_idx,
                 total_items,
                 current_query,
+                category_filter,
             ],
         )
 
         # Also trigger search on Enter key in the search box
         search_input.submit(
-            fn=lambda data, query: update_ui(data, query, 0),
-            inputs=[loaded_data, search_input],
+            fn=lambda data, query, cat: update_ui(data, query, 0, cat),
+            inputs=[loaded_data, search_input, category_filter],
             outputs=[
                 conversation_display,
                 idx_slider,
@@ -676,6 +795,22 @@ def agent_viewer_ui():
                 current_idx,
                 total_items,
                 current_query,
+                category_filter,
+            ],
+        )
+
+        # Category filter change
+        category_filter.change(
+            fn=lambda data, query, cat: update_ui(data, query, 0, cat),
+            inputs=[loaded_data, search_input, category_filter],
+            outputs=[
+                conversation_display,
+                idx_slider,
+                nav_text,
+                current_idx,
+                total_items,
+                current_query,
+                category_filter,
             ],
         )
 
@@ -691,6 +826,7 @@ def agent_viewer_ui():
                 current_idx,
                 total_items,
                 current_query,
+                category_filter,
             ],
         )
 
@@ -699,7 +835,7 @@ def agent_viewer_ui():
             fn=go_to_prev, inputs=[current_idx], outputs=[current_idx]
         ).then(
             fn=update_ui,
-            inputs=[loaded_data, search_input, current_idx],
+            inputs=[loaded_data, search_input, current_idx, category_filter],
             outputs=[
                 conversation_display,
                 idx_slider,
@@ -707,6 +843,7 @@ def agent_viewer_ui():
                 current_idx,
                 total_items,
                 current_query,
+                category_filter,
             ],
         )
 
@@ -714,7 +851,7 @@ def agent_viewer_ui():
             fn=go_to_next, inputs=[current_idx, total_items], outputs=[current_idx]
         ).then(
             fn=update_ui,
-            inputs=[loaded_data, search_input, current_idx],
+            inputs=[loaded_data, search_input, current_idx, category_filter],
             outputs=[
                 conversation_display,
                 idx_slider,
@@ -722,6 +859,7 @@ def agent_viewer_ui():
                 current_idx,
                 total_items,
                 current_query,
+                category_filter,
             ],
         )
 
@@ -729,7 +867,7 @@ def agent_viewer_ui():
             fn=lambda idx: idx, inputs=[idx_slider], outputs=[current_idx]
         ).then(
             fn=update_ui,
-            inputs=[loaded_data, search_input, current_idx],
+            inputs=[loaded_data, search_input, current_idx, category_filter],
             outputs=[
                 conversation_display,
                 idx_slider,
@@ -737,6 +875,7 @@ def agent_viewer_ui():
                 current_idx,
                 total_items,
                 current_query,
+                category_filter,
             ],
         )
 
