@@ -87,6 +87,7 @@ def fill_database(cc: CocoClient, cfg: DictConfig, dataset: RAGDataset):
         chunks=chunks,
         language=cfg.data.language,
         filename=cfg.data.name,
+        session_id=0,
         date_times=chunk_datetimes,
         model=cfg.retrieval.embedding_model[0],
         batch_size=cfg.data.fill_db.embed_and_store_batch_size,
