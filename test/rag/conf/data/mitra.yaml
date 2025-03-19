@@ -5,9 +5,9 @@ language: de
 limit_samples: null
 random_datetimes_if_missing: false
 backup_db: false
-clear_db: false
+clear_db: true
 fill_db:
-  skip: true
+  skip: false
   embed_and_store_batch_size: 25
   embed_and_store_limit_parallel: 10
 

@@ -9,6 +9,7 @@ get_answers:
   load_file_name_gt: ${general.data_dir}/runs/test-gt-qa-2/generated_answers_gt.json
   output_file_name_ret: ${general.data_dir}/runs/${wandb.name}/generated_answers_ret.json
   output_file_name_gt: ${general.data_dir}/runs/${wandb.name}/generated_answers_gt.json
+  output_file_name_agent: null
 
   # rag options
   rag_generate_answers_batch_size: 5

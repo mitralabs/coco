@@ -213,6 +213,7 @@ class AgentClient:
         max_tool_calls: int = 10,
         max_iterations: int = 5,
         temperature: float = 0.0,
+        return_just_answers: bool = True,
     ) -> Dict[str, Dict[str, Any]]:
         """Internal async method to handle multiple chat sessions in parallel.
 
@@ -227,8 +228,7 @@ class AgentClient:
         Returns:
             (answers, n_toolcalls): Tuple[List[str], List[int]]: List of answers and list of number of tool calls
         """
-        answers = []
-        n_toolcalls = []
+        results = []
         for query in queries:
             messages = [
                 {"role": "system", "content": system_prompt or self.system_prompt},
@@ -243,10 +243,11 @@ class AgentClient:
                 temperature=temperature,
                 stream=False,
             )
-            answers.append(result["content"])
-            n_toolcalls.append(len(result["tool_calls"]))
+            results.append(result)
 
-        return answers, n_toolcalls
+        if return_just_answers:
+            results = [r["content"] for r in results]
+        return results
 
     def chat_multiple(
         self,
@@ -260,6 +261,7 @@ class AgentClient:
         batch_size: int = 20,
         limit_parallel: int = 10,
         show_progress: bool = True,
+        return_just_answers: bool = True,
     ) -> Dict[str, Dict[str, Any]]:
         """Handle multiple chat sessions with tool calling support.
 
@@ -275,7 +277,16 @@ class AgentClient:
             show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to True.
 
         Returns:
-            Dict[str, Dict[str, Any]]: Dictionary mapping queries to their chat results
+            if return_just_answers is True:
+                List[str]: List of answers
+            else:
+                List[Dict[str, Any]]: List of chat results
+                {
+                    "content": str,
+                    "tool_calls": List[coco.structs.ToolCall],
+                    "tool_results": List[Any],
+                    "conversation_history": List[Dict[str, Any]],
+                }
         """
         if pull_model and self.llm_api == "ollama":
             models = self.lm.list_ollama_models()
@@ -299,4 +310,5 @@ class AgentClient:
             max_tool_calls=max_tool_calls,
             max_iterations=max_iterations,
             temperature=temperature,
+            return_just_answers=return_just_answers,
         )

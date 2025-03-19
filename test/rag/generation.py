@@ -73,6 +73,7 @@ def get_answers(
     load_from_file: bool,
     load_file_name: str,
     output_file_name: str,
+    output_file_name_agent: str,
 ) -> Dict[str, Dict[str, Any]]:
     if load_from_file:
         # load from file if specified
@@ -107,7 +108,7 @@ def get_answers(
             logger.info(f"Generated answers with mean tok_s {m_tok_s}")
         else:
             queries = list(top_chunks.keys())
-            generated_answers, n_toolcalls = cc.agent.chat_multiple(
+            results = cc.agent.chat_multiple(
                 queries=queries,
                 system_prompt=cfg.generation.get_answers.agent_system_prompt,
                 model=cfg.generation.llm_model[0],
@@ -118,12 +119,28 @@ def get_answers(
                 batch_size=cfg.generation.get_answers.agent_generate_answers_batch_size,
                 limit_parallel=cfg.generation.get_answers.agent_generate_answers_limit_parallel,
                 show_progress=True,
+                return_just_answers=False,
             )
-            answers = {q: a for q, a in zip(queries, generated_answers)}
+            answers = {q: r["content"] for q, r in zip(queries, results)}
             wandb.log(
-                {f"{wandb_prefix}/m_n_toolcalls": np.nanmean(np.array(n_toolcalls))}
+                {
+                    f"{wandb_prefix}/m_n_toolcalls": np.nanmean(
+                        np.array([len(r["tool_calls"]) for r in results])
+                    )
+                }
             )
             logger.info(f"Generated answers with agent")
+
+            # dump full history for all agentic answers
+            dumpable_results = [r.copy() for r in results]
+            for r in dumpable_results:
+                r["tool_calls"] = [t.to_dict() for t in r["tool_calls"]]
+            agent_conversations = {q: r for q, r in zip(queries, dumpable_results)}
+            agent_conversations_file = Path(output_file_name_agent)
+            agent_conversations_file.parent.mkdir(parents=True, exist_ok=True)
+            with agent_conversations_file.open("w") as f:
+                json.dump(agent_conversations, f)
+            logger.info(f"Saved agent conversations to {agent_conversations_file}")
     # save to file
     output_file = Path(output_file_name)
     output_file.parent.mkdir(parents=True, exist_ok=True)
@@ -483,6 +500,7 @@ def generation_stage(
         load_from_file=cfg.generation.get_answers.load_from_file,
         load_file_name=cfg.generation.get_answers.load_file_name_ret,
         output_file_name=cfg.generation.get_answers.output_file_name_ret,
+        output_file_name_agent=cfg.generation.get_answers.output_file_name_agent,
     )
     groundedness(
         ds=ds,
@@ -528,6 +546,7 @@ def generation_stage(
             load_from_file=cfg.generation.get_answers.load_from_file,
             load_file_name=cfg.generation.get_answers.load_file_name_gt,
             output_file_name=cfg.generation.get_answers.output_file_name_gt,
+            output_file_name_agent=cfg.generation.get_answers.output_file_name_agent,
         )
         groundedness(
             ds=ds,
