@@ -44,6 +44,7 @@ class DbApiClient:
         n_results: int = 5,
         start_date_time: Optional[datetime.datetime] = None,
         end_date_time: Optional[datetime.datetime] = None,
+        session_id: Optional[int] = None,
         contains_substring: Optional[str] = None,
     ):
         """Retrieve the closest results from the database service.
@@ -53,6 +54,7 @@ class DbApiClient:
             n_results (int, optional): The number of results to return. Defaults to 5.
             start_date_time (datetime.datetime, optional): Only return documents with a date greater than or equal to this. Defaults to None.
             end_date_time (datetime.datetime, optional): Only return documents with a date less than or equal to this. Defaults to None.
+            session_id (int, optional): Only return documents with this session ID. Defaults to None.
             contains_substring (str, optional): Only return documents that contain this substring. Defaults to None.
         Returns:
             Tuple[List[str], List[str], List[Dict], List[float]]: (ids, documents, metadatas, distances)
@@ -60,7 +62,7 @@ class DbApiClient:
                 - language: str (the chunk's language)
                 - filename: str (the audio filename the chunk was extracted from)
                 - chunk_index: int (the index of the chunk in the audio file)
-                - total_chunks: int (the total number of chunks of the audio file)
+                - session_id: int (the session ID)
                 - date_time: str (ISO format date string, or None if no date is present)
         """
         with httpx.Client() as client:
@@ -69,6 +71,8 @@ class DbApiClient:
                 request_data["start_date_time"] = start_date_time.isoformat()
             if end_date_time:
                 request_data["end_date_time"] = end_date_time.isoformat()
+            if session_id is not None:
+                request_data["session_id"] = session_id
             if contains_substring:
                 request_data["contains_substring"] = contains_substring
             response = client.post(
@@ -96,6 +100,7 @@ class DbApiClient:
         n_results: int = 5,
         start_date_time: Optional[datetime.datetime] = None,
         end_date_time: Optional[datetime.datetime] = None,
+        session_id: Optional[int] = None,
     ):
         """Internal async method to get closest results from the database.
 
@@ -104,6 +109,7 @@ class DbApiClient:
             n_results: Number of results to return per embedding
             start_date_time: Optional datetime object to filter results (inclusive)
             end_date_time: Optional datetime object to filter results (inclusive)
+            session_id: Optional session ID to filter results
 
         Note:
             start_date_time and end_date_time must be datetime objects, not strings
@@ -114,6 +120,8 @@ class DbApiClient:
                 request_data["start_date_time"] = start_date_time.isoformat()
             if end_date_time:
                 request_data["end_date_time"] = end_date_time.isoformat()
+            if session_id is not None:
+                request_data["session_id"] = session_id
 
             response = await client.post(
                 f"{self.base_url}/get_multiple_closest",
@@ -148,6 +156,7 @@ class DbApiClient:
         show_progress: bool = True,
         start_date_time: Optional[datetime.datetime] = None,
         end_date_time: Optional[datetime.datetime] = None,
+        session_id: Optional[int] = None,
     ):
         """Get the closest results from the database service for multiple embeddings.
 
@@ -159,6 +168,7 @@ class DbApiClient:
             show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to True.
             start_date_time (datetime.datetime, optional): Only return documents with a date greater than or equal to this. Defaults to None.
             end_date_time (datetime.datetime, optional): Only return documents with a date less than or equal to this. Defaults to None.
+            session_id (int, optional): Only return documents with this session ID. Defaults to None.
 
         Returns:
             List[Tuple[List[str], List[str], List[Dict], List[float]]]: The closest results for each embedding.
@@ -166,7 +176,7 @@ class DbApiClient:
                 - language: str (the chunk's language)
                 - filename: str (the audio filename the chunk was extracted from)
                 - chunk_index: int (the index of the chunk in the audio file)
-                - total_chunks: int (the total number of chunks of the audio file)
+                - session_id: int (the session ID)
                 - date_time: str (ISO format date string, or None if no date is present)
         """
         batched_get_multiple_closest = batched_parallel(
@@ -177,7 +187,7 @@ class DbApiClient:
             description="Getting multiple closest",
         )
         return batched_get_multiple_closest(
-            embeddings, n_results, start_date_time, end_date_time
+            embeddings, n_results, start_date_time, end_date_time, session_id
         )
 
     def get_full_database(
@@ -197,7 +207,7 @@ class DbApiClient:
                 - language: str (the chunk's language)
                 - filename: str (the audio filename the chunk was extracted from)
                 - chunk_index: int (the index of the chunk in the audio file)
-                - total_chunks: int (the total number of chunks of the audio file)
+                - session_id: int (the session ID)
                 - date_time: str (ISO format date string, or None if no date is present)
         """
         with httpx.Client() as client:
@@ -225,6 +235,69 @@ class DbApiClient:
 
         return ids, documents, metadatas
 
+    def get_by_session_id(self, session_id: str) -> dict:
+        """Get all documents that belong to a specific session.
+
+        Args:
+            session_id (str): The session ID to search for
+
+        Returns:
+            dict: Response containing the documents and their metadata
+        """
+        with httpx.Client() as client:
+            response = client.post(
+                f"{self.base_url}/get_by_session_id",
+                params={"session_id": session_id},
+                headers={"X-API-Key": self.api_key},
+            )
+            response.raise_for_status()
+            return response.json()
+
+    def get_by_date(
+        self,
+        start_date_time: Optional[datetime.datetime] = None,
+        end_date_time: Optional[datetime.datetime] = None,
+    ):
+        """Get documents filtered by date range.
+
+        Args:
+            start_date_time (datetime.datetime, optional): Only return documents with a date greater than or equal to this. Defaults to None.
+            end_date_time (datetime.datetime, optional): Only return documents with a date less than or equal to this. Defaults to None.
+
+        Returns:
+            Tuple[List[str], List[str], List[Dict]]: (ids, documents, metadatas)
+            metadata dict includes:
+                - language: str (the chunk's language)
+                - filename: str (the audio filename the chunk was extracted from)
+                - chunk_index: int (the index of the chunk in the audio file)
+                - session_id: int (the session ID)
+                - date_time: str (ISO format date string, or None if no date is present)
+        """
+        with httpx.Client() as client:
+            params = {}
+            if start_date_time:
+                params["start_date_time"] = start_date_time.isoformat()
+            if end_date_time:
+                params["end_date_time"] = end_date_time.isoformat()
+
+            response = client.post(
+                f"{self.base_url}/get_by_date",
+                json=params,
+                headers={"X-API-Key": self.api_key, "Content-Type": "application/json"},
+            )
+            response.raise_for_status()
+            results_response = response.json()
+
+        if not results_response.get("status") == "success":
+            logger.error(f"Database get_by_date failed: {results_response['error']}")
+
+        results = results_response["results"]
+        ids = [result["id"] for result in results]
+        documents = [result["document"] for result in results]
+        metadatas = [result["metadata"] for result in results]
+
+        return ids, documents, metadatas
+
     def clear_database(self) -> int:
         """Clear the database.
 
@@ -245,23 +318,71 @@ class DbApiClient:
         deleted_count = del_response["count"]
         return deleted_count
 
+    def delete_by_session_id(self, session_id: int):
+        """Delete all documents with the specified session_id.
+
+        Args:
+            session_id (int): The session ID to delete documents for
+
+        Returns:
+            dict: Response containing the number of documents deleted
+        """
+        with httpx.Client() as client:
+            response = client.delete(
+                f"{self.base_url}/delete_by_session_id",
+                params={"session_id": session_id},
+                headers={"X-API-Key": self.api_key},
+            )
+            response.raise_for_status()
+            return response.json()
+
+    def delete_by_date(
+        self,
+        start_date_time: Optional[datetime.datetime] = None,
+        end_date_time: Optional[datetime.datetime] = None,
+    ):
+        """Delete documents within a specified date range.
+
+        Args:
+            start_date_time (datetime.datetime, optional): Delete documents with a date greater than or equal to this. Defaults to None.
+            end_date_time (datetime.datetime, optional): Delete documents with a date less than or equal to this. Defaults to None.
+
+        Returns:
+            dict: Response containing the number of documents deleted
+        """
+        with httpx.Client() as client:
+            params = {}
+            if start_date_time:
+                params["start_date_time"] = start_date_time.isoformat()
+            if end_date_time:
+                params["end_date_time"] = end_date_time.isoformat()
+
+            response = client.delete(
+                f"{self.base_url}/delete_by_date",
+                params=params,
+                headers={"X-API-Key": self.api_key},
+            )
+            response.raise_for_status()
+            return response.json()
+
     async def _store_multiple(
         self,
         chunks: List[str],
         embeddings: List[List[float]],
         language: str,
         filename: str,
+        session_id: int,
         date_times: List[Optional[datetime.datetime]] = None,
+        chunk_indices: List[int] = None,
     ) -> Tuple[List[int], List[int]]:
         documents = []
-        n_chunks = len(chunks)
 
-        # Handle the case when date_times is None
-        if date_times is None:
-            date_times = [None] * n_chunks
+        # Use provided chunk indices or default to array indices
+        if chunk_indices is None:
+            chunk_indices = list(range(len(chunks)))
 
-        for i, (chunk, embedding, doc_date_time) in enumerate(
-            zip(chunks, embeddings, date_times)
+        for i, (chunk, embedding, chunk_index, doc_date_time) in enumerate(
+            zip(chunks, embeddings, chunk_indices, date_times or [None] * len(chunks))
         ):
             documents.append(
                 {
@@ -270,8 +391,8 @@ class DbApiClient:
                     "metadata": {
                         "language": language,
                         "filename": filename,
-                        "chunk_index": i,
-                        "total_chunks": n_chunks,
+                        "chunk_index": chunk_index,
+                        "session_id": session_id,
                         "date_time": (
                             doc_date_time.isoformat() if doc_date_time else None
                         ),
@@ -300,7 +421,9 @@ class DbApiClient:
         embeddings: List[List[float]],
         language: str,
         filename: str,
+        session_id: int,
         date_times: List[Optional[datetime.datetime]] = None,
+        chunk_indices: List[int] = None,
         batch_size: int = 20,
         limit_parallel: int = 10,
         show_progress: bool = False,
@@ -312,7 +435,9 @@ class DbApiClient:
             embeddings (List[List[float]]): The embeddings of the chunks.
             language (str): The language of the chunks.
             filename (str): The filename of the chunks.
+            session_id (int): The session ID to associate with the chunks.
             date_times (List[Optional[datetime.datetime]], optional): The dates of the chunks. Defaults to None.
+            chunk_indices (List[int], optional): The indices of the chunks. Defaults to None (will use array indices).
             batch_size (int, optional): The size of each batch. Defaults to 20.
             limit_parallel (int, optional): The maximum number of parallel tasks / batches. Defaults to 10.
             show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to False.
@@ -329,6 +454,12 @@ class DbApiClient:
             description="Storing in database",
         )
         ns_added, ns_skipped = batched_store_multiple(
-            chunks, embeddings, language, filename, date_times
+            chunks,
+            embeddings,
+            language,
+            filename,
+            session_id,
+            date_times,
+            chunk_indices,
         )
         return sum(ns_added), sum(ns_skipped)
