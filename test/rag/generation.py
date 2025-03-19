@@ -318,6 +318,13 @@ def correctness(
         "geval_correctness": [],
     }
 
+    # load agent conversations json file if exists to add metrics
+    agent_conversations = None
+    agent_conversations_file = Path(cfg.generation.get_answers.output_file_name_agent)
+    if agent_conversations_file.exists():
+        with agent_conversations_file.open("r") as f:
+            agent_conversations = json.load(f)
+
     for sample in tqdm(ds, desc="Computing answer correctness metrics"):
         assert len(sample.gt_answers) == 1
         gt_answer = sample.gt_answers[0]
@@ -329,13 +336,13 @@ def correctness(
             lang="de",
         )
         category_sample_metrics[sample.category]["bertscore_precisions"].append(
-            bertscore["precision"]
+            bertscore["precision"][0]
         )
         category_sample_metrics[sample.category]["bertscore_recalls"].append(
-            bertscore["recall"]
+            bertscore["recall"][0]
         )
         category_sample_metrics[sample.category]["bertscore_f1s"].append(
-            bertscore["f1"]
+            bertscore["f1"][0]
         )
         rouge = rouge_metric.compute(
             predictions=[generated_answer],
@@ -384,6 +391,31 @@ def correctness(
             category_sample_metrics[sample.category]["geval_correctness"].append(
                 geval_correctness_metric.score
             )
+
+        if agent_conversations is not None:
+            agent_conversations[sample.query]["metrics"] = {
+                "bertscore_precision": float(bertscore["precision"][0]),
+                "bertscore_recall": float(bertscore["recall"][0]),
+                "bertscore_f1": float(bertscore["f1"][0]),
+                "rouge1": float(rouge["rouge1"]),
+                "rouge2": float(rouge["rouge2"]),
+                "rougeL": float(rouge["rougeL"]),
+                "rougeLsum": float(rouge["rougeLsum"]),
+                "sacrebleu_score": float(sacrebleu["score"]),
+                "sacrebleu_precision1": float(sacrebleu["precisions"][0]),
+                "sacrebleu_precision2": float(sacrebleu["precisions"][1]),
+                "sacrebleu_precision3": float(sacrebleu["precisions"][3]),
+                "sacrebleu_bp": float(sacrebleu["bp"]),
+                "semscore_paper": float(semscore_scores["paper"]),
+                "semscore_multilingual": float(semscore_scores["multilingual"]),
+                "geval_correctness": float(geval_correctness_metric.score),
+            }
+
+    # save agent conversations json file if exists
+    if agent_conversations is not None:
+        with agent_conversations_file.open("w") as f:
+            json.dump(agent_conversations, f)
+        logger.info(f"Saved agent conversations to {agent_conversations_file}")
 
     # aggregate metrics across categories
     for cat, sample_metrics in category_sample_metrics.items():
