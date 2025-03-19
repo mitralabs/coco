@@ -312,3 +312,70 @@ class AgentClient:
             temperature=temperature,
             return_just_answers=return_just_answers,
         )
+
+    def chat_multiple_sequential(
+        self,
+        queries: List[str],
+        system_prompt: str = None,
+        model: str = "llama3.2:1b",
+        max_tool_calls: int = 10,
+        max_iterations: int = 5,
+        temperature: float = 0.0,
+        pull_model: bool = False,
+        batch_size: int = 20,
+        limit_parallel: int = 10,
+        show_progress: bool = True,
+        return_just_answers: bool = True,
+    ) -> Dict[str, Dict[str, Any]]:
+        """Sequentially handle multiple chat sessions with tool calling support.
+
+        Args:
+            queries (List[str]): List of user queries
+            model (str, optional): Model to use for chat completion. Defaults to "llama3.2:1b".
+            max_tool_calls (int, optional): Maximum number of tool calls. Defaults to 10.
+            max_iterations (int, optional): Maximum number of iterations for tool calling. Defaults to 5.
+            temperature (float, optional): Temperature for chat completion. Defaults to 0.0.
+            pull_model (bool, optional): Whether to pull the ollama model. Defaults to False.
+            batch_size (int, optional): The batch size to use. Defaults to 20.
+            limit_parallel (int, optional): The maximum number of parallel tasks / batches. Defaults to 10.
+            show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to True.
+
+        Returns:
+            if return_just_answers is True:
+                List[str]: List of answers
+            else:
+                List[Dict[str, Any]]: List of chat results
+                {
+                    "content": str,
+                    "tool_calls": List[coco.structs.ToolCall],
+                    "tool_results": List[Any],
+                    "conversation_history": List[Dict[str, Any]],
+                }
+        """
+        if pull_model and self.llm_api == "ollama":
+            models = self.lm.list_ollama_models()
+            if model not in models:
+                logger.info(f"Pulling model {model} because it is not available")
+                self.lm.pull_ollama_model(model)
+                logger.info(f"Pulled model {model}")
+
+        results = []
+        for query in queries:
+            messages = [
+                {"role": "system", "content": system_prompt or self.system_prompt},
+                {"role": "user", "content": query},
+            ]
+
+            result = self.chat(
+                messages=messages,
+                model=model,
+                max_tool_calls=max_tool_calls,
+                max_iterations=max_iterations,
+                temperature=temperature,
+                stream=False,
+            )
+            results.append(result)
+
+        if return_just_answers:
+            results = [r["content"] for r in results]
+        return results
