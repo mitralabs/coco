@@ -129,20 +129,21 @@ class RAGDataset:
 
     @classmethod
     def from_custom_datasets(
-        cls, custom_datasets: Dict[str, Any], split: Literal["train", "test"]
+        cls, custom_datasets: Dict[str, Any], split: Literal["train", "test", "full"]
     ) -> "RAGDataset":
         """Create a Dataset from a custom dataset."""
-        assert split in ["train", "test"], "split must be train or test"
+        assert split in ["train", "test", "full"], "split must be train, test, or full"
         samples = []
         all_chunks = []
         all_chunk_datetimes = []
         for category, dataset in custom_datasets.items():
             split_idx = int(len(dataset["question"]) * 0.8)
-            split_slice = (
-                slice(0, split_idx)
-                if split == "train"
-                else slice(split_idx, len(dataset["question"]))
-            )
+            if split == "full":
+                split_slice = slice(0, len(dataset["question"]))
+            elif split == "train":
+                split_slice = slice(0, split_idx)
+            else:
+                split_slice = slice(split_idx, len(dataset["question"]))
             for q, a, chunks, chunk_datetimes in zip(
                 dataset["question"][split_slice],
                 dataset["answer"][split_slice],
