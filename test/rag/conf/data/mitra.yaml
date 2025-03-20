@@ -18,3 +18,4 @@ use_test: false
 
 # custom settings
 custom_samples_root: ../dataset/datasets_by_category
+custom_split: train # train or test

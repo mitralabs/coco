@@ -1,7 +1,7 @@
 import datetime
 import logging
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional, Tuple, Literal
 
 logger = logging.getLogger(__name__)
 
@@ -128,17 +128,26 @@ class RAGDataset:
         return cls(samples, supports_retrieval=True)
 
     @classmethod
-    def from_custom_datasets(cls, custom_datasets: Dict[str, Any]) -> "RAGDataset":
+    def from_custom_datasets(
+        cls, custom_datasets: Dict[str, Any], split: Literal["train", "test"]
+    ) -> "RAGDataset":
         """Create a Dataset from a custom dataset."""
+        assert split in ["train", "test"], "split must be train or test"
         samples = []
         all_chunks = []
         all_chunk_datetimes = []
         for category, dataset in custom_datasets.items():
+            split_idx = int(len(dataset["question"]) * 0.8)
+            split_slice = (
+                slice(0, split_idx)
+                if split == "train"
+                else slice(split_idx, len(dataset["question"]))
+            )
             for q, a, chunks, chunk_datetimes in zip(
-                dataset["question"],
-                dataset["answer"],
-                dataset["chunks"],
-                dataset["chunk_datetimes"],
+                dataset["question"][split_slice],
+                dataset["answer"][split_slice],
+                dataset["chunks"][split_slice],
+                dataset["chunk_datetimes"][split_slice],
             ):
                 samples.append(
                     Sample(
