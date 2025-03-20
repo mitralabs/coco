@@ -330,10 +330,13 @@ def correctness(
 
     # load agent conversations json file if exists to add metrics
     agent_conversations = None
-    agent_conversations_file = Path(cfg.generation.get_answers.output_file_name_agent)
-    if agent_conversations_file.exists():
-        with agent_conversations_file.open("r") as f:
-            agent_conversations = json.load(f)
+    if cfg.generation.get_answers.output_file_name_agent is not None:
+        agent_conversations_file = Path(
+            cfg.generation.get_answers.output_file_name_agent
+        )
+        if agent_conversations_file.exists():
+            with agent_conversations_file.open("r") as f:
+                agent_conversations = json.load(f)
 
     for sample in tqdm(ds, desc="Computing answer correctness metrics"):
         assert len(sample.gt_answers) == 1
