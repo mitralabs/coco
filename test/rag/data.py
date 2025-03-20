@@ -104,7 +104,9 @@ def data_stage(cc: CocoClient, cfg: DictConfig) -> Dataset:
         ds = RAGDataset.from_dpr_dataset(hf_dpr_dataset)
     elif cfg.data.type == "custom":
         custom_datasets = parse.get_datasets(samples_path=cfg.data.custom_samples_root)
-        ds = RAGDataset.from_custom_datasets(custom_datasets)
+        ds = RAGDataset.from_custom_datasets(
+            custom_datasets, split=cfg.data.custom_split
+        )
     else:
         logger.error(f"Invalid dataset type: {cfg.data.type}")
         wandb.finish()

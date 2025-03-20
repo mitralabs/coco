@@ -18,3 +18,4 @@ use_test: false
 
 # custom settings
 custom_samples_root: null
+custom_split: null
