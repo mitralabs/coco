@@ -107,7 +107,7 @@ class ToolDefinition:
                 "name": self.name,
                 "description": self.description,
                 "parameters": {
-                    "type": "object",
+                    "type": "dict",
                     "properties": properties,
                     "required": required,
                 },
