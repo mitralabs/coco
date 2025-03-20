@@ -268,9 +268,19 @@ def correctness(
     sacrebleu_metric = load("sacrebleu")
     semscore_metric = SemScore()
     if not cfg.generation.geval.skip:
+        GT = LLMTestCaseParams.EXPECTED_OUTPUT.value
+        PRED = LLMTestCaseParams.ACTUAL_OUTPUT.value
+        Q = LLMTestCaseParams.INPUT.value
         geval_correctness_metric = GEval(
             name="correctness",
-            criteria="Determine whether the actual output is factually correct based on the expected output.",
+            evaluation_steps=[
+                f"List all statements made by {PRED}.",
+                f"List all statements made by {GT}.",
+                f"Make sure statements of {PRED} answer the question or fulfill the request posed by {Q}. (IMPORTANT: Only pay attention to semantic meanings, NOT sentence structure, grammar, word choice, etc.)",
+                f"Make sure all statements of {PRED} are present in {GT}. (IMPORTANT: Only pay attention to semantic meanings, NOT sentence structure, grammar, word choice, etc.)",
+                f"Make sure {PRED} contains no statements not present in {GT}. (IMPORTANT: Only pay attention to semantic meanings, NOT sentence structure, grammar, word choice, etc.)",
+                f"Make sure you do not let differences in sentence structure, grammar, word choice, etc. affect your score.",
+            ],
             evaluation_params=[
                 LLMTestCaseParams.INPUT,
                 LLMTestCaseParams.ACTUAL_OUTPUT,
@@ -554,20 +564,13 @@ def generation_stage(
     logger.info("Generation stage for retrieved chunks completed")
 
     # optimization target for wandb sweeps
-    optimization_target_metrics = [
-        "bertscore_f1",
-        "semscore_multilingual",
-        "rougeLsum",
-        "sacrebleu",
-        "geval_correctness",
-    ]
-    optimization_target_weights = [1.0] * len(optimization_target_metrics)
-    optimization_target = sum(
-        [
-            w * ret_corr_metrics[m]
-            for w, m in zip(optimization_target_weights, optimization_target_metrics)
-        ]
-    ) / sum(optimization_target_weights)
+    optimization_target = (
+        0.2 * ret_corr_metrics["geval_correctness"]
+        + 0.2 * ret_corr_metrics["bertscore_f1"]
+        + 0.2 * ret_corr_metrics["semscore"]
+        + 0.2 * ret_corr_metrics["rougeLsum"]
+        + 0.2 * (ret_corr_metrics["sacrebleu"] / 100)
+    )
     wandb.log({"optimization_target": optimization_target})
 
     if not cfg.data.type == "custom":  # our dataset does not have gt chunks

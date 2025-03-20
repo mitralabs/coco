@@ -36,7 +36,9 @@ def get_dataset(cfg) -> Optional[RAGDataset]:
             custom_datasets = data.parse.get_datasets(
                 samples_path=cfg.data.custom_samples_root
             )
-            return RAGDataset.from_custom_datasets(custom_datasets)
+            return RAGDataset.from_custom_datasets(
+                custom_datasets, split=cfg.data.custom_split
+            )
     except Exception as e:
         print(f"Error loading dataset: {e}")
     return None
