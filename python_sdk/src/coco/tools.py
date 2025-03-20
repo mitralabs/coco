@@ -240,7 +240,7 @@ class ToolsClient:
     def semantic_query(
         self,
         query_text: str,
-        num_results: int = 5,
+        num_results: int = 25,
         start_date_time_iso: Optional[str] = None,
         end_date_time_iso: Optional[str] = None,
         contains_substring: Optional[str] = None,
@@ -249,7 +249,7 @@ class ToolsClient:
 
         Args:
             query_text (str): The query text to search for. This will be compared to the database chunks by embedding similarity.
-            num_results (int, optional): The number of chunks to return for the query. If not set, defaults to 5.
+            num_results (int, optional): The number of chunks to return for the query. If not set, defaults to 25.
             start_date_time_iso (Optional[str], optional): The start date in ISO format. If provided, only chunks dated after this date will be considered. If not set, all knowledge chunks will be considered.
             end_date_time_iso (Optional[str], optional): The end date in ISO format. If provided, only chunks dated before this date will be considered. If not set, all knowledge chunks will be considered.
             contains_substring (Optional[str], optional): Only consider chunks that contain this substring (case insensitive). If not set, all knowledge chunks will be considered.
