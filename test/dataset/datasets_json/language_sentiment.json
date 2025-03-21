@@ -92,7 +92,7 @@
     "Answer": "Claudia, die Projektmanagerin.",
     "chunks": [
       {
-        "text": "Ich: Das Meeting war produktiv. Tom hat gute Ideen eingebracht und Sarah hat die technischen Details gut erklärt.\nMax: Und wie fandest du Claudias Projektupdate?\nIch: Es war... informativ. Die Zeitpläne scheinen realistisch zu sein.",
+        "text": "Ich: Das Meeting war produktiv. Tim hat gute Ideen eingebracht und Sarah hat die technischen Details gut erklärt.\nMax: Und wie fandest du Claudias Projektupdate?\nIch: Es war... informativ. Die Zeitpläne scheinen realistisch zu sein.",
         "datetime": "2024-06-05 09-30"
       },
       {
@@ -100,11 +100,11 @@
         "datetime": "2024-06-10 14-45"
       },
       {
-        "text": "Claudia: Haben Sie die Dokumente für das Meeting vorbereitet?\nIch: Ja, Sabine. Ich habe sie Ihnen soeben per E-Mail zugesendet.\nClaudia: Danke. Bitte stellen Sie sicher, dass Sie beim nächsten Mal die Formatvorlage verwenden.\nIch: Selbstverständlich. Entschuldigen Sie das Versehen.",
+        "text": "Claudia: Haben Sie die Dokumente für das Meeting vorbereitet?\nIch: Ja, Claudia. Ich habe sie Ihnen soeben per E-Mail zugesendet.\nClaudia: Danke. Bitte stellen Sie sicher, dass Sie beim nächsten Mal die Formatvorlage verwenden.\nIch: Selbstverständlich. Entschuldigen Sie das Versehen.",
         "datetime": "2024-06-15 11-20"
       },
       {
-        "text": "Tom: Die Stimmung zwischen dir und Claudia scheint etwas angespannt zu sein.\nIch: Wir haben einfach unterschiedliche Arbeitsstile. Es ist nichts Persönliches. Wir bleiben professionell und erledigen unsere Aufgaben.",
+        "text": "Tim: Die Stimmung zwischen dir und Claudia scheint etwas angespannt zu sein.\nIch: Wir haben einfach unterschiedliche Arbeitsstile. Es ist nichts Persönliches. Wir bleiben professionell und erledigen unsere Aufgaben.",
         "datetime": "2024-06-20 16-30"
       }
     ]
@@ -250,7 +250,7 @@
         "datetime": "2024-03-07 10-45"
       },
       {
-        "text": "Karen: Was denkst du über die neue Marketingstrategie?\nIch: Das neue Marketingkonzept zielt auf eine breitere Zielgruppe ab. Wir sollten die Botschaft einfach halten und emotionale Elemente einbauen, damit sie bei den Kunden ankommt.",
+        "text": "Rebecca: Was denkst du über die neue Marketingstrategie?\nIch: Das neue Marketingkonzept zielt auf eine breitere Zielgruppe ab. Wir sollten die Botschaft einfach halten und emotionale Elemente einbauen, damit sie bei den Kunden ankommt.",
         "datetime": "2024-03-08 15-30"
       },
       {
@@ -265,10 +265,10 @@
   },
   {
     "Question": "Welche Person macht mich durch ihre Kommunikation besonders nervös oder unsicher?",
-    "Answer": "Meine Kollegin Sabine aus der Rechtsabteilung.",
+    "Answer": "Meine Kollegin Renate aus der Rechtsabteilung.",
     "chunks": [
       {
-        "text": "Sabine: Könntest du mir kurz erläutern, warum du diese Entscheidung getroffen hast?\nIch: Äh, ja, also... ich habe – lass mich kurz nachdenken – ich habe die Daten analysiert und, ähm, festgestellt, dass diese Option, nun ja, die besten Ergebnisse liefern würde. Ich kann dir gerne die Details zeigen, wenn du, ähm, wenn du möchtest?",
+        "text": "Renate: Könntest du mir kurz erläutern, warum du diese Entscheidung getroffen hast?\nIch: Äh, ja, also... ich habe – lass mich kurz nachdenken – ich habe die Daten analysiert und, ähm, festgestellt, dass diese Option, nun ja, die besten Ergebnisse liefern würde. Ich kann dir gerne die Details zeigen, wenn du, ähm, wenn du möchtest?",
         "datetime": "2024-05-03 09-30"
       },
       {
@@ -276,11 +276,11 @@
         "datetime": "2024-05-04 14-15"
       },
       {
-        "text": "Sabine: Ich habe einige Anmerkungen zu deinem Bericht.\nIch: Oh, natürlich, ja... Was – ähm – was genau meinst du? War etwas nicht... nicht korrekt oder unvollständig vielleicht?",
+        "text": "Renate: Ich habe einige Anmerkungen zu deinem Bericht.\nIch: Oh, natürlich, ja... Was – ähm – was genau meinst du? War etwas nicht... nicht korrekt oder unvollständig vielleicht?",
         "datetime": "2024-05-10 11-45"
       },
       {
-        "text": "Thomas: Musst du Sabine noch auf ihre E-Mail antworten?\nIch: Ja, ich setze mich gleich dran. \nThomas: Was schreibst du ihr?\nIch: Sehr geehrte Frau Schmidt, anbei finden Sie wie besprochen die angeforderten Unterlagen. Ich hoffe, dass diese alle notwendigen Informationen enthalten. Sollten Sie weitere Fragen haben oder zusätzliche Dokumente benötigen, zögern Sie bitte nicht, mich zu kontaktieren. Ich stehe jederzeit zur Verfügung, um eventuelle Unklarheiten zu beseitigen. Mit freundlichen Grüßen...",
+        "text": "Thomas: Musst du Renate noch auf ihre E-Mail antworten?\nIch: Ja, ich setze mich gleich dran. \nThomas: Was schreibst du ihr?\nIch: Sehr geehrte Frau Schmidt, anbei finden Sie wie besprochen die angeforderten Unterlagen. Ich hoffe, dass diese alle notwendigen Informationen enthalten. Sollten Sie weitere Fragen haben oder zusätzliche Dokumente benötigen, zögern Sie bitte nicht, mich zu kontaktieren. Ich stehe jederzeit zur Verfügung, um eventuelle Unklarheiten zu beseitigen. Mit freundlichen Grüßen...",
         "datetime": "2024-05-12 16-20"
       }
     ]
