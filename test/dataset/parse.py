@@ -1,4 +1,5 @@
 import csv
+import json
 from pathlib import Path
 from datetime import datetime
 
@@ -18,6 +19,10 @@ def get_dataset(dataset_file: Path) -> dict:
         }
     """
     data = {"question": [], "answer": [], "chunks": [], "chunk_datetimes": []}
+
+    if dataset_file.suffix.lower() == ".json":
+        return get_json_dataset(dataset_file)
+
     with dataset_file.open("r", encoding="utf-8") as f:
         reader = csv.reader(f, delimiter=";", quotechar='"')
         header = next(reader)
@@ -53,11 +58,61 @@ def get_dataset(dataset_file: Path) -> dict:
     return data
 
 
-def get_datasets(samples_path: str) -> dict:
-    """Load all datasets (categories) from csv files in samples directory.
+def get_json_dataset(dataset_file: Path) -> dict:
+    """Load single dataset (category) from json file.
 
     Args:
-        samples_path (str): Path to directory with csv files with datasets.
+        dataset_file (Path): Path to json file with dataset.
+
+    Returns:
+        dict: {
+            "question": list[str],
+            "answer": list[str],
+            "chunks": list[list[str]],
+            "chunk_datetimes": list[list[datetime]],
+        }
+    """
+    data = {"question": [], "answer": [], "chunks": [], "chunk_datetimes": []}
+
+    with dataset_file.open("r", encoding="utf-8") as f:
+        json_data = json.load(f)
+
+        for i, item in enumerate(json_data):
+            if "Question" in item and "Answer" in item and "chunks" in item:
+                question = item["Question"]
+                answer = item["Answer"]
+
+                chunk_texts = []
+                chunk_dates = []
+
+                for chunk in item["chunks"]:
+                    if "text" in chunk and "datetime" in chunk:
+                        chunk_texts.append(chunk["text"])
+                        try:
+                            dt = datetime.strptime(chunk["datetime"], "%Y-%m-%d %H-%M")
+                            chunk_dates.append(dt)
+                        except Exception as e:
+                            print(
+                                f"Error parsing datetime for item {i + 1}: {e} of dataset: {dataset_file}"
+                            )
+
+                assert len(chunk_texts) == len(
+                    chunk_dates
+                ), f"Item {i + 1} of {dataset_file} has {len(chunk_texts)} chunks and {len(chunk_dates)} chunk datetimes"
+
+                data["question"].append(question)
+                data["answer"].append(answer)
+                data["chunks"].append(chunk_texts)
+                data["chunk_datetimes"].append(chunk_dates)
+
+    return data
+
+
+def get_datasets(samples_path: str) -> dict:
+    """Load all datasets (categories) from csv and json files in samples directory.
+
+    Args:
+        samples_path (str): Path to directory with csv/json files with datasets.
 
     Returns:
         dict: {
@@ -68,6 +123,8 @@ def get_datasets(samples_path: str) -> dict:
     samples_dir = Path(samples_path)
     datasets = {}
     for dataset_file in samples_dir.glob("*.csv"):
+        datasets[dataset_file.stem] = get_dataset(dataset_file)
+    for dataset_file in samples_dir.glob("*.json"):
         datasets[dataset_file.stem] = get_dataset(dataset_file)
     return datasets
 
@@ -96,10 +153,10 @@ def merge_datasets(datasets: dict) -> dict:
 
 
 def get_negative_chunks(negatives_path: str) -> dict:
-    """Load negative chunks and datetimes from csv file.
+    """Load negative chunks and datetimes from csv or json file.
 
     Args:
-        negatives_csv_path (str): Path to csv file with negative chunks and datetimes.
+        negatives_path (str): Path to csv or json file with negative chunks and datetimes.
 
     Returns:
         dict: {
@@ -109,17 +166,35 @@ def get_negative_chunks(negatives_path: str) -> dict:
     """
     negatives_file = Path(negatives_path)
     chunks, datetimes = [], []
-    with negatives_file.open("r", encoding="utf-8") as f:
-        reader = csv.reader(f, delimiter=";", quotechar='"')
-        header = next(reader)
 
-        for row in reader:
-            if len(row) >= 2:
-                chunk = row[0]
-                chunk_datetime = row[1]
+    if negatives_file.suffix.lower() == ".json":
+        with negatives_file.open("r", encoding="utf-8") as f:
+            json_data = json.load(f)
 
-                chunks.append(chunk)
-                datetimes.append(chunk_datetime)
+            for item in json_data:
+                if "text" in item and "datetime" in item:
+                    chunks.append(item["text"])
+                    try:
+                        dt = datetime.strptime(item["datetime"], "%Y-%m-%d %H-%M")
+                        datetimes.append(dt)
+                    except Exception as e:
+                        print(f"Error parsing datetime in negative chunks: {e}")
+    else:
+        with negatives_file.open("r", encoding="utf-8") as f:
+            reader = csv.reader(f, delimiter=";", quotechar='"')
+            header = next(reader)
+
+            for row in reader:
+                if len(row) >= 2:
+                    chunk = row[0]
+                    chunk_datetime = row[1]
+
+                    chunks.append(chunk)
+                    try:
+                        dt = datetime.strptime(chunk_datetime, "%Y-%m-%d %H-%M")
+                        datetimes.append(dt)
+                    except Exception as e:
+                        print(f"Error parsing datetime in negative chunks: {e}")
 
     return {"chunks": chunks, "chunk_datetimes": datetimes}
 

@@ -1,0 +1,442 @@
+[
+  {
+    "Question": "Woran habe ich im Dezember 2024 gearbeitet?",
+    "Answer": "Im Dezember 2024 hast du an deinem Portfolioprojekt gearbeitet.",
+    "chunks": [
+      {
+        "text": "Ich: Letzten Monat war ich so fokussiert auf mein Portfolioprojekt. Ich wollte es unbedingt vor dem Jahresende fertigstellen.\nTim: Wie viel Zeit hast du täglich dafür aufgewendet?\nIch: Mindestens drei Stunden jeden Tag. Es war anstrengend, aber es hat sich gelohnt.",
+        "datetime": "2025-01-10 14-30"
+      },
+      {
+        "text": "Ben: Wie war dein Jahresabschluss?\nIch: Produktiv! Ich habe mein Portfolioprojekt fertiggestellt.",
+        "datetime": "2025-01-15 09-45"
+      },
+      {
+        "text": "Tim: Hast du dir schon Gedanken gemacht, welche Projekte du dieses Jahr angehen willst?\nIch: Ja, aber ich brauche erst mal eine kleine Pause nach dem Dezember-Marathon mit meinem Portfolioprojekt.",
+        "datetime": "2025-01-22 16-20"
+      },
+      {
+        "text": "Sophie: Dein Portfolio sieht beeindruckend aus! Wann hast du das fertiggestellt?\nIch: Danke! Ich habe es Ende des Jahres abgeschlossen.",
+        "datetime": "2025-02-05 11-30"
+      }
+    ]
+  },
+  {
+    "Question": "Was habe ich im Sommer 2023 gelernt?",
+    "Answer": "Im Sommer 2023 hast du Spanisch gelernt.",
+    "chunks": [
+      {
+        "text": "Ich: Ich habe letzte Woche mit dem Spanisch-Intensivkurs begonnen. Es ist anstrengend, aber macht Spaß!\nEmma: Wie oft hast du Unterricht?\nIch: Dreimal die Woche für jeweils zwei Stunden. Und ich übe täglich mit dieser neuen Sprachlern-App.",
+        "datetime": "2023-06-05 18-30"
+      },
+      {
+        "text": "Emma: Wie läuft's mit deinem Spanisch-Kurs?\nIch: Wirklich gut! Ich kann schon einfache Sätze bilden und verstehe immer mehr. Die Tage sind perfekt, um eine neue Sprache zu lernen – ich habe mehr Zeit und Energie.",
+        "datetime": "2023-07-12 12-45"
+      },
+      {
+        "text": "David: Hast du Pläne für September?\nIch: Ich überlege, einen Aufbaukurs in Spanisch zu machen. Ich möchte jetzt nicht den Schwung verlieren.",
+        "datetime": "2023-08-25 16-20"
+      },
+      {
+        "text": "Emma: Kannst du schon Gespräche auf Spanisch führen?\nIch: Einfache ja! Es ist erstaunlich, wie viel ich in drei Monaten gelernt habe. Von null auf einfache Konversation – ich bin ziemlich stolz auf mich.",
+        "datetime": "2023-09-10 11-30"
+      }
+    ]
+  },
+  {
+    "Question": "Welches Projekt habe ich im Februar 2024 abgeschlossen?",
+    "Answer": "Im Februar 2024 hast du dein Badezimmer-Renovierungsprojekt abgeschlossen.",
+    "chunks": [
+      {
+        "text": "Ich: Endlich sind die neuen Fliesen für das Badezimmer geliefert worden! Jetzt kann ich am Wochenende mit der Renovierung beginnen.\nAlex: Machst du alles selbst?\nIch: Ja, ich will die Fliesen selbst verlegen, eine neue Dusche installieren und die Wände neu streichen.",
+        "datetime": "2024-02-01 09-15"
+      },
+      {
+        "text": "Alex: Wie läuft die Badezimmer-Renovierung?\nIch: Langsamer als geplant, aber es wird! Die Fliesen sind fast fertig, aber die Duschinstallation macht mir Kopfzerbrechen.",
+        "datetime": "2024-02-12 18-30"
+      },
+      {
+        "text": "Ich: Ich kann es kaum glauben, aber mein Badezimmer ist endlich fertig! Drei Wochen hat es gedauert, aber das Ergebnis kann sich sehen lassen.\nAlex: Glückwunsch! Zeig mal Fotos!",
+        "datetime": "2024-02-22 20-45"
+      },
+      {
+        "text": "Emma: Wie gefällt dir dein neues Badezimmer jetzt, wo du es schon eine Weile benutzt?\nIch: Ich bin immer noch begeistert! Besonders die neue Dusche ist ein Traum.",
+        "datetime": "2024-03-15 13-20"
+      }
+    ]
+  },
+  {
+    "Question": "Was habe ich in der ersten Januarwoche 2025 gemacht?",
+    "Answer": "In der ersten Januarwoche 2025 warst du im Skiurlaub in den Alpen.",
+    "chunks": [
+      {
+        "text": "Ich: Die Pisten hier in den Alpen sind traumhaft! Perfekter Schnee und kaum Leute.\nDaniel: Wie lange bleibst du noch?\nIch: Bis Sonntag, also insgesamt eine Woche. Ich will jeden Tag ausnutzen.",
+        "datetime": "2025-01-03 16-45"
+      },
+      {
+        "text": "Ich: Heute habe ich einen Skikurs gemacht, um meine Technik zu verbessern. Der Lehrer meinte, ich mache gute Fortschritte!\nDaniel: Super! Genießt du auch die Après-Ski-Atmosphäre?\nIch: Ja, die Berghütten sind so gemütlich. Gestern haben wir bis spät abends bei Glühwein und Musik gesessen.",
+        "datetime": "2025-01-05 19-30"
+      },
+      {
+        "text": "Emma: Wie war dein Jahresstart?\nIch: Perfekt! Ich war in den Alpen. Genau das Richtige, um das Jahr aktiv zu beginnen.",
+        "datetime": "2025-01-12 11-20"
+      },
+      {
+        "text": "Daniel: Planst du dieses Jahr wieder einen Skiurlaub?\nIch: Definitiv! Es war so toll, dass ich das zur Tradition machen möchte. Die Pisten waren nicht überlaufen und das Wetter war perfekt.",
+        "datetime": "2025-02-20 14-15"
+      }
+    ]
+  },
+  {
+    "Question": "Was habe ich im November 2024 beruflich erreicht?",
+    "Answer": "Im November 2024 hast du eine Beförderung zum Projektleiter erhalten.",
+    "chunks": [
+      {
+        "text": "Marcus: Herzlichen Glückwunsch zur Beförderung! Wie fühlst du dich als neuer Projektleiter?\nIch: Danke! Ich bin aufgeregt und ein bisschen nervös. Es ist eine große Verantwortung, aber ich freue mich auf die Herausforderung.",
+        "datetime": "2024-11-04 10-15"
+      },
+      {
+        "text": "Ich: Heute habe ich mein erstes Team-Meeting als Projektleiter geleitet. Es lief besser als erwartet!\nJana: Das freut mich zu hören! Woran arbeitest du mit deinem Team?\nIch: An einem strategischen Projekt mit hoher Priorität. Die Geschäftsführung hat große Erwartungen.",
+        "datetime": "2024-11-12 17-30"
+      },
+      {
+        "text": "Jana: Wie läuft's mit deiner neuen Rolle?\nIch: Gut! Es war intensiv – die Beförderung, das neue Projekt, die Teamleitung. Aber ich fühle mich immer wohler in der Position.",
+        "datetime": "2024-11-28 13-45"
+      },
+      {
+        "text": "Marcus: Wie war dein erstes Monat als Projektleiter?\nIch: Herausfordernd, aber sehr bereichernd! Ich habe viel gelernt und bin stolz auf das, was wir als Team bereits erreicht haben.",
+        "datetime": "2024-12-05 09-20"
+      }
+    ]
+  },
+  {
+    "Question": "Was habe ich in den Osterferien 2024 gemacht?",
+    "Answer": "In den Osterferien 2024 hast du eine Städtereise nach Rom unternommen.",
+    "chunks": [
+      {
+        "text": "Ich: Ich freue mich so auf die Ferien! Mein Flug nach Rom ist gebucht.\nEmma: Rom ist wunderschön! Wie lange bleibst du?\nIch: Eine Woche. Ich will das Kolosseum, den Vatikan und natürlich all die kleinen Gassen und Plätze erkunden.",
+        "datetime": "2024-03-20 14-30"
+      },
+      {
+        "text": "Ich: Die Führung durch den Vatikan heute war beeindruckend! Die Sixtinische Kapelle hat mich sprachlos gemacht.\nDaniel: Klingt nach einem tollen Urlaub! Wie ist das Wetter?\nIch: Perfekt für Sightseeing – sonnig aber nicht zu heiß. Und das Essen ist unglaublich!",
+        "datetime": "2024-04-02 19-45"
+      },
+      {
+        "text": "Emma: Wie waren deine Ferien?\nIch: Fantastisch! Rom war die richtige Wahl. So viel Geschichte, Kultur und natürlich das Essen... Ich bin mit ein paar Extra-Kilos zurückgekommen!",
+        "datetime": "2024-04-10 12-15"
+      },
+      {
+        "text": "Daniel: Planst du schon deinen nächsten Urlaub?\nIch: Ja, aber es wird schwer, meine Rom-Reise zu toppen. Das war wirklich ein perfekter Städtetrip.",
+        "datetime": "2024-05-05 16-30"
+      }
+    ]
+  },
+  {
+    "Question": "Was habe ich im Frühjahr 2023 in meinem Garten angepflanzt?",
+    "Answer": "Im Frühjahr 2023 hast du Tomaten, Zucchini, Kräuter und Sonnenblumen in deinem Garten angepflanzt.",
+    "chunks": [
+      {
+        "text": "Ich: Ich habe heute die ersten Tomatensämlinge eingepflanzt! Dieses Jahr probiere ich drei verschiedene Sorten aus.\nEmma: Spannend! Was pflanzt du noch an?\nIch: Zucchini, verschiedene Kräuter und Sonnenblumen. Ich nutze den frühen Beginn, um alles rechtzeitig in die Erde zu bekommen.",
+        "datetime": "2023-03-15 11-30"
+      },
+      {
+        "text": "Emma: Wie entwickelt sich dein Garten?\nIch: Die Tomaten wachsen erstaunlich gut! Auch die Zucchini und Kräuter kommen schön.",
+        "datetime": "2023-04-20 16-45"
+      },
+      {
+        "text": "Ich: Die ersten Tomaten können geerntet werden! Es hat sich gelohnt, so früh zu pflanzen.\nEmma: Das ging ja schnell! Welche Sorte ist es?\nIch: Die Cherry-Tomaten. Die größeren Sorten brauchen noch etwas Zeit.",
+        "datetime": "2023-06-10 09-15"
+      },
+      {
+        "text": "Emma: Wie war deine Gartensaison dieses Jahr?\nIch: Sehr erfolgreich! Besonders die Tomaten haben reichlich getragen. Die Zeit und Mühe haben sich definitiv ausgezahlt.",
+        "datetime": "2023-09-05 18-30"
+      }
+    ]
+  },
+  {
+    "Question": "Welches Hobby habe ich im Herbst 2024 begonnen?",
+    "Answer": "Im Herbst 2024 hast du mit dem Töpfern begonnen.",
+    "chunks": [
+      {
+        "text": "Ich: Ich habe mich für einen Töpferkurs angemeldet! Nächste Woche geht's los.\nLisa: Das klingt toll! Was hat dich dazu inspiriert?\nIch: Ich wollte schon immer etwas Kreatives mit den Händen machen, und jetzt ist perfekt, um ein neues Indoor-Hobby zu beginnen.",
+        "datetime": "2024-09-05 18-30"
+      },
+      {
+        "text": "Lisa: Wie läuft der Töpferkurs?\nIch: Fantastisch! Ich habe mir sogar eine kleine Töpferscheibe für zuhause gekauft, damit ich mehr üben kann.",
+        "datetime": "2024-09-25 12-45"
+      },
+      {
+        "text": "Ich: Schau mal, meine ersten selbstgetöpferten Schalen! Sie sind noch nicht perfekt, aber ich bin stolz darauf.\nMax: Die sehen erstaunlich gut aus für einen Anfänger! Wie lange töpferst du schon?\nIch: Erst seit etwa zwei Monaten. Aber ich bin total begeistert und verbringe jede freie Minute damit.",
+        "datetime": "2024-11-10 16-20"
+      },
+      {
+        "text": "Lisa: Was schenkst du deiner Familie zu Weihnachten?\nIch: Selbstgetöpferte Tassen! Ich habe schon einige schöne Stücke hergestellt. Es macht so viel Spaß, etwas Persönliches zu verschenken.",
+        "datetime": "2024-12-15 14-30"
+      }
+    ]
+  },
+  {
+    "Question": "Was habe ich in der letzten Augustwoche 2023 gefeiert?",
+    "Answer": "In der letzten Augustwoche 2023 hast du deinen 30. Geburtstag gefeiert.",
+    "chunks": [
+      {
+        "text": "Ich: Die Vorbereitungen für meine Geburtstagsparty laufen auf Hochtouren! Ich kann kaum glauben, dass ich nächste Woche 30 werde.\nJulia: Wie feierst du?\nIch: Mit einer großen Party am Samstag. Und ich habe ein Strandhaus für das Wochenende gemietet, um mit meinen engsten Freunden zu feiern.",
+        "datetime": "2023-08-22 14-30"
+      },
+      {
+        "text": "Ich: Das Geburtstagswochenende war unglaublich! Das Strandhaus war perfekt, und so viele Freunde und Familie sind gekommen.\nJulia: Klingt wunderbar! Hast du dir selbst auch etwas geschenkt?\nIch: Ja, die Uhr, die ich mir schon so lange gewünscht habe. Mit 30 darf man sich ruhig mal etwas gönnen!",
+        "datetime": "2023-08-29 19-45"
+      },
+      {
+        "text": "Max: Wie fühlt es sich an, 30 zu sein?\nIch: Bisher nicht anders als 29! Die Feier war jedenfalls ein perfekter Abschluss meiner Zwanziger.",
+        "datetime": "2023-09-05 12-15"
+      },
+      {
+        "text": "Julia: Trägst du die Uhr, die du dir zum Geburtstag geschenkt hast?\nIch: Ja, jeden Tag! Sie erinnert mich an die tolle Feier. Der Eintritt in mein drittes Lebensjahrzehnt hätte nicht schöner sein können.",
+        "datetime": "2023-09-20 16-30"
+      }
+    ]
+  },
+  {
+    "Question": "Was habe ich im Winter 2024/2025 gelernt?",
+    "Answer": "Im Winter 2024/2025 hast du das Klavierspielen gelernt.",
+    "chunks": [
+      {
+        "text": "Ich: Ich habe heute meine erste Klavierstunde gehabt! Es war herausfordernd, aber macht Spaß.\nDavid: Cool! Hast du ein Klavier zuhause?\nIch: Noch nicht, aber ich werde mir diese Woche ein digitales Klavier kaufen. Perfekt für die dunklen Abende – endlich ein sinnvolles Indoor-Hobby!",
+        "datetime": "2024-12-05 18-30"
+      },
+      {
+        "text": "David: Wie läuft's mit dem Klavierspielen?\nIch: Besser als erwartet! Ich übe jeden Tag mindestens 30 Minuten.",
+        "datetime": "2025-01-10 12-45"
+      },
+      {
+        "text": "Ich: Ich kann jetzt tatsächlich schon einfache Stücke spielen! Mein Lehrer ist beeindruckt von meinen Fortschritten.\nEmma: Das ist toll! Wie lange lernst du schon?\nIch: Seit Anfang Dezember, also etwa zwei Monate. Man ist ja sowieso viel drinnen.",
+        "datetime": "2025-02-02 16-20"
+      },
+      {
+        "text": "David: Spielst du noch Klavier?\nIch: Ja, und es macht immer mehr Spaß! In nur drei Monaten habe ich mehr gelernt, als ich erwartet hatte. Ich kann jetzt sogar schon ein paar bekannte Melodien spielen.",
+        "datetime": "2025-03-15 14-30"
+      }
+    ]
+  },
+  {
+    "Question": "Welchen Sport habe ich im Frühjahr 2024 begonnen?",
+    "Answer": "Im Frühjahr 2024 hast du mit Yoga begonnen.",
+    "chunks": [
+      {
+        "text": "Ich: Ich war heute bei meiner ersten Yogastunde. Es war anstrengender als ich dachte!\nLena: Welchen Stil hast du gemacht?\nIch: Vinyasa Flow. Hat mir gut gefallen! Ich glaube, das könnte mein neuer Sport werden.",
+        "datetime": "2024-03-12 19-15"
+      },
+      {
+        "text": "Lena: Wie läuft es mit deinem neuen Hobby?\nIch: Super! Ich gehe jetzt zweimal pro Woche zum Yoga. Die Sonne motiviert mich zusätzlich.",
+        "datetime": "2024-04-02 12-30"
+      },
+      {
+        "text": "Thomas: Du siehst entspannter aus als sonst. Machst du etwas anders?\nIch: Ja, ich mache jetzt Yoga! Es hilft mir, den Arbeitsstress abzubauen und beweglich zu bleiben.",
+        "datetime": "2024-05-14 08-45"
+      },
+      {
+        "text": "Lena: Machst du noch Yoga?\nIch: Definitiv! Das war die beste Entscheidung. Ich merke schon, wie viel beweglicher ich geworden bin.",
+        "datetime": "2024-06-10 17-20"
+      }
+    ]
+  },
+  {
+    "Question": "Was habe ich zu Weihnachten 2023 bekommen?",
+    "Answer": "Zu Weihnachten 2023 hast du eine Smartwatch bekommen.",
+    "chunks": [
+      {
+        "text": "Ich: Die Geschenke unter dem Baum sehen vielversprechend aus! Bin gespannt, was mich morgen erwartet.\nPaul: Hast du dir etwas Bestimmtes gewünscht?\nIch: Eine Smartwatch steht ganz oben auf meiner Liste. Mal sehen, ob der Weihnachtsmann mir eine bringt!",
+        "datetime": "2023-12-24 18-10"
+      },
+      {
+        "text": "Paul: Na, was hat der Weihnachtsmann gebracht?\nIch: Die Smartwatch, die ich mir gewünscht habe! Meine Eltern haben sich wirklich Mühe gegeben, genau das Modell zu finden, das ich wollte.",
+        "datetime": "2023-12-26 11-25"
+      },
+      {
+        "text": "Nina: Ist das neu? Die Uhr sieht cool aus!\nIch: Ja, ein Geschenk! Ich trage sie jetzt seit zwei Wochen und bin begeistert von all den Funktionen.",
+        "datetime": "2024-01-09 14-30"
+      },
+      {
+        "text": "Paul: Wie zufrieden bist du mit deiner Smartwatch?\nIch: Sehr! Das war wirklich das beste Geschenk. Ich nutze sie täglich für Fitness-Tracking und Benachrichtigungen.",
+        "datetime": "2024-07-15 09-45"
+      }
+    ]
+  },
+  {
+    "Question": "Wohin bin ich im Sommer 2024 in den Urlaub gefahren?",
+    "Answer": "Im Sommer 2024 bist du nach Portugal in den Urlaub gefahren.",
+    "chunks": [
+      {
+        "text": "Ich: Endlich habe ich den Urlaub gebucht! Zwei Wochen Portugal im Juli.\nMarie: Oh, wunderschön! Welche Regionen besuchst du?\nIch: Erst Lissabon, dann die Algarve. Ich freue mich schon auf Sonne, Strand und gutes Essen!",
+        "datetime": "2024-05-20 16-45"
+      },
+      {
+        "text": "Ich: Die Strände hier an der Algarve sind atemberaubend! Das klare Wasser und die Felsenformationen sind noch beeindruckender als auf den Bildern.\nMarie: Wie ist das Wetter?\nIch: Perfekt! Jeden Tag Sonnenschein und angenehme 28 Grad.",
+        "datetime": "2024-07-18 20-10"
+      },
+      {
+        "text": "Marie: Wie war dein Urlaub?\nIch: Fantastisch! Portugal war genau das, was ich brauchte. Zwei Wochen Entspannung und neue Eindrücke.",
+        "datetime": "2024-08-30 13-25"
+      },
+      {
+        "text": "Thomas: Planst du schon den nächsten Urlaub?\nIch: Erst mal zehre ich noch von den Erinnerungen an Portugal. Die Fotos schaue ich mir immer wieder gerne an.",
+        "datetime": "2024-10-05 11-40"
+      }
+    ]
+  },
+  {
+    "Question": "Was habe ich im Q3 2023 beruflich erreicht?",
+    "Answer": "Im Q3 2023 hast du ein wichtiges Kundenprojekt erfolgreich abgeschlossen.",
+    "chunks": [
+      {
+        "text": "Felix: Wie kommst du mit dem Kundenprojekt voran?\nIch: Es ist herausfordernd, aber wir liegen im Zeitplan. Hoffentlich können wir es bis Ende dieses Quartals abschließen.",
+        "datetime": "2023-07-15 09-30"
+      },
+      {
+        "text": "Ich: Wir haben heute die finale Präsentation für den Kunden gehalten. Es lief besser als erwartet!\nFelix: Das freut mich zu hören! War der Kunde zufrieden?\nIch: Absolut. Sie waren beeindruckt von unserer Lösung und haben bereits über Folgeprojekte gesprochen.",
+        "datetime": "2023-09-28 16-45"
+      },
+      {
+        "text": "Felix: Wie läuft's bei der Arbeit?\nIch: Gut! Nach dem erfolgreichen Abschluss des Großprojekts im letzten Quartal habe ich etwas mehr Luft.",
+        "datetime": "2023-10-10 14-20"
+      },
+      {
+        "text": "Hannah: Woran arbeitest du momentan?\nIch: An einem neuen Projekt, seit Oktober. Nach dem erfolgreichen Abschluss des Kundenprojekts habe ich mehr Verantwortung bekommen.",
+        "datetime": "2023-11-05 11-15"
+      }
+    ]
+  },
+  {
+    "Question": "Was habe ich am ersten Adventswochenende 2024 gemacht?",
+    "Answer": "Am ersten Adventswochenende 2024 hast du einen Weihnachtsmarkt in Wien besucht.",
+    "chunks": [
+      {
+        "text": "Ich: Mein Wochenendtrip nach Wien ist gebucht! Ich freue mich schon darauf, den berühmten Weihnachtsmarkt zu besuchen.\nSophia: Das klingt toll! Wie lange bleibst du?\nIch: Von Freitag bis Sonntag. Genug Zeit, um die festliche Atmosphäre zu genießen und Geschenke zu kaufen.",
+        "datetime": "2024-11-25 13-40"
+      },
+      {
+        "text": "Ich: Der Weihnachtsmarkt in Wien ist wunderschön! Die Lichter, der Duft von Glühwein und gebrannten Mandeln – einfach perfekt für den Start.\nSophia: Schickst du mir ein paar Fotos?\nIch: Natürlich! Ich habe den ganzen Markt dokumentiert!",
+        "datetime": "2024-12-01 19-15"
+      },
+      {
+        "text": "Sophia: Hast du schon Weihnachtsgeschenke besorgt?\nIch: Einige! Auf dem Wiener Weihnachtsmarkt habe ich schöne handgemachte Sachen gefunden.",
+        "datetime": "2024-12-08 14-30"
+      },
+      {
+        "text": "Markus: Wie war dein Adventsbeginn?\nIch: Besonders schön! Ich habe das Wochenende in Wien verbracht und den Weihnachtsmarkt besucht. Die perfekte Einstimmung auf die Weihnachtszeit!",
+        "datetime": "2024-12-15 17-10"
+      }
+    ]
+  },
+  {
+    "Question": "Welche neue Fähigkeit habe ich in der ersten Hälfte 2023 erlernt?",
+    "Answer": "In der ersten Hälfte 2023 hast du Fotografie erlernt.",
+    "chunks": [
+      {
+        "text": "Ich: Ich habe mir endlich eine richtige Kamera gekauft! Jetzt muss ich nur noch lernen, wie man sie benutzt.\nJonas: Was für eine Kamera ist es?\nIch: Eine Spiegelreflexkamera. Ich habe mich für einen Anfängerkurs angemeldet, der nächste Woche startet.",
+        "datetime": "2023-01-10 18-45"
+      },
+      {
+        "text": "Jonas: Wie läuft der Fotokurs?\nIch: Wirklich gut! Ich lerne so viel über Belichtung, Perspektive und Bildbearbeitung.",
+        "datetime": "2023-02-20 12-30"
+      },
+      {
+        "text": "Ich: Schau mal, meine ersten richtigen Landschaftsaufnahmen! Was sagst du?\nJonas: Die sind wirklich beeindruckend! Wie lange fotografierst du jetzt schon?\nIch: Seit Januar, also knapp sechs Monate. Ich bin selbst überrascht, wie schnell man Fortschritte macht.",
+        "datetime": "2023-06-15 17-10"
+      },
+      {
+        "text": "Mia: Diese Fotos sind fantastisch! Seit wann machst du Fotografie?\nIch: Danke! Ich habe Anfang des Jahres damit angefangen.",
+        "datetime": "2023-07-30 15-25"
+      }
+    ]
+  },
+  {
+    "Question": "Welches Buch habe ich im Herbst 2022 gelesen?",
+    "Answer": "Im Herbst 2022 hast du den Roman \"Der Schatten des Windes\" gelesen.",
+    "chunks": [
+      {
+        "text": "Ich: Ich habe gestern mit einem neuen Buch angefangen: 'Der Schatten des Windes'. Es wurde mir schon so oft empfohlen!\nClara: Oh, das ist eines meiner Lieblingsbücher! Wie gefällt es dir bisher?\nIch: Ich bin erst am Anfang, aber es hat mich sofort in seinen Bann gezogen. Perfekte Lektüre!",
+        "datetime": "2022-09-30 21-15"
+      },
+      {
+        "text": "Clara: Wie weit bist du mit 'Der Schatten des Windes'?\nIch: Fast fertig! Ich nutze jede freie Minute zum Lesen. Die regnerischen Tage sind perfekt dafür.",
+        "datetime": "2022-10-25 17-40"
+      },
+      {
+        "text": "Ich: Ich habe gestern Nacht 'Der Schatten des Windes' beendet. Was für ein bewegendes Ende!\nClara: Eines der besten Bücher, oder? Hast du schon etwas Neues zum Lesen?\nIch: Noch nicht. Ich brauche erst mal Zeit, um das Gelesene zu verarbeiten. Das Buch hat mich wirklich beeindruckt.",
+        "datetime": "2022-11-15 22-05"
+      },
+      {
+        "text": "Clara: Hast du in letzter Zeit etwas Gutes gelesen?\nIch: 'Der Schatten des Windes' war fantastisch. Seitdem habe ich nichts gefunden, das mich so begeistert hat.",
+        "datetime": "2023-01-20 14-30"
+      }
+    ]
+  },
+  {
+    "Question": "Was habe ich im April 2025 renoviert?",
+    "Answer": "Im April 2025 hast du deine Küche renoviert.",
+    "chunks": [
+      {
+        "text": "Ich: Die Pläne für die Küchenrenovierung sind endlich fertig! Nächsten Monat geht es los.\nLeon: Welchen Stil hast du gewählt?\nIch: Modern und funktional. Neue Arbeitsplatten, Schränke und Geräte. Ich freue mich schon darauf, endlich eine schöne Küche zu haben.",
+        "datetime": "2025-03-25 15-40"
+      },
+      {
+        "text": "Ich: Die Küchenrenovierung ist in vollem Gange. Der Raum ist komplett leergeräumt, und die alten Schränke sind bereits entfernt.\nLeon: Wie lange wird es noch dauern?\nIch: Etwa zwei Wochen. Aber das Chaos ist es wert, wenn ich danach eine traumhafte neue Küche habe!",
+        "datetime": "2025-04-08 18-15"
+      },
+      {
+        "text": "Leon: Wie ist die neue Küche geworden?\nIch: Besser als ich es mir vorgestellt habe! Die Renovierung war anstrengend, aber das Ergebnis ist perfekt.",
+        "datetime": "2025-04-30 12-50"
+      },
+      {
+        "text": "Mia: Du kochst in letzter Zeit viel mehr, oder?\nIch: Definitiv! Es macht einfach viel mehr Spaß. In der neuen Küche ist alles so praktisch angeordnet und schön anzusehen.",
+        "datetime": "2025-05-20 19-30"
+      }
+    ]
+  },
+  {
+    "Question": "Was habe ich in der letzten Septemberwoche 2023 gefeiert?",
+    "Answer": "In der letzten Septemberwoche 2023 hast du deine Beförderung gefeiert.",
+    "chunks": [
+      {
+        "text": "Ich: Rate mal! Ich wurde befördert! Ab nächstem Monat bin ich Teamleiter!\nStefan: Herzlichen Glückwunsch! Das hast du dir verdient. Wie feierst du?\nIch: Mit einem Abendessen am Freitag. Ich habe einen Tisch in meinem Lieblingsrestaurant reserviert.",
+        "datetime": "2023-09-25 16-20"
+      },
+      {
+        "text": "Ich: Der Abend gestern war fantastisch! Das perfekte Essen, um meine Beförderung zu feiern.\nStefan: Freut mich, dass du einen schönen Abend hattest! Wann startest du in der neuen Position?\nIch: Offiziell ab nächster Woche. Ich bin schon ganz aufgeregt!",
+        "datetime": "2023-09-30 11-45"
+      },
+      {
+        "text": "Stefan: Wie läuft es in deiner neuen Rolle?\nIch: Gut, aber intensiv! Es ist schwer zu glauben, dass es erst einen Monat her ist, dass wir gefeiert haben.",
+        "datetime": "2023-10-28 19-10"
+      },
+      {
+        "text": "Anna: Wann wurdest du eigentlich befördert?\nIch: Wir haben mit einem schönen Abendessen gefeiert. Es war ein wichtiger Meilenstein für mich.",
+        "datetime": "2024-03-15 13-30"
+      }
+    ]
+  },
+  {
+    "Question": "Was habe ich im Valentinstag 2024 erlebt?",
+    "Answer": "Am Valentinstag 2024 hast du einen Heiratsantrag bekommen.",
+    "chunks": [
+      {
+        "text": "Ich: Der Valentinstag steht vor der Tür. Michael hat angedeutet, dass er etwas Besonderes geplant hat.\nTina: Ooh, spannend! Hast du eine Vermutung, was es sein könnte?\nIch: Keine Ahnung, aber er verhält sich in letzter Zeit etwas merkwürdig. Fast so, als wäre er nervös wegen etwas.",
+        "datetime": "2024-02-12 19-30"
+      },
+      {
+        "text": "Ich: Oh mein Gott, Tina! Michael hat mir einen Antrag gemacht! Ich kann es immer noch nicht glauben!\nTina: WAS?! Erzähl mir ALLES!\nIch: Er hat ein romantisches Dinner vorbereitet und dann plötzlich auf die Knie gegangen. Ich habe sofort Ja gesagt!",
+        "datetime": "2024-02-14 23-45"
+      },
+      {
+        "text": "Tina: Wie laufen die Hochzeitsvorbereitungen?\nIch: Stressig, aber aufregend! Es ist schwer zu glauben, dass es erst zwei Monate her ist.",
+        "datetime": "2024-04-20 15-10"
+      },
+      {
+        "text": "Michael: Weißt du noch, wie nervös ich war?\nIch: Natürlich! Als du vor mir niedergekniet bist, habe ich deine Hände zittern sehen. Das war gleichzeitig das romantischste und überraschendste Ereignis meines Lebens.",
+        "datetime": "2024-06-30 18-25"
+      }
+    ]
+  }
+]

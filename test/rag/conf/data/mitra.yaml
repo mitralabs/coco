@@ -17,5 +17,5 @@ use_train: true
 use_test: false
 
 # custom settings
-custom_samples_root: ../dataset/datasets_by_category
+custom_samples_root: ../dataset/datasets_json
 custom_split: train # train / test / full
