@@ -1,6 +1,5 @@
 import numpy as np
 import wandb
-from datasets import Dataset
 from collections import defaultdict
 from omegaconf import DictConfig
 import json
@@ -10,14 +9,14 @@ from coco import CocoClient
 from typing import Dict, Any, List
 from tqdm import tqdm
 
+from dataset import RAGDataset
+
 logger = logging.getLogger(__name__)
 
 
-def get_top_chunks(cc: CocoClient, cfg: DictConfig, ds: Dataset):
-    if cfg.retrieval.skip:
-        logger.info("Retrieval stage skipped")
-        return
-
+def get_top_chunks(
+    cc: CocoClient, cfg: DictConfig, ds: RAGDataset
+) -> Dict[str, Dict[str, Any]]:
     if cfg.retrieval.get_top_chunks.load_from_file:
         # load from file if specified
         chunks_file = Path(cfg.retrieval.get_top_chunks.load_file_name)
@@ -32,7 +31,7 @@ def get_top_chunks(cc: CocoClient, cfg: DictConfig, ds: Dataset):
     else:
         # obtain from db
         top_chunks = {}
-        queries = [sample["question"] for sample in ds]
+        queries = ds.queries()
         results = cc.rag.retrieve_multiple(
             query_texts=queries,
             n_results=cfg.retrieval.get_top_chunks.top_k,
@@ -112,65 +111,108 @@ def mean_average_precision(aps: List[float]):
     return np.nanmean(np.array(aps))
 
 
-def relevance(top_chunks: Dict[str, Dict[str, Any]], cfg: DictConfig, ds: Dataset):
+def relevance(top_chunks: Dict[str, Dict[str, Any]], cfg: DictConfig, ds: RAGDataset):
     """Compute context relevance metrics and log to wandb.
 
     Args:
         top_chunks (Dict[str, Dict[str, Any]]): top chunks for each query
         cfg (DictConfig): config
-        ds (Dataset): dataset
+        ds (RAGDataset): dataset
     """
-    precs, recs, f1s = (
-        defaultdict(list),
-        defaultdict(list),
-        defaultdict(list),
-    )
-    ranks, aps = [], []
+    category_sample_metrics = {
+        cat: {
+            "precs": defaultdict(list),
+            "recs": defaultdict(list),
+            "f1s": defaultdict(list),
+            "ranks": [],
+            "aps": [],
+        }
+        for cat in ds.unique_categories()
+    }
+    category_sample_metrics["full"] = {
+        "precs": defaultdict(list),
+        "recs": defaultdict(list),
+        "f1s": defaultdict(list),
+        "ranks": [],
+        "aps": [],
+    }
 
     # sample wise metrics
     for sample in tqdm(ds, desc="Computing context relevance metrics"):
-        query = sample["question"]
-        gt_chunks = sample["positive_ctxs"]["text"]
-        retrieved_chunks = top_chunks[query]["documents"]
+        retrieved_chunks = top_chunks[sample.query]["documents"]
 
         # order independent metrics
         for k in cfg.retrieval.metric_ks:
-            prec = precision_at_k(retrieved_chunks, gt_chunks, k)
-            rec = recall_at_k(retrieved_chunks, gt_chunks, k)
+            prec = precision_at_k(retrieved_chunks, sample.pos_chunks, k)
+            rec = recall_at_k(retrieved_chunks, sample.pos_chunks, k)
             f1 = f1_score(prec, rec)
-            precs[k].append(prec)
-            recs[k].append(rec)
-            f1s[k].append(f1)
+            category_sample_metrics[sample.category]["precs"][k].append(prec)
+            category_sample_metrics[sample.category]["recs"][k].append(rec)
+            category_sample_metrics[sample.category]["f1s"][k].append(f1)
 
         # order aware metrics
-        ranks.append(rank_first_relevant(retrieved_chunks, gt_chunks, cfg))
-        aps.append(average_precision(retrieved_chunks, gt_chunks))
+        category_sample_metrics[sample.category]["ranks"].append(
+            rank_first_relevant(retrieved_chunks, sample.pos_chunks, cfg)
+        )
+        category_sample_metrics[sample.category]["aps"].append(
+            average_precision(retrieved_chunks, sample.pos_chunks)
+        )
 
-    # dataset wise order independent metrics
-    macro_avg_prec, macro_avg_rec, macro_avg_f1 = {}, {}, {}
-    for k in cfg.retrieval.metric_ks:
-        macro_avg_prec[k] = np.nanmean(np.array(precs[k]))
-        macro_avg_rec[k] = np.nanmean(np.array(recs[k]))
-        macro_avg_f1[k] = np.nanmean(np.array(f1s[k]))
+    # aggregate metrics across categories
+    for cat, sample_metrics in category_sample_metrics.items():
+        if cat == "full":
+            continue
+        for k in cfg.retrieval.metric_ks:
+            category_sample_metrics["full"]["precs"][k].extend(
+                sample_metrics["precs"][k]
+            )
+            category_sample_metrics["full"]["recs"][k].extend(sample_metrics["recs"][k])
+            category_sample_metrics["full"]["f1s"][k].extend(sample_metrics["f1s"][k])
+        category_sample_metrics["full"]["ranks"].extend(sample_metrics["ranks"])
+        category_sample_metrics["full"]["aps"].extend(sample_metrics["aps"])
 
-    # dataset wise order aware metrics
-    m_r = np.nanmean(np.array(ranks))
-    m_rr = mean_reciprocal_rank(ranks)
-    m_ap = mean_average_precision(aps)
+    for cat, sample_metrics in category_sample_metrics.items():
+        # dataset wise order independent metrics
+        macro_avg_prec, macro_avg_rec, macro_avg_f1 = {}, {}, {}
+        for k in cfg.retrieval.metric_ks:
+            macro_avg_prec[k] = np.nanmean(np.array(sample_metrics["precs"][k]))
+            macro_avg_rec[k] = np.nanmean(np.array(sample_metrics["recs"][k]))
+            macro_avg_f1[k] = np.nanmean(np.array(sample_metrics["f1s"][k]))
 
-    metrics = {
-        "mr": m_r,
-        "mrr": m_rr,
-        "map": m_ap,
-    }
-    for k in cfg.retrieval.metric_ks:
-        metrics[f"precision@{str(k).zfill(4)}"] = np.nanmean(np.array(precs[k]))
-        metrics[f"recall@{str(k).zfill(4)}"] = np.nanmean(np.array(recs[k]))
-        metrics[f"f1@{str(k).zfill(4)}"] = np.nanmean(np.array(f1s[k]))
-    wandb.log({f"retrieval/context_relevance/{k}": v for k, v in metrics.items()})
+        # dataset wise order aware metrics
+        m_r = np.nanmean(np.array(sample_metrics["ranks"]))
+        m_rr = mean_reciprocal_rank(sample_metrics["ranks"])
+        m_ap = mean_average_precision(sample_metrics["aps"])
+
+        metrics = {
+            "mr": m_r,
+            "mrr": m_rr,
+            "map": m_ap,
+        }
+        for k in cfg.retrieval.metric_ks:
+            metrics[f"precision@{str(k).zfill(4)}"] = np.nanmean(
+                np.array(sample_metrics["precs"][k])
+            )
+            metrics[f"recall@{str(k).zfill(4)}"] = np.nanmean(
+                np.array(sample_metrics["recs"][k])
+            )
+            metrics[f"f1@{str(k).zfill(4)}"] = np.nanmean(
+                np.array(sample_metrics["f1s"][k])
+            )
+        wandb.log(
+            {f"retrieval/{cat}/context_relevance/{k}": v for k, v in metrics.items()}
+        )
 
 
-def retrieval_stage(cc: CocoClient, cfg: DictConfig, ds: Dataset):
+def retrieval_stage(cc: CocoClient, cfg: DictConfig, ds: RAGDataset):
+    if cfg.retrieval.skip:
+        logger.info("Retrieval stage skipped")
+        return None
+    if not ds.supports_retrieval:
+        logger.warning(
+            "Retrieval stage skipped even though it was configured to run because dataset does not support retrieval"
+        )
+        return None
     logger.info("Starting retrieval stage")
     top_chunks = get_top_chunks(cc, cfg, ds)
     relevance(top_chunks, cfg, ds)

@@ -3,6 +3,8 @@ from omegaconf import DictConfig, OmegaConf
 import wandb
 import logging
 from coco import CocoClient
+import random
+import numpy as np
 
 from data import data_stage
 from retrieval import retrieval_stage
@@ -13,12 +15,16 @@ logging.basicConfig(level=logging.INFO)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("absl").setLevel(logging.WARNING)
 logging.getLogger("sentence_transformers.SentenceTransformer").setLevel(logging.WARNING)
+logging.getLogger("coco.tools").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
 @hydra.main(config_path="conf", config_name="config", version_base="1.3")
 def main(cfg: DictConfig) -> None:
     logger.info(f"Config:\n{OmegaConf.to_yaml(cfg)}")
+
+    random.seed(cfg.general.random_seed)
+    np.random.seed(cfg.general.random_seed)
 
     wandb.init(
         entity=cfg.wandb.entity,
@@ -37,7 +43,7 @@ def main(cfg: DictConfig) -> None:
 
     ds = data_stage(cc, cfg)
     top_chunks = retrieval_stage(cc, cfg, ds)
-    generation_stage(cc, cfg, top_chunks, ds)
+    generation_stage(cc, cfg, ds, top_chunks)
 
     wandb.finish()
 

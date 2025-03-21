@@ -71,7 +71,7 @@ def tool(name: str = None, description: str = None):
             param_desc = ""
             if func.__doc__:
                 for line in func.__doc__.split("\n"):
-                    if line.strip().startswith(f"{param_name}:"):
+                    if line.strip().startswith(f"{param_name}"):
                         param_desc = line.split(":", 1)[1].strip()
                         break
 
@@ -235,40 +235,49 @@ class ToolsClient:
         return tool.method(**converted_kwargs)
 
     @tool(
-        description="Search for relevant information in the database based on a query. The query can be filtered by a start and end date."
+        description="Search for relevant information in the knowledge database by embedding similarity to the query_text. Searched chunks can be filtered by a start and end date before the search."
     )
     def semantic_query(
         self,
         query_text: str,
-        num_results: int = 5,
+        num_results: int = 25,
         start_date_time_iso: Optional[str] = None,
         end_date_time_iso: Optional[str] = None,
+        contains_substring: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """Search for relevant information in the database based on a query.
 
         Args:
-            query_text (str): The query text to search for.
-            num_results (int, optional): The number of results to return. Defaults to 5.
-            start_date_time_iso (Optional[str], optional): The start date in ISO format. Defaults to None.
-            end_date_time_iso (Optional[str], optional): The end date in ISO format. Defaults to None.
-
+            query_text (str): The query text to search for. This will be compared to the database chunks by embedding similarity.
+            num_results (int, optional): The number of chunks to return for the query. If not set, defaults to 25.
+            start_date_time_iso (Optional[str], optional): The start date in ISO format. If provided, only chunks dated after this date will be considered. If not set, all knowledge chunks will be considered.
+            end_date_time_iso (Optional[str], optional): The end date in ISO format. If provided, only chunks dated before this date will be considered. If not set, all knowledge chunks will be considered.
+            contains_substring (Optional[str], optional): Only consider chunks that contain this substring (case insensitive). If not set, all knowledge chunks will be considered.
         Returns:
             List[Dict[str, Any]]: The search results.
         """
+        start, end = None, None
+        if start_date_time_iso is not None:
+            try:
+                start = datetime.datetime.fromisoformat(start_date_time_iso)
+            except ValueError:
+                return {
+                    "message": f"Invalid start date time: {start_date_time_iso}. Please provide a valid ISO 8601 formatted date time or don't set the parameter. Call the tool again without asking the user for confirmation.",
+                }
+        if end_date_time_iso is not None:
+            try:
+                end = datetime.datetime.fromisoformat(end_date_time_iso)
+            except ValueError:
+                return {
+                    "message": f"Invalid end date time: {end_date_time_iso}. Please provide a valid ISO 8601 formatted date time or don't set the parameter. Call the tool again without asking the user for confirmation.",
+                }
         embedding = self.lm.embed(query_text)
         ids, documents, metadatas, distances = self.db_api.get_closest(
             embedding=embedding,
             n_results=num_results,
-            start_date_time=(
-                datetime.datetime.fromisoformat(start_date_time_iso)
-                if start_date_time_iso
-                else None
-            ),
-            end_date_time=(
-                datetime.datetime.fromisoformat(end_date_time_iso)
-                if end_date_time_iso
-                else None
-            ),
+            start_date_time=start,
+            end_date_time=end,
+            contains_substring=contains_substring,
         )
         knowledge = [
             {
@@ -278,9 +287,9 @@ class ToolsClient:
             for document, metadata in zip(documents, metadatas)
         ]
         return {
+            "message": f"Here are your knowledge chunks and their metadata for the query '{query_text}'.",
             "knowledge": knowledge,
             "tool_timestamp": datetime.datetime.now().isoformat(),
-            "message": f"Hier sind die relevantesten Informationen aus der Datenbank zu deiner Anfrage.",
         }
 
     @tool(description="Get the current date and time")
@@ -290,65 +299,65 @@ class ToolsClient:
             "date_time": datetime.datetime.now().isoformat(),
             "message": f"Das ist die aktuelle Uhrzeit und der aktuelle Tag.",
         }
-        
-    @tool(
-        description="Retrieve all chunks that belong to the same session as the first result from a semantic search."
-    )
-    def get_session_chunks(
-        self,
-        query_text: str,
-        sort_by_date: bool = True,
-    ) -> Dict[str, Any]:
-        """
-        Find the first relevant chunk using semantic search and then retrieve all chunks
-        that share the same session_id.
 
-        Args:
-            query_text: The natural language query to find the initial chunk
-            sort_by_date: Whether to sort the results by date (default: True)
+    # @tool(
+    #     description="Retrieve all chunks that belong to the same session as the first result from a semantic search."
+    # )
+    # def get_session_chunks(
+    #     self,
+    #     query_text: str,
+    #     sort_by_date: bool = True,
+    # ) -> Dict[str, Any]:
+    #     """
+    #     Find the first relevant chunk using semantic search and then retrieve all chunks
+    #     that share the same session_id.
 
-        Returns:
-            A dictionary containing the session chunks and metadata
-        """
-        # First get the most relevant chunk to find the session_id
-        embedding = self.lm.embed(query_text)
-        ids, documents, metadatas, distances = self.db_api.get_closest(
-            embedding=embedding,
-            n_results=1,
-        )
-        
-        if not metadatas or "session_id" not in metadatas[0]:
-            return {
-                "knowledge": [],
-                "tool_timestamp": datetime.datetime.now().isoformat(),
-                "message": "No matching session found.",
-            }
+    #     Args:
+    #         query_text: The natural language query to find the initial chunk
+    #         sort_by_date: Whether to sort the results by date (default: True)
 
-        # Get all chunks with the same session_id
-        session_id = str(metadatas[0]["session_id"])  # Convert to string for API call
-        response = self.db_api.get_by_session_id(session_id)
-        
-        if not response or not response.get("results"):
-            return {
-                "knowledge": [],
-                "tool_timestamp": datetime.datetime.now().isoformat(),
-                "message": "No chunks found for the session.",
-            }
-        
-        results = response["results"]
-        if sort_by_date:
-            results.sort(key=lambda x: x["metadata"]["date"] if x["metadata"]["date"] else "")
-        
-        knowledge = [
-            {
-                "content": result["document"],
-                "metadata": result["metadata"],
-            }
-            for result in results
-        ]
+    #     Returns:
+    #         A dictionary containing the session chunks and metadata
+    #     """
+    #     # First get the most relevant chunk to find the session_id
+    #     embedding = self.lm.embed(query_text)
+    #     ids, documents, metadatas, distances = self.db_api.get_closest(
+    #         embedding=embedding,
+    #         n_results=1,
+    #     )
 
-        return {
-            "knowledge": knowledge,
-            "tool_timestamp": datetime.datetime.now().isoformat(),
-            "message": f"Found {len(knowledge)} chunks from the requested session.",
-        }
+    #     if not metadatas or "session_id" not in metadatas[0]:
+    #         return {
+    #             "knowledge": [],
+    #             "tool_timestamp": datetime.datetime.now().isoformat(),
+    #             "message": "No matching session found.",
+    #         }
+
+    #     # Get all chunks with the same session_id
+    #     session_id = str(metadatas[0]["session_id"])  # Convert to string for API call
+    #     response = self.db_api.get_by_session_id(session_id)
+
+    #     if not response or not response.get("results"):
+    #         return {
+    #             "knowledge": [],
+    #             "tool_timestamp": datetime.datetime.now().isoformat(),
+    #             "message": "No chunks found for the session.",
+    #         }
+
+    #     results = response["results"]
+    #     if sort_by_date:
+    #         results.sort(key=lambda x: x["metadata"]["date"] if x["metadata"]["date"] else "")
+
+    #     knowledge = [
+    #         {
+    #             "content": result["document"],
+    #             "metadata": result["metadata"],
+    #         }
+    #         for result in results
+    #     ]
+
+    #     return {
+    #         "knowledge": knowledge,
+    #         "tool_timestamp": datetime.datetime.now().isoformat(),
+    #         "message": f"Found {len(knowledge)} chunks from the requested session.",
+    #     }

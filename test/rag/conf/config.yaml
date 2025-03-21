@@ -1,11 +1,11 @@
 defaults:
-  - data: germandpr
+  - data: mitra
   - retrieval: primitive
-  - generation: primitive
+  - generation: agent
   - _self_
 
 wandb:
-  entity: nicostellwag-academic
+  entity: coco-mitra-labs
   project: mitra-rag
   name: ${now:%Y-%m-%d_%H-%M-%S} # overwrite this!
 
