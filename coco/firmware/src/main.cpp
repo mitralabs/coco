@@ -17,43 +17,9 @@
 #include <HTTPClient.h>
 #include <time.h>
 
+#include "config.h"  // New configuration header
 #include "secrets.h"
-
-/**********************************
- *       MACRO DEFINITIONS        *
- **********************************/
-#define LED_PIN 2
-#define BUTTON_PIN GPIO_NUM_1
-#define BATTERY_PIN 4
-
-#define RECORD_TIME 10       // seconds
-#define AUDIO_QUEUE_SIZE 10
-#define SAMPLING_RATE 16000  // 16kHz is currently the best possible Sampling Rate. Optimizing Battery and Quality.
-
-#define RECORDINGS_DIR "/recordings"  // Directory constant
-#define UPLOAD_QUEUE_FILE "/upload_queue.txt"  // File that stores the upload queue
-#define UPLOAD_QUEUE_TEMP "/upload_queue.tmp"  // Temporary file for upload queue
-#define SD_SPEED 20000000  // Set frequency to 20 MHz, Maximum is probably around 25MHz default is 4MHz, the rational is that a higher speed translates to a shorter SD Card operation, which in turn translates to a lower power consumption. Note: Higher is with current SD card not possible.
-
-#define LOG_QUEUE_SIZE 20
-
-#define BUTTON_PRESS_TIME 1000  // Time in milliseconds to detect a button press
-#define SLEEP_TIMEOUT_SEC 6000  // Deep sleep period in seconds // https://deepbluembedded.com/esp32-sleep-modes-power-consumption/
-
-#define DEFAULT_TIME 1740049200     // Default time:  20. Februar 2025 12:00:00 GMT+01:00 // https://www.epochconverter.com
-#define TIMEZONE "GMT" // "CEST-1CET,M3.2.0/2:00:00,M11.1.0/2:00:00" // "CET-1CEST,M3.5.0/2,M10.5.0/3" // Timezone for Central Europe with some additions. Read it online to change it.
-
-#define BATTERY_MONITOR_INTERVAL 60000  // Interval in milliseconds to monitor the battery // 60000 = 60s
-#define TIME_PERSIST_INTERVAL 60000  // Interval in milliseconds to persist the time // 60000 = 60s
-
-#define MIN_SCAN_INTERVAL 5000 // microseconds initial scan interval
-#define MAX_SCAN_INTERVAL 600000  // 10 minutes max scan interval
-
-#define HTTP_TIMEOUT 10000  // microseconds timeout for HTTP requests
-#define UPLOAD_CHECK_INTERVAL 2000 // Check every 2 seconds
-
-#define LOG_FILE "/device.log"
-#define TIME_FILE "/time.txt"
+#include "LogManager.h" // Include new LogManager
 
 /***********************************************
  *     GLOBAL VARIABLES AND DATA STRUCTURES    *
@@ -68,10 +34,6 @@ File logFile;
 int bootSession = 0;
 int logFileIndex = 0;
 int audioFileIndex = 0;
-
-// LED PWM configuration parameters
-int freq = 5000;     // PWM frequency in Hz
-int resolution = 8;  // Resolution in bits (1-16)
 
 time_t storedTime = 0;
 
@@ -125,19 +87,6 @@ TaskHandle_t uploadTaskHandle = NULL;
 TaskHandle_t persistTimeTaskHandle = NULL;
 TaskHandle_t backendReachabilityTaskHandle = NULL;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**********************************
  *      FUNCTION PROTOTYPES       *
  **********************************/
@@ -157,9 +106,7 @@ void fileUploadTask(void *parameter);
 bool uploadFileFromBuffer(uint8_t *buffer, size_t size, const String &filename);
 
 void initSD();
-void ensureLogFile();
-void log(const String &message);
-void logFlushTask(void *parameter);
+void ensureLogFile(); // Keep for backward compatibility
 
 void batteryMonitorTask(void *parameter);
 void ErrorBlinkLED(int interval);
@@ -201,11 +148,11 @@ void buttonTimerCallback(TimerHandle_t xTimer) {
       // Confirmed: valid wakeup
       externalWakeValid = 1;
       recordingRequested = true;
-      log("Sustained button press confirmed; proceeding with boot.");
+      LogManager::log("Sustained button press confirmed; proceeding with boot.");
     } else {
       // Invalid wake: button released too soon.
       externalWakeValid = 0;
-      log("Accidental wake detected.");
+      LogManager::log("Accidental wake detected.");
     }
     externalWakeTriggered = false;
   } else {
@@ -214,10 +161,10 @@ void buttonTimerCallback(TimerHandle_t xTimer) {
       // If we're currently recording, stopping will trigger deep sleep
       if (recordingRequested) {
         readyForDeepSleep = true;
-        log("Recording stop requested; will enter deep sleep when safe");
+        LogManager::log("Recording stop requested; will enter deep sleep when safe");
       }
       recordingRequested = !recordingRequested;
-      log(recordingRequested ? "Recording start requested" : "Recording stop requested");
+      LogManager::log(recordingRequested ? "Recording start requested" : "Recording stop requested");
     }
   }
   // Update the LED state.
@@ -227,27 +174,15 @@ void buttonTimerCallback(TimerHandle_t xTimer) {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
 /**********************************
  *       SETUP & LOOP             *
  **********************************/
 void setup() {
   Serial.begin(115200);
-  setCpuFrequencyMhz(80);  // 80 is lowest stable frequency for this routine.
+  setCpuFrequencyMhz(CPU_FREQ_MHZ);  
 
-  ledcAttach(LED_PIN, freq, resolution);
+  ledcAttach(LED_PIN, LED_FREQUENCY, LED_RESOLUTION);
   ledcWrite(LED_PIN, 0);  // Set brightness (0-255 for 8-bit resolution) // Lower values = dimmer LED = less power consumption
-
 
   // Set up the button pin
   pinMode(BUTTON_PIN, INPUT_PULLUP);
@@ -255,17 +190,6 @@ void setup() {
   ledMutex = xSemaphoreCreateMutex(); // Create the mutex
   sdMutex = xSemaphoreCreateMutex();   // Global mutex for SD card access
   httpMutex = xSemaphoreCreateMutex(); // Create mutex for HTTP operations
-
-  logQueue = xQueueCreate(LOG_QUEUE_SIZE, sizeof(char*)); // Create a queue with space for log messages.
-  if (logQueue == NULL) {
-    logFile = SD.open(LOG_FILE, FILE_APPEND);
-    if (logFile) {
-      logFile.println("Failed to create log queue!");
-      logFile.flush();
-      logFile.close();
-    }
-    ErrorBlinkLED(100);
-  }
 
   buttonTimer = xTimerCreate("ButtonTimer", pdMS_TO_TICKS(BUTTON_PRESS_TIME), pdFALSE, NULL, buttonTimerCallback); // Create a one-shot timer which triggers after the specified time
   
@@ -309,7 +233,7 @@ void setup_from_external() {
 
   // If decision was valid, proceed with boot.
   if (externalWakeValid == 1) {
-    log("Valid external wake, proceeding with boot.");
+    LogManager::log("Valid external wake, proceeding with boot.");
     setup_from_boot();
   } else {
     // Write to log and enter deep sleep again.
@@ -331,10 +255,28 @@ void setup_from_boot() {
   bootSession++;  // increment for a new boot
   preferences.putInt("bootSession", bootSession);
   preferences.end();
-  log("\n\n\n======= Boot session: " + String(bootSession) + "=======");
+  
+  initSD();
+  
+  // Initialize LogManager
+  if (!LogManager::init(sdMutex)) {
+    Serial.println("Failed to initialize LogManager!");
+    ErrorBlinkLED(100);
+  }
+  
+  // Set the boot session and timestamp provider
+  LogManager::setBootSession(bootSession);
+  LogManager::setTimestampProvider(getTimestamp);
+  
+  // Start the log task
+  if (!LogManager::startLogTask()) {
+    Serial.println("Failed to start log task!");
+    ErrorBlinkLED(100);
+  }
+  
+  LogManager::log("\n\n\n======= Boot session: " + String(bootSession) + "=======");
 
   audioFileIndex = 0;  // Reset audio file index on boot
-  logFileIndex = 0;    // Reset log file index on boot
 
   initTime();
   
@@ -342,48 +284,43 @@ void setup_from_boot() {
 
   audioQueue = xQueueCreate(AUDIO_QUEUE_SIZE , sizeof(AudioBuffer)); // Create a queue with space for AudioBuffer items.
   if(audioQueue == NULL) {
-    log("Failed to create audio queue!");
+    LogManager::log("Failed to create audio queue!");
     ErrorBlinkLED(100);
   }
 
-  initSD();
   initRecordingMode();
   
   // Tasks on Core 1
   // Name, Stack size, Priority, Task handle, Core
   if(xTaskCreatePinnedToCore(recordAudio, "Record Loop", 4096, NULL, 1, &recordAudioTaskHandle, 1) != pdPASS ) {
-    log("Failed to create recordAudio task!");
+    LogManager::log("Failed to create recordAudio task!");
     ErrorBlinkLED(100);
   }
 
   // Tasks on Core 0
   if(xTaskCreatePinnedToCore(persistTimeTask, "Persist Time", 4096, NULL, 1, &persistTimeTaskHandle, 0) != pdPASS ) {
-    log("Failed to create persistTime task!");
+    LogManager::log("Failed to create persistTime task!");
     ErrorBlinkLED(100);
   }
   
   if(xTaskCreatePinnedToCore(audioFileTask, "Audio File Save", 4096, NULL, 4, &audioFileTaskHandle, 0) != pdPASS ) {
-    log("Failed to create audioFile task!");
-    ErrorBlinkLED(100);
-  }
-  if(xTaskCreatePinnedToCore(logFlushTask, "Log Flush", 4096, NULL, 1,  &logFlushTaskHandle, 0) != pdPASS ) {
-    log("Failed to create logFlush task!");
+    LogManager::log("Failed to create audioFile task!");
     ErrorBlinkLED(100);
   }
 
   if(xTaskCreatePinnedToCore(wifiConnectionTask, "WiFi Connection", 4096, NULL, 1, &wifiConnectionTaskHandle, 0) != pdPASS ) {
-    log("Failed to create wifiConnection task!");
+    LogManager::log("Failed to create wifiConnection task!");
     ErrorBlinkLED(100);
   }
 
   if(xTaskCreatePinnedToCore(batteryMonitorTask, "Battery Monitor", 4096, NULL, 1, &batteryMonitorTaskHandle, 0) != pdPASS ) {
-    log("Failed to create batteryMonitor task!");
+    LogManager::log("Failed to create batteryMonitor task!");
     ErrorBlinkLED(100);
   }
   
   // This task can be used to monitor the stack usage. It can be commented / uncommented as needed.
   // if(xTaskCreatePinnedToCore(stackMonitorTask, "Stack Monitor", 4096, NULL, 1, NULL, 0) != pdPASS ) {
-  //   log("Failed to create stackMonitor task!");
+  //   LogManager::log("Failed to create stackMonitor task!");
   //   ErrorBlinkLED(100);
   // }
 }
@@ -392,37 +329,27 @@ void loop() {
   // Empty loop as tasks are running on different cores
 }
 
-
-
-
-
-
-
-
-
-
-
 /**********************************
  *         RECORDING FUNCTIONS    *
  **********************************/
 void initRecordingMode() {
-  log("Initializing PDM Microphone...");
+  LogManager::log("Initializing PDM Microphone...");
   i2s.setPinsPdmRx(42, 41);
   if (!i2s.begin(I2S_MODE_PDM_RX, SAMPLING_RATE, I2S_DATA_BIT_WIDTH_16BIT,
                  I2S_SLOT_MODE_MONO)) {
-    log("Failed to initialize I2S!");
+    LogManager::log("Failed to initialize I2S!");
     ErrorBlinkLED(100);
   }
-  log("Mic initialized.");
+  LogManager::log("Mic initialized.");
   ensureRecordingDirectory();
 }
 
 void ensureRecordingDirectory() {
   if (!SD.exists(RECORDINGS_DIR)) {
     if (SD.mkdir(RECORDINGS_DIR)) {
-      log("Recordings directory created");
+      LogManager::log("Recordings directory created");
     } else {
-      log("Failed to create recordings directory!");
+      LogManager::log("Failed to create recordings directory!");
     }
   }
 }
@@ -447,7 +374,7 @@ void recordAudio(void *parameter) {
       
       audio.buffer = i2s.recordWAV(RECORD_TIME, &audio.size);
       if (xQueueSend(audioQueue, &audio, pdMS_TO_TICKS(1000)) != pdPASS) {
-        log("Failed to enqueue audio buffer!");
+        LogManager::log("Failed to enqueue audio buffer!");
         free(audio.buffer);
       }
     } else {
@@ -459,7 +386,7 @@ void recordAudio(void *parameter) {
         audio.type = END;
         audio.buffer = i2s.recordWAV(RECORD_TIME, &audio.size);
         if (xQueueSend(audioQueue, &audio, pdMS_TO_TICKS(1000)) != pdPASS) {
-          log("Failed to enqueue final audio buffer!");
+          LogManager::log("Failed to enqueue final audio buffer!");
           free(audio.buffer);
         }
         wasRecording = false;
@@ -492,22 +419,22 @@ void audioFileTask(void *parameter) {
       if (xSemaphoreTake(sdMutex, portMAX_DELAY) == pdPASS) {
         File curr_file = SD.open(fileName, FILE_WRITE);
         if (!curr_file) {
-          log("Failed to open file for writing: " + fileName);
+          LogManager::log("Failed to open file for writing: " + fileName);
           xSemaphoreGive(sdMutex);
           free(audio.buffer);
           continue;
         }
         if (curr_file.write(audio.buffer, audio.size) != audio.size) {
-          log("Failed to write audio data to file: " + fileName);
+          LogManager::log("Failed to write audio data to file: " + fileName);
         } else {
-          log("Audio recorded and saved: " + fileName);
+          LogManager::log("Audio recorded and saved: " + fileName);
           wavFilesAvailable = true;
 
           // Add to upload queue while we have the mutex
           if (addToUploadQueue(fileName)) {
-            log("Added to upload queue: " + fileName);
+            LogManager::log("Added to upload queue: " + fileName);
           } else {
-            log("Failed to add to upload queue: " + fileName);
+            LogManager::log("Failed to add to upload queue: " + fileName);
           }
         }
         curr_file.close();
@@ -524,7 +451,7 @@ void audioFileTask(void *parameter) {
     
       // Make sure log queue is also empty before sleep
       if (uxQueueMessagesWaiting(logQueue) == 0) {
-        log("Recording stopped and all data processed. Entering deep sleep.");
+        LogManager::log("Recording stopped and all data processed. Entering deep sleep.");
         vTaskDelay(pdMS_TO_TICKS(500)); // Short delay to allow log to be written
         initDeepSleep();
       }
@@ -538,7 +465,7 @@ bool addToUploadQueue(const String &filename) {
   // We assume the SD mutex is already taken by the calling function
   File queueFile = SD.open(UPLOAD_QUEUE_FILE, FILE_APPEND);
   if (!queueFile) {
-    log("Failed to open upload queue file for writing");
+    LogManager::log("Failed to open upload queue file for writing");
     return false;
   }
   
@@ -546,13 +473,6 @@ bool addToUploadQueue(const String &filename) {
   queueFile.close();
   return true;
 }
-
-
-
-
-
-
-
 
 /**********************************
  *         FILE UPLOAD            *
@@ -646,7 +566,7 @@ void fileUploadTask(void *parameter) {
         String nextFile = getNextUploadFile();
         
         if (nextFile.length() > 0) {
-          log("Processing next file from queue: " + nextFile);
+          LogManager::log("Processing next file from queue: " + nextFile);
           
           // Try to take SD card mutex
           if (xSemaphoreTake(sdMutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
@@ -664,12 +584,12 @@ void fileUploadTask(void *parameter) {
                   // Read the entire file into RAM
                   size_t bytesRead = file.read(uploadBuffer.buffer, uploadBuffer.size);
                   if (bytesRead != uploadBuffer.size) {
-                    log("Error reading file into buffer");
+                    LogManager::log("Error reading file into buffer");
                     free(uploadBuffer.buffer);
                     uploadBuffer.buffer = NULL;
                   }
                 } else {
-                  log("Failed to allocate memory for file upload");
+                  LogManager::log("Failed to allocate memory for file upload");
                 }
                 
                 file.close();
@@ -681,19 +601,19 @@ void fileUploadTask(void *parameter) {
             
             if (uploadBuffer.buffer) {
               // Upload the file from RAM
-              log("Uploading file from buffer: " + uploadBuffer.filename);
+              LogManager::log("Uploading file from buffer: " + uploadBuffer.filename);
               bool uploadSuccess = uploadFileFromBuffer(uploadBuffer.buffer, uploadBuffer.size, uploadBuffer.filename);
               
               // If upload was successful, delete the file and remove from queue
               if (uploadSuccess) {
-                log("Upload successful, deleting file");
+                LogManager::log("Upload successful, deleting file");
                 
                 // Take SD mutex again just for deletion
                 if (xSemaphoreTake(sdMutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
                   if (SD.remove(uploadBuffer.filename)) {
-                    log("File deleted: " + uploadBuffer.filename);
+                    LogManager::log("File deleted: " + uploadBuffer.filename);
                   } else {
-                    log("Failed to delete file: " + uploadBuffer.filename);
+                    LogManager::log("Failed to delete file: " + uploadBuffer.filename);
                   }
                   xSemaphoreGive(sdMutex);
                 }
@@ -701,19 +621,19 @@ void fileUploadTask(void *parameter) {
                 // Remove from queue
                 removeFirstFromUploadQueue();
               } else {
-                log("Upload failed for: " + uploadBuffer.filename);
+                LogManager::log("Upload failed for: " + uploadBuffer.filename);
               }
               
               // Free the buffer memory
               free(uploadBuffer.buffer);
             }
           } else {
-            log("Could not get SD card mutex for file upload");
+            LogManager::log("Could not get SD card mutex for file upload");
           }
         } else {
           // No files in queue
           wavFilesAvailable = false;
-          log("No files in upload queue");
+          LogManager::log("No files in upload queue");
         }
         
         uploadInProgress = false;
@@ -730,7 +650,7 @@ bool uploadFileFromBuffer(uint8_t *buffer, size_t size, const String &filename) 
     return false;
   }
   if (xSemaphoreTake(httpMutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
-    log("Could not get HTTP mutex for file upload");
+    LogManager::log("Could not get HTTP mutex for file upload");
     return false;
   }
   
@@ -742,7 +662,7 @@ bool uploadFileFromBuffer(uint8_t *buffer, size_t size, const String &filename) 
 
   // Check WiFi connection before proceeding
   if (WiFi.status() != WL_CONNECTED) {
-    log("WiFi not connected, aborting upload");
+    LogManager::log("WiFi not connected, aborting upload");
     return false;
   }
   
@@ -761,9 +681,9 @@ bool uploadFileFromBuffer(uint8_t *buffer, size_t size, const String &filename) 
   int httpResponseCode = client.sendRequest("POST",buffer, size);
   
   if (httpResponseCode > 0) {
-    log("HTTP Response code: " + String(httpResponseCode));
+    LogManager::log("HTTP Response code: " + String(httpResponseCode));
     String response = client.getString();
-    log("Server response: " + response);
+    LogManager::log("Server response: " + response);
     client.end();
     bool success = (httpResponseCode == HTTP_CODE_OK || httpResponseCode == HTTP_CODE_CREATED);
     if (!success) {
@@ -774,7 +694,7 @@ bool uploadFileFromBuffer(uint8_t *buffer, size_t size, const String &filename) 
     xSemaphoreGive(httpMutex);
     return success;
   } else {
-    log("Error on HTTP request: " + String(client.errorToString(httpResponseCode).c_str()));
+    LogManager::log("Error on HTTP request: " + String(client.errorToString(httpResponseCode).c_str()));
     client.end();
     // Network error, mark backend as unavailable
     backendReachable = false;
@@ -784,7 +704,6 @@ bool uploadFileFromBuffer(uint8_t *buffer, size_t size, const String &filename) 
   }
 }
 
-
 /**********************************
  *         LOG FILE MANAGEMENT    *
  **********************************/
@@ -793,72 +712,20 @@ void initSD() {
     Serial.println("Failed to mount SD Card!");
     ErrorBlinkLED(100);
   }
-  log("SD card initialized.");
-  ensureLogFile();
+  Serial.println("SD card initialized.");
 }
 
+// Keep for backward compatibility but make it a simple wrapper
 void ensureLogFile() {
-  if (!SD.exists(LOG_FILE)) {
-    File logFile = SD.open(LOG_FILE, FILE_WRITE);
-    if (logFile) {
-      logFile.println("=== Device Log Started ===");
-      logFile.flush();
-      logFile.close();
-    }
-  }
+  // This is now handled by LogManager::init()
 }
 
+// Replace original log function with a wrapper for LogManager
 void log(const String &message) {
-  String timestamp = getTimestamp();
-  String logMessage = String(bootSession) + "_" + String(logFileIndex) + "_" + timestamp + ": " + message;
-  logFileIndex++;
-  Serial.println(logMessage);
-
-  // Allocate a copy on the heap.
-  char *msgCopy = strdup(logMessage.c_str());
-  if (xQueueSend(logQueue, &msgCopy, portMAX_DELAY) != pdPASS) {
-    Serial.println("Failed to enqueue log message!");
-    free(msgCopy);
-  }
+  LogManager::log(message);
 }
 
-void logFlushTask(void *parameter) {
-  while (true) {
-    if (uxQueueMessagesWaiting(logQueue) > 0) {
-      if (xSemaphoreTake(sdMutex, portMAX_DELAY) == pdPASS) {
-        File logFile = SD.open(LOG_FILE, FILE_APPEND);
-        if (logFile) {
-          char *pendingLog;
-          while (xQueueReceive(logQueue, &pendingLog, 0) == pdTRUE) {
-            logFile.println(pendingLog);
-            free(pendingLog);
-          }
-          logFile.flush();
-          logFile.close();
-        } else {
-          Serial.println("Failed to open log file for batch flush!");
-          char *pendingLog;
-          while (xQueueReceive(logQueue, &pendingLog, 0) == pdTRUE) {
-            free(pendingLog);
-          }
-        }
-        xSemaphoreGive(sdMutex);
-      }
-    }
-    vTaskDelay(pdMS_TO_TICKS(10));
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
+// Remove the logFlushTask function as it's been replaced by LogManager::logFlushTask
 
 /**********************************
  *       UTILITY FUNCTIONS        *
@@ -881,13 +748,13 @@ void logFlushTask(void *parameter) {
       vTaskDelay(pdMS_TO_TICKS(5));  // Brief delay between readings to stabilize ADC
     }
     int averagedRawValue = total / sampleCount;
-    // log average raw value
-    // log("Battery raw value: " + String(averagedRawValue));
+    // LogManager::log average raw value
+    // LogManager::log("Battery raw value: " + String(averagedRawValue));
 
     // Convert averaged raw value to voltage.
     // For a 12-bit ADC with a 3.3V reference and a voltage divider with 2x 10k resistors:
     float voltage = ((float)averagedRawValue / 4095.0) * 3.3 * 2;
-    log("Battery voltage: " + String(voltage, 3) + "V");
+    LogManager::log("Battery voltage: " + String(voltage, 3) + "V");
 
     // Wait for 10 seconds before next measurement.
     vTaskDelay(pdMS_TO_TICKS(BATTERY_MONITOR_INTERVAL));
@@ -928,21 +795,12 @@ void stackMonitorTask(void *parameter) {
 
 void monitorStackUsage(TaskHandle_t taskHandle) {
   if (taskHandle == NULL) {
-    log("Task handle is null");
+    LogManager::log("Task handle is null");
     return;
   }
   UBaseType_t highWaterMark = uxTaskGetStackHighWaterMark(taskHandle);
-  log("Task " + String(pcTaskGetName(taskHandle)) + " high water mark: " + String(highWaterMark));
+  LogManager::log("Task " + String(pcTaskGetName(taskHandle)) + " high water mark: " + String(highWaterMark));
 }
-
-
-
-
-
-
-
-
-
 
 /**********************************
  *         DEEP SLEEP             *
@@ -953,20 +811,14 @@ void initDeepSleep() {
   esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(BUTTON_PIN), 0); // Use EXT0 wakeup on BUTTON_PIN: trigger when the pin reads LOW.
   esp_sleep_enable_timer_wakeup(SLEEP_TIMEOUT_SEC * 1000000ULL); // Timer wakeup after SLEEP_TIMEOUT_SEC seconds
 
+  // Wait until there are no pending logs
+  while (LogManager::hasPendingLogs()) {
+    delay(10);
+  }
+
   storeCurrentTime(); // Persist current time before sleep.  
   esp_deep_sleep_start(); // Enter deep sleep.
 }
-
-
-
-
-
-
-
-
-
-
-
 
 /**********************************
  *         TIME MANAGEMENT    *
@@ -989,7 +841,7 @@ void initDeepSleep() {
         String timeStr = timeFile.readStringUntil('\n');
         timeFile.close();
         persistedTime = (time_t)timeStr.toInt();
-        log("Read persisted time from SD card: " + String(persistedTime));
+        LogManager::log("Read persisted time from SD card: " + String(persistedTime));
       }
     }
     xSemaphoreGive(sdMutex);
@@ -1002,15 +854,15 @@ void initDeepSleep() {
     tv.tv_usec = 0;
     settimeofday(&tv, NULL);
     storedTime = DEFAULT_TIME;
-    log("Default time set: " + String(storedTime));
+    LogManager::log("Default time set: " + String(storedTime));
   } else {
     // Check if RTC has a valid updated time
     if (currentRtcTime > persistedTime) {
       storedTime = currentRtcTime;
-      log("System time updated from RTC: " + String(storedTime));
+      LogManager::log("System time updated from RTC: " + String(storedTime));
     } else {
       storedTime = persistedTime;
-      log("System time updated from persisted time: " + String(storedTime));
+      LogManager::log("System time updated from persisted time: " + String(storedTime));
     }
     tv.tv_sec = storedTime;
     tv.tv_usec = 0;
@@ -1023,21 +875,21 @@ void initDeepSleep() {
 
 bool updateTimeFromNTP() {
   if (WiFi.status() != WL_CONNECTED) {
-    log("Cannot update time: WiFi not connected");
+    LogManager::log("Cannot update time: WiFi not connected");
     return false;
   }
   
-  log("Updating time from NTP servers...");
+  LogManager::log("Updating time from NTP servers...");
   configTime(0, 0, "pool.ntp.org", "time.google.com", "time.nist.gov");
   struct tm timeinfo;
 
   if (getLocalTime(&timeinfo)) {
     storedTime = mktime(&timeinfo);
-    log("Current time obtained.");
+    LogManager::log("Current time obtained.");
     storeCurrentTime();
     return true;
   } else {
-    log("Failed to obtain time.");
+    LogManager::log("Failed to obtain time.");
     return false;
   }
 }
@@ -1059,13 +911,13 @@ void storeCurrentTime() {
     if (timeFile) {
       timeFile.println(String(current));
       timeFile.close();
-      log("Stored current time to SD card: " + String(current));
+      LogManager::log("Stored current time to SD card: " + String(current));
     } else {
-      log("Failed to open time file for writing");
+      LogManager::log("Failed to open time file for writing");
     }
     xSemaphoreGive(sdMutex);
   } else {
-    log("Failed to take SD mutex for time storage");
+    LogManager::log("Failed to take SD mutex for time storage");
   }
 }
 
@@ -1079,17 +931,6 @@ String getTimestamp() {
   }
   return "unknown";
 }
-
-
-
-
-
-
-
-
-
-
-
 
 /**********************************
  *         WIFI MANAGEMENT    *
@@ -1110,21 +951,21 @@ void wifiConnectionTask(void *parameter) {
     
     // If we're not connected and it's time to scan
     if (!WIFIconnected && currentTime >= nextWifiScanTime) {
-      log("Scanning for WiFi networks...");
+      LogManager::log("Scanning for WiFi networks...");
       
       // Start network scan
       int networksFound = WiFi.scanNetworks();
       bool ssidFound = false;
       
       if (networksFound > 0) {
-        log("Found " + String(networksFound) + " networks");
+        LogManager::log("Found " + String(networksFound) + " networks");
         
         // Check if our SSID is in the list
         for (int i = 0; i < networksFound; i++) {
           String scannedSSID = WiFi.SSID(i);
           if (scannedSSID == String(SS_ID)) {
             ssidFound = true;
-            log("Target network '" + String(SS_ID) + "' found with signal strength: " + 
+            LogManager::log("Target network '" + String(SS_ID) + "' found with signal strength: " + 
                 String(WiFi.RSSI(i)) + " dBm");
             break;
           }
@@ -1133,18 +974,18 @@ void wifiConnectionTask(void *parameter) {
         
         // If our SSID was found and we haven't exceeded max attempts, try to connect
         if (ssidFound) {
-          log("Attempting to connect to: " + String(SS_ID));
+          LogManager::log("Attempting to connect to: " + String(SS_ID));
           WiFi.begin(SS_ID, PASSWORD);
         } else {
-          log("Target network not found in scan");
+          LogManager::log("Target network not found in scan");
           
           // Apply exponential backoff for next scan
           currentScanInterval = std::min(currentScanInterval * 2UL, (unsigned long)MAX_SCAN_INTERVAL);
           nextWifiScanTime = currentTime + currentScanInterval;
-          log("Next scan in " + String(currentScanInterval / 1000) + " seconds");
+          LogManager::log("Next scan in " + String(currentScanInterval / 1000) + " seconds");
         }
       } else {
-        log("No networks found");
+        LogManager::log("No networks found");
         // Apply exponential backoff for next scan
         currentScanInterval = std::min(currentScanInterval * 2UL, (unsigned long)MAX_SCAN_INTERVAL);
         nextWifiScanTime = currentTime + currentScanInterval;
@@ -1160,7 +1001,7 @@ void wifiConnectionTask(void *parameter) {
 }
 
 void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info) {
-  log("WiFi connected with IP: " + WiFi.localIP().toString());
+  LogManager::log("WiFi connected with IP: " + WiFi.localIP().toString());
   currentScanInterval = MIN_SCAN_INTERVAL;
   WIFIconnected = true;
   
@@ -1170,7 +1011,7 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info) {
 
   // Update time as soon as we get an IP address
   if (updateTimeFromNTP()) {
-    log("Time synchronized with NTP successfully");
+    LogManager::log("Time synchronized with NTP successfully");
   } else {
     // Schedule a retry in 30 seconds
     if(xTaskCreatePinnedToCore(
@@ -1181,7 +1022,7 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info) {
       },
       "NTPRetry", 4096, NULL, 1, NULL, 0
     ) != pdPASS) {
-      log("Failed to create NTP retry task");
+      LogManager::log("Failed to create NTP retry task");
     }
   }
 
@@ -1197,7 +1038,7 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info) {
       &uploadTaskHandle,
       0         // Run on Core 0
     ) != pdPASS) {
-      log("Failed to create file upload task");
+      LogManager::log("Failed to create file upload task");
     }
   }
 
@@ -1212,19 +1053,19 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info) {
       &backendReachabilityTaskHandle,
       0         // Run on Core 0
     ) != pdPASS) {
-      log("Failed to create backend reachability task");
+      LogManager::log("Failed to create backend reachability task");
     }
   } 
 }
 
 void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info) {
-  log("Connected to WiFi access point");
+  LogManager::log("Connected to WiFi access point");
 }
 
 /*
 void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info) {
   WIFIconnected = false;
-  log("Disconnected from WiFi. Reason: " + String(info.wifi_sta_disconnected.reason));
+  LogManager::log("Disconnected from WiFi. Reason: " + String(info.wifi_sta_disconnected.reason));
   nextWifiScanTime = 0; // Force a scan on next wifiConnectionTask iteration
 }*/
 
@@ -1237,7 +1078,7 @@ bool checkBackendReachability() {
     return false;
   }
   if (xSemaphoreTake(httpMutex, pdMS_TO_TICKS(2000)) != pdTRUE) {
-    log("HTTP mutex busy, skipping backend check");
+    LogManager::log("HTTP mutex busy, skipping backend check");
     return backendReachable;  // Return current state
   }
   
@@ -1249,7 +1090,7 @@ bool checkBackendReachability() {
     API_KEY);  // Add the API key as a custom header
 
   int httpResponseCode = http.GET();
-  log("Backend check response: " + String(httpResponseCode));
+  LogManager::log("Backend check response: " + String(httpResponseCode));
   
   http.end();
   xSemaphoreGive(httpMutex);
@@ -1279,22 +1120,22 @@ void backendReachabilityTask(void *parameter) {
       }
       
       if (shouldCheck) {
-        log("Checking backend reachability...");
+        LogManager::log("Checking backend reachability...");
         
         if (checkBackendReachability()) {
-          log("Backend is reachable");
+          LogManager::log("Backend is reachable");
           backendReachable = true;
           // Reset backoff on success
           currentBackendInterval = MIN_SCAN_INTERVAL;
           // Record successful check time
           lastSuccessfulCheck = currentTime;
         } else {
-          log("Backend is not reachable");
+          LogManager::log("Backend is not reachable");
           backendReachable = false;
           
           // Apply exponential backoff for next check
           currentBackendInterval = std::min(currentBackendInterval * 2UL, (unsigned long)MAX_SCAN_INTERVAL);
-          log("Next backend check in " + String(currentBackendInterval / 1000) + " seconds");
+          LogManager::log("Next backend check in " + String(currentBackendInterval / 1000) + " seconds");
         }
         
         nextBackendCheckTime = currentTime + currentBackendInterval;
