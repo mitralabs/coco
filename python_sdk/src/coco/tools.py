@@ -235,7 +235,7 @@ class ToolsClient:
         return tool.method(**converted_kwargs)
 
     @tool(
-        description="Search for relevant information in the knowledge database by embedding similarity to the query_text. Searched chunks can be filtered by a start and end date before the search."
+        description="Search for relevant information in the knowledge database by embedding similarity to the query_text. Searched chunks can be restricted using a couple of filters before the similarity search: only consider chunks from a specific time range, only consider chunks that contain a specific substring."
     )
     def semantic_query(
         self,
@@ -271,6 +271,7 @@ class ToolsClient:
                 return {
                     "message": f"Invalid end date time: {end_date_time_iso}. Please provide a valid ISO 8601 formatted date time or don't set the parameter. Call the tool again without asking the user for confirmation.",
                 }
+
         embedding = self.lm.embed(query_text)
         ids, documents, metadatas, distances = self.db_api.get_closest(
             embedding=embedding,
@@ -281,13 +282,117 @@ class ToolsClient:
         )
         knowledge = [
             {
+                "id": id,
                 "content": document,
                 "metadata": metadata,
+                "cosine_distance": distance,
             }
-            for document, metadata in zip(documents, metadatas)
+            for id, document, metadata, distance in zip(
+                ids, documents, metadatas, distances
+            )
         ]
         return {
-            "message": f"Here are your knowledge chunks and their metadata for the query '{query_text}'.",
+            "message": f"Here is the list of chunks / knowledge for your query '{query_text}'.",
+            "knowledge": knowledge,
+            "tool_timestamp": datetime.datetime.now().isoformat(),
+        }
+
+    @tool(
+        description="Search for relevant information in the knowledge database by a specific emotion reflected in the chunk text. Searched chunks can be restricted using a couple of filters before the similarity search: only consider chunks from a specific time range, only consider chunks that contain a specific substring."
+    )
+    def emotion_query(
+        self,
+        emotion: str,
+        num_results: int = 25,
+        start_date_time_iso: Optional[str] = None,
+        end_date_time_iso: Optional[str] = None,
+        contains_substring: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Search for relevant information in the database based on a query.
+
+        Args:
+            emotion (str): The emotion to search for. This will be compared to the database chunks by embedding similarity.
+            num_results (int, optional): The number of chunks to return for the query. If not set, defaults to 25.
+            start_date_time_iso (Optional[str], optional): The start date in ISO format. If provided, only chunks dated after this date will be considered. If not set, all knowledge chunks will be considered.
+            end_date_time_iso (Optional[str], optional): The end date in ISO format. If provided, only chunks dated before this date will be considered. If not set, all knowledge chunks will be considered.
+            contains_substring (Optional[str], optional): Only consider chunks that contain this substring (case insensitive). If not set, all knowledge chunks will be considered.
+        Returns:
+            List[Dict[str, Any]]: The search results.
+        """
+        start, end = None, None
+        if start_date_time_iso is not None:
+            try:
+                start = datetime.datetime.fromisoformat(start_date_time_iso)
+            except ValueError:
+                return {
+                    "message": f"Invalid start date time: {start_date_time_iso}. Please provide a valid ISO 8601 formatted date time or don't set the parameter. Call the tool again without asking the user for confirmation.",
+                }
+        if end_date_time_iso is not None:
+            try:
+                end = datetime.datetime.fromisoformat(end_date_time_iso)
+            except ValueError:
+                return {
+                    "message": f"Invalid end date time: {end_date_time_iso}. Please provide a valid ISO 8601 formatted date time or don't set the parameter. Call the tool again without asking the user for confirmation.",
+                }
+
+        gen_prompt = f"""
+            ## Task:
+            - Generate a query text that encodes an emotion for embedding cosine similarity search
+            - The query can should NOT filter based on semantic content, just on emotion!
+            - Do NOT just use the emotion word, but speech patterns like positive or negative formulations, fill words, adjectives / no adjectives, conjunctions / no conjunctions, etc.
+            - IF you think using fillers like 'ahem', 'hmm', 'eeeh', etc. is appropriate for the given emotion, use them and spell them out! Your query will be compared to transcribed speech.
+
+            ### Examples:
+            - if the emotion is anxious, the query should contain a lot of fill words and conjunctions.
+            - if the emotion is happy, the query should contain a lot of strong adjectives and adverbs.
+            - if the emotion is sad, the query should contain a lot of negative formulations, adjectives and adverbs.
+
+            ## Answer format:
+            - in GERMAN
+            - JUST the query text, nothing else!
+
+            ## Emotion:
+            {emotion}
+            """
+        query_text = self.lm.generate_multiple(
+            prompts=[gen_prompt], model="meta-llama/Llama-3.3-70B-Instruct"
+        )[0][0]
+        embedding = self.lm.embed(query_text)
+
+        ids, documents, metadatas, distances = self.db_api.get_closest(
+            embedding=embedding,
+            n_results=num_results,
+            start_date_time=start,
+            end_date_time=end,
+            contains_substring=contains_substring,
+        )
+        print(
+            f"""
+            =====
+            == Emotion filter:
+            {emotion}
+
+            == Query text:
+            {query_text}
+
+            == First two chunks:
+            {documents[:2]}
+            =====
+            """
+        )
+        knowledge = [
+            {
+                "id": id,
+                "content": document,
+                "metadata": metadata,
+                "cosine_distance": distance,
+            }
+            for id, document, metadata, distance in zip(
+                ids, documents, metadatas, distances
+            )
+        ]
+        return {
+            "message": f"Here is the list of chunks / knowledge for your query '{query_text}'.",
             "knowledge": knowledge,
             "tool_timestamp": datetime.datetime.now().isoformat(),
         }
