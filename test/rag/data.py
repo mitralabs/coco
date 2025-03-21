@@ -4,47 +4,20 @@ from omegaconf import DictConfig
 import logging
 import wandb
 import shutil
-
 from coco import CocoClient
+import sys
+import random
+import datetime
+
+sys.path.append("../dataset")
+
+import parse  # type: ignore
+from dataset import RAGDataset
 
 logger = logging.getLogger(__name__)
 
 
-def unique_texts(ds, verbose=False):
-    """
-    Extract unique texts from the dataset.
-
-    Args:
-        ds (Dataset): The dataset to extract unique texts from.
-        verbose (bool, optional): Whether to print verbose output. Defaults to False.
-
-    Returns:
-        list: A list of tuples (text, title)
-    """
-    pos, neg, hard_neg = [], [], []
-    for sample in ds:
-        p = sample["positive_ctxs"]
-        for title, text in zip(p["text"], p["title"]):
-            pos.append((title, text))
-        n = sample["negative_ctxs"]
-        for title, text in zip(n["text"], n["title"]):
-            neg.append((title, text))
-        hn = sample["hard_negative_ctxs"]
-        for title, text in zip(hn["text"], hn["title"]):
-            hard_neg.append((title, text))
-    merged = list(set(pos + neg + hard_neg))
-    if verbose:
-        print("pos", len(pos))
-        print("neg", len(neg))
-        print("hard_neg", len(hard_neg))
-        print("sum", len(pos) + len(neg) + len(hard_neg))
-        print("merged", len(merged))
-        print("merged_unique_titles", len(set([title for _, title in merged])))
-        print("merged_unique_texts", len(set([text for text, _ in merged])))
-    return merged
-
-
-def init_dataset(cfg: DictConfig) -> Dataset:
+def get_hf_dpr_dataset(cfg: DictConfig) -> Dataset:
     ds = load_dataset(cfg.data.hf_name, trust_remote_code=True)
     train_ds, test_ds = ds["train"], ds["test"]
     datasets = []
@@ -89,7 +62,16 @@ def clear_database(cc: CocoClient, cfg: DictConfig):
     logger.info(f"Cleared database: {deleted_count} chunks")
 
 
-def fill_database(cc: CocoClient, cfg: DictConfig, dataset: Dataset):
+def random_dt(
+    from_dt: datetime.datetime = datetime.datetime(2021, 1, 1, 0, 0, 0),
+    to_dt: datetime.datetime = datetime.datetime(2025, 12, 31, 23, 59, 59),
+) -> datetime.datetime:
+    return datetime.datetime.fromtimestamp(
+        random.uniform(from_dt.timestamp(), to_dt.timestamp())
+    )
+
+
+def fill_database(cc: CocoClient, cfg: DictConfig, dataset: RAGDataset):
     if cfg.data.fill_db.skip:
         logger.info(f"Skipping {cfg.data.name} to db")
         return
@@ -98,13 +80,15 @@ def fill_database(cc: CocoClient, cfg: DictConfig, dataset: Dataset):
     assert (
         model_emb_dim <= db_emb_dim
     ), f"Embedding model {cfg.retrieval.embedding_model[0]} has dimension {model_emb_dim} which is greater than the maximum supported dimension {db_emb_dim}"
-    unique = unique_texts(dataset)
-    texts = [text for text, _ in unique]  # don't use titles for now
+    chunks, chunk_datetimes = dataset.unique_chunks()
+    if cfg.data.random_datetimes_if_missing:
+        chunk_datetimes = [dt or random_dt() for dt in chunk_datetimes]
     added, skipped = cc.embed_and_store_multiple(
-        chunks=texts,
+        chunks=chunks,
         language=cfg.data.language,
         filename=cfg.data.name,
-        date_times=[None] * len(texts),
+        session_id=0,
+        date_times=chunk_datetimes,
         model=cfg.retrieval.embedding_model[0],
         batch_size=cfg.data.fill_db.embed_and_store_batch_size,
         limit_parallel=cfg.data.fill_db.embed_and_store_limit_parallel,
@@ -115,9 +99,20 @@ def fill_database(cc: CocoClient, cfg: DictConfig, dataset: Dataset):
 
 def data_stage(cc: CocoClient, cfg: DictConfig) -> Dataset:
     logger.info(f"Starting data stage")
-    ds = init_dataset(cfg)
+    if cfg.data.type == "hf_dpr":
+        hf_dpr_dataset = get_hf_dpr_dataset(cfg)
+        ds = RAGDataset.from_dpr_dataset(hf_dpr_dataset)
+    elif cfg.data.type == "custom":
+        custom_datasets = parse.get_datasets(samples_path=cfg.data.custom_samples_root)
+        ds = RAGDataset.from_custom_datasets(
+            custom_datasets, split=cfg.data.custom_split
+        )
+    else:
+        logger.error(f"Invalid dataset type: {cfg.data.type}")
+        wandb.finish()
+        exit(1)
     if cfg.data.limit_samples:
-        ds = ds.select(range(cfg.data.limit_samples))
+        ds = ds[: cfg.data.limit_samples]
     backup_database(cfg)
     clear_database(cc, cfg)
     fill_database(cc, cfg, ds)

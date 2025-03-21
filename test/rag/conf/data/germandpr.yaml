@@ -1,12 +1,21 @@
 name: germandpr
-hf_name: deepset/germandpr
+type: hf_dpr # custom / hf_dpr
 language: de
+
 limit_samples: null
-use_train: true
-use_test: false
+random_datetimes_if_missing: true
 backup_db: false
-clear_db: true
+clear_db: false
 fill_db:
-  skip: false
+  skip: true
   embed_and_store_batch_size: 25
   embed_and_store_limit_parallel: 10
+
+# hf_dpr settings
+hf_name: deepset/germandpr
+use_train: true
+use_test: false
+
+# custom settings
+custom_samples_root: null
+custom_split: null

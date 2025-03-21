@@ -45,6 +45,7 @@ class DbApiClient:
         start_date_time: Optional[datetime.datetime] = None,
         end_date_time: Optional[datetime.datetime] = None,
         session_id: Optional[int] = None,
+        contains_substring: Optional[str] = None,
     ):
         """Retrieve the closest results from the database service.
 
@@ -54,7 +55,7 @@ class DbApiClient:
             start_date_time (datetime.datetime, optional): Only return documents with a date greater than or equal to this. Defaults to None.
             end_date_time (datetime.datetime, optional): Only return documents with a date less than or equal to this. Defaults to None.
             session_id (int, optional): Only return documents with this session ID. Defaults to None.
-
+            contains_substring (str, optional): Only return documents that contain this substring. Defaults to None.
         Returns:
             Tuple[List[str], List[str], List[Dict], List[float]]: (ids, documents, metadatas, distances)
             metadata dict:
@@ -72,7 +73,8 @@ class DbApiClient:
                 request_data["end_date_time"] = end_date_time.isoformat()
             if session_id is not None:
                 request_data["session_id"] = session_id
-
+            if contains_substring:
+                request_data["contains_substring"] = contains_substring
             response = client.post(
                 f"{self.base_url}/get_closest",
                 json=request_data,
