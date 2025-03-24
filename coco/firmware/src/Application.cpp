@@ -2,6 +2,7 @@
 #include "config.h"
 #include "LogManager.h"
 #include "TimeManager.h"
+#include "FileSystem.h" // Added for using FileSystem
 
 // Initialize static instance to nullptr
 Application* Application::_instance = nullptr;
@@ -33,7 +34,6 @@ Application::Application() :
     readyForDeepSleep(false),
     externalWakeValid(-1),
     ledMutex(nullptr),
-    sdMutex(nullptr),
     uploadMutex(nullptr),
     httpMutex(nullptr),
     stateMutex(nullptr),
@@ -86,13 +86,11 @@ bool Application::init() {
 // Initialize mutexes
 bool Application::initMutexes() {
     ledMutex = xSemaphoreCreateMutex();
-    sdMutex = xSemaphoreCreateMutex();
     uploadMutex = xSemaphoreCreateMutex();
     httpMutex = xSemaphoreCreateMutex();
     stateMutex = xSemaphoreCreateMutex();
     
     return (ledMutex != nullptr && 
-            sdMutex != nullptr && 
             uploadMutex != nullptr && 
             httpMutex != nullptr &&
             stateMutex != nullptr);
@@ -108,11 +106,13 @@ bool Application::initQueues() {
 
 // Initialize SD card
 bool Application::initSD() {
-    if (!SD.begin(21, SPI, SD_SPEED)) {
-        Serial.println("Failed to mount SD Card!");
+    // Use FileSystem module instead of direct SD initialization
+    FileSystem* fs = FileSystem::getInstance();
+    if (!fs->init()) {
+        Serial.println("Failed to initialize FileSystem for SD card access!");
         return false;
     }
-    Serial.println("SD card initialized.");
+    Serial.println("SD card initialized through FileSystem module.");
     return true;
 }
 
@@ -157,25 +157,9 @@ bool Application::initRecordingMode() {
         return false;
     }
     
-    return ensureRecordingDirectory();
-}
-
-// Ensure recording directory exists
-bool Application::ensureRecordingDirectory() {
-    if (xSemaphoreTake(sdMutex, portMAX_DELAY) == pdPASS) {
-        if (!SD.exists(RECORDINGS_DIR)) {
-            if (SD.mkdir(RECORDINGS_DIR)) {
-                LogManager::log("Recordings directory created");
-            } else {
-                LogManager::log("Failed to create recordings directory!");
-                xSemaphoreGive(sdMutex);
-                return false;
-            }
-        }
-        xSemaphoreGive(sdMutex);
-        return true;
-    }
-    return false;
+    // Use FileSystem instead of local implementation
+    FileSystem* fs = FileSystem::getInstance();
+    return fs->ensureDirectory(RECORDINGS_DIR);
 }
 
 // Thread-safe state accessors
@@ -324,8 +308,9 @@ SemaphoreHandle_t Application::getLedMutex() {
     return ledMutex;
 }
 
+// Updated to delegate to FileSystem's mutex
 SemaphoreHandle_t Application::getSDMutex() {
-    return sdMutex;
+    return FileSystem::getInstance()->getSDMutex();
 }
 
 SemaphoreHandle_t Application::getUploadMutex() {
@@ -445,27 +430,4 @@ void Application::setBackendReachabilityTaskHandle(TaskHandle_t handle) {
 
 TaskHandle_t Application::getBackendReachabilityTaskHandle() const {
     return backendReachabilityTaskHandle;
-}
-
-// File operations
-bool Application::openFile(const String& path, File& file, const char* mode) {
-    if (xSemaphoreTake(sdMutex, portMAX_DELAY) == pdPASS) {
-        file = SD.open(path, mode);
-        bool success = file;
-        xSemaphoreGive(sdMutex);
-        return success;
-    }
-    return false;
-}
-
-bool Application::closeFile(File& file) {
-    if (xSemaphoreTake(sdMutex, portMAX_DELAY) == pdPASS) {
-        if (file) {
-            file.close();
-            xSemaphoreGive(sdMutex);
-            return true;
-        }
-        xSemaphoreGive(sdMutex);
-    }
-    return false;
 }

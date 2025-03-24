@@ -22,6 +22,7 @@
 #include "Application.h" // Include Application class first to avoid duplicate definitions
 #include "LogManager.h" // Include new LogManager
 #include "TimeManager.h" // Include TimeManager module
+#include "FileSystem.h" // Include FileSystem module
 
 /***********************************************
  *     GLOBAL VARIABLES AND DATA STRUCTURES    *
@@ -149,13 +150,20 @@ void setup() {
 }
 
 void setup_from_timer() {
+  // Initialize FileSystem for log operations
+  FileSystem* fs = FileSystem::getInstance();
+  if (!fs->init()) {
+    Serial.println("Failed to initialize FileSystem!");
+    while(1) { delay(100); } // Halt
+  }
+  
   // Write to log and enter deep sleep again.
   File logFile;
-  if (app->openFile(LOG_FILE, logFile, FILE_APPEND)) {
+  if (fs->openFile(LOG_FILE, logFile, FILE_APPEND)) {
     logFile.println("Woke from deep sleep (timer).");
     logFile.println("Timer wake up routine not yet implemented. Going back to sleep.");
     logFile.flush();
-    app->closeFile(logFile);
+    fs->closeFile(logFile);
   }
   initDeepSleep();
 }
@@ -176,19 +184,33 @@ void setup_from_external() {
     LogManager::log("Valid external wake, proceeding with boot.");
     setup_from_boot();
   } else {
+    // Initialize FileSystem for log operations
+    FileSystem* fs = FileSystem::getInstance();
+    if (!fs->init()) {
+      Serial.println("Failed to initialize FileSystem!");
+      while(1) { delay(100); } // Halt
+    }
+    
     // Write to log and enter deep sleep again.
     File logFile;
-    if (app->openFile(LOG_FILE, logFile, FILE_APPEND)) {
+    if (fs->openFile(LOG_FILE, logFile, FILE_APPEND)) {
       logFile.println("Invalid external wake, entering deep sleep again.");
       logFile.flush();
-      app->closeFile(logFile);
+      fs->closeFile(logFile);
     }
     initDeepSleep();
   }
 }
 
 void setup_from_boot() {
-  // Initialize TimeManager first to ensure valid timestamps are available early
+  // Initialize FileSystem first as other modules depend on it
+  FileSystem* fs = FileSystem::getInstance();
+  if (!fs->init()) {
+    Serial.println("Failed to initialize FileSystem!");
+    ErrorBlinkLED(100);
+  }
+  
+  // Initialize TimeManager after FileSystem is initialized
   if (!TimeManager::init(app)) {
     Serial.println("Failed to initialize TimeManager!");
     ErrorBlinkLED(100);
@@ -342,6 +364,8 @@ void recordAudio(void *parameter) {
 
 void audioFileTask(void *parameter) {
   AudioBuffer audio;
+  FileSystem* fs = FileSystem::getInstance();
+  
   while (true) {
     QueueHandle_t audioQueue = app->getAudioQueue();
     while (xQueueReceive(audioQueue, &audio, pdMS_TO_TICKS(10)) == pdTRUE) {
@@ -361,7 +385,7 @@ void audioFileTask(void *parameter) {
       app->setAudioFileIndex(app->getAudioFileIndex() + 1);
 
       File curr_file;
-      if (app->openFile(fileName, curr_file, FILE_WRITE)) {
+      if (fs->openFile(fileName, curr_file, FILE_WRITE)) {
         if (curr_file.write(audio.buffer, audio.size) != audio.size) {
           LogManager::log("Failed to write audio data to file: " + fileName);
         } else {
@@ -369,13 +393,13 @@ void audioFileTask(void *parameter) {
           app->setWavFilesAvailable(true);
 
           // Add to upload queue while we have the mutex
-          if (addToUploadQueue(fileName)) {
+          if (fs->addToUploadQueue(fileName)) {
             LogManager::log("Added to upload queue: " + fileName);
           } else {
             LogManager::log("Failed to add to upload queue: " + fileName);
           }
         }
-        app->closeFile(curr_file);
+        fs->closeFile(curr_file);
       } else {
         LogManager::log("Failed to open file for writing: " + fileName);
       }
@@ -400,88 +424,9 @@ void audioFileTask(void *parameter) {
   }
 }
 
-bool addToUploadQueue(const String &filename) {
-  // We can use the app's openFile method which handles the mutex
-  File queueFile;
-  bool success = app->openFile(UPLOAD_QUEUE_FILE, queueFile, FILE_APPEND);
-  if (!success) {
-    LogManager::log("Failed to open upload queue file for writing");
-    return false;
-  }
-  
-  queueFile.println(filename);
-  app->closeFile(queueFile);
-  return true;
-}
-
-String getNextUploadFile() {
-  String nextFile = "";
-  
-  File queueFile;
-  if (app->openFile(UPLOAD_QUEUE_FILE, queueFile, FILE_READ)) {
-    if (queueFile.available()) {
-      nextFile = queueFile.readStringUntil('\n');
-      nextFile.trim(); // Remove any newline characters
-    }
-    app->closeFile(queueFile);
-  }
-  
-  return nextFile;
-}
-
-bool removeFirstFromUploadQueue() {
-  SemaphoreHandle_t sdMutex = app->getSDMutex();
-  if (xSemaphoreTake(sdMutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
-    if (!SD.exists(UPLOAD_QUEUE_FILE)) {
-      xSemaphoreGive(sdMutex);
-      return false;
-    }
-    
-    File queueFile = SD.open(UPLOAD_QUEUE_FILE, FILE_READ);
-    if (!queueFile) {
-      xSemaphoreGive(sdMutex);
-      return false;
-    }
-    
-    // Create a temporary file
-    File tempFile = SD.open(UPLOAD_QUEUE_TEMP, FILE_WRITE);
-    if (!tempFile) {
-      queueFile.close();
-      xSemaphoreGive(sdMutex);
-      return false;
-    }
-    
-    // Skip the first line and copy the rest
-    bool firstLine = true;
-    String line;
-    
-    while (queueFile.available()) {
-      line = queueFile.readStringUntil('\n');
-      
-      if (firstLine) {
-        firstLine = false;
-        // Skip the first line (we're removing it)
-        continue;
-      }
-      
-      tempFile.println(line);
-    }
-    
-    queueFile.close();
-    tempFile.close();
-    
-    // Replace original file with temp file
-    SD.remove(UPLOAD_QUEUE_FILE);
-    SD.rename(UPLOAD_QUEUE_TEMP, UPLOAD_QUEUE_FILE);
-    
-    xSemaphoreGive(sdMutex);
-    return true;
-  }
-  
-  return false;
-}
-
 void fileUploadTask(void *parameter) {
+  FileSystem* fs = FileSystem::getInstance();
+  
   while (true) {
     // Only proceed if WiFi is connected
     if (app->isWifiConnected() && app->isBackendReachable()) {
@@ -491,13 +436,13 @@ void fileUploadTask(void *parameter) {
         app->setUploadInProgress(true);
         
         // Get the next file to upload from queue
-        String nextFile = getNextUploadFile();
+        String nextFile = fs->getNextUploadFile();
         
         if (nextFile.length() > 0) {
           LogManager::log("Processing next file from queue: " + nextFile);
           
           // Try to take SD card mutex
-          SemaphoreHandle_t sdMutex = app->getSDMutex();
+          SemaphoreHandle_t sdMutex = fs->getSDMutex();
           if (xSemaphoreTake(sdMutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
             UploadBuffer uploadBuffer = {NULL, 0, ""};
             
@@ -548,7 +493,7 @@ void fileUploadTask(void *parameter) {
                 }
                 
                 // Remove from queue
-                removeFirstFromUploadQueue();
+                fs->removeFirstFromUploadQueue();
               } else {
                 LogManager::log("Upload failed for: " + uploadBuffer.filename);
               }

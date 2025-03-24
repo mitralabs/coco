@@ -25,22 +25,15 @@ bool TimeManager::init(Application* application) {
     time_t currentRtcTime = time(NULL);
     time_t persistedTime = 0;
     
-    // Check if time file exists on SD card
-    SemaphoreHandle_t sdMutex = app->getSDMutex();
-    if (xSemaphoreTake(sdMutex, portMAX_DELAY) == pdPASS) {
-        if (SD.exists(TIME_FILE)) {
-            File timeFile = SD.open(TIME_FILE, FILE_READ);
-            if (timeFile) {
-                String timeStr = timeFile.readStringUntil('\n');
-                timeFile.close();
-                persistedTime = (time_t)timeStr.toInt();
-                LogManager::log("Read persisted time from SD card: " + String(persistedTime));
-            }
-        }
-        xSemaphoreGive(sdMutex);
-    } else {
-        LogManager::log("Failed to take SD mutex for time initialization");
-        return false;
+    // Check if time file exists and read it using FileSystem
+    FileSystem* fs = FileSystem::getInstance();
+    File timeFile;
+    
+    if (fs->openFile(TIME_FILE, timeFile, FILE_READ)) {
+        String timeStr = timeFile.readStringUntil('\n');
+        fs->closeFile(timeFile);
+        persistedTime = (time_t)timeStr.toInt();
+        LogManager::log("Read persisted time from SD card: " + String(persistedTime));
     }
 
     // Determine which time source to use
@@ -122,33 +115,25 @@ bool TimeManager::storeCurrentTime() {
     time_t current = time(NULL);
     storedTime = current;
     
-    // Store time to SD card
-    SemaphoreHandle_t sdMutex = app->getSDMutex();
-    if (xSemaphoreTake(sdMutex, portMAX_DELAY) == pdPASS) {
-        File timeFile = SD.open(TIME_FILE, FILE_WRITE);
-        if (timeFile) {
-            timeFile.println(String(current));
-            timeFile.close();
-            // Use Serial instead of LogManager to avoid circular dependency issues early in boot
-            if (initialized)
-                LogManager::log("Stored current time to SD card: " + String(current));
-            else
-                Serial.println("Stored current time to SD card: " + String(current));
-            xSemaphoreGive(sdMutex);
-            return true;
-        } else {
-            if (initialized)
-                LogManager::log("Failed to open time file for writing");
-            else
-                Serial.println("Failed to open time file for writing");
-            xSemaphoreGive(sdMutex);
-            return false;
-        }
+    // Store time to SD card using FileSystem
+    FileSystem* fs = FileSystem::getInstance();
+    File timeFile;
+    
+    if (fs->openFile(TIME_FILE, timeFile, FILE_WRITE)) {
+        timeFile.println(String(current));
+        fs->closeFile(timeFile);
+        
+        // Use Serial instead of LogManager to avoid circular dependency issues early in boot
+        if (initialized)
+            LogManager::log("Stored current time to SD card: " + String(current));
+        else
+            Serial.println("Stored current time to SD card: " + String(current));
+        return true;
     } else {
         if (initialized)
-            LogManager::log("Failed to take SD mutex for time storage");
+            LogManager::log("Failed to open time file for writing");
         else
-            Serial.println("Failed to take SD mutex for time storage");
+            Serial.println("Failed to open time file for writing");
         return false;
     }
 }
@@ -177,9 +162,20 @@ bool TimeManager::startPersistenceTask() {
 }
 
 void TimeManager::persistTimeTask(void *parameter) {
+    TickType_t lastPersistTime = xTaskGetTickCount();
+    
     while (true) {
-        storeCurrentTime();
-        vTaskDelay(pdMS_TO_TICKS(TIME_PERSIST_INTERVAL));
+        // Store current time
+        bool success = storeCurrentTime();
+        
+        if (success) {
+            // If successful, wait for the normal interval
+            vTaskDelay(pdMS_TO_TICKS(TIME_PERSIST_INTERVAL));
+        } else {
+            // If failed, try again sooner but add a small delay to avoid tight loop
+            vTaskDelay(pdMS_TO_TICKS(5000)); // Try again in 5 seconds
+            LogManager::log("Retrying time persistence after failure");
+        }
     }
 }
 

@@ -13,6 +13,7 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <time.h>
+#include "FileSystem.h"
 
 // Forward declarations
 class LogManager;
@@ -46,11 +47,6 @@ private:
     Preferences preferences;
     I2SClass i2s;
     
-    // File handles
-    File curr_file;
-    File recordings_root_dir;
-    File logFile;
-    
     // Counters and indexes
     int bootSession;
     int logFileIndex;
@@ -76,7 +72,6 @@ private:
     
     // Mutexes
     SemaphoreHandle_t ledMutex;
-    SemaphoreHandle_t sdMutex;
     SemaphoreHandle_t uploadMutex;
     SemaphoreHandle_t httpMutex;
     
@@ -173,11 +168,6 @@ public:
     TaskHandle_t getUploadTaskHandle() const;
     void setBackendReachabilityTaskHandle(TaskHandle_t handle);
     TaskHandle_t getBackendReachabilityTaskHandle() const;
-    
-    // File operations
-    bool openFile(const String& path, File& file, const char* mode = FILE_READ);
-    bool closeFile(File& file);
-    bool ensureRecordingDirectory();
 };
 
 #endif // APPLICATION_H

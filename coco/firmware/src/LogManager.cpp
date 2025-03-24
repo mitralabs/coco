@@ -4,6 +4,7 @@
  */
 
 #include "LogManager.h"
+#include "FileSystem.h"
 
 // Initialize static members
 Application* LogManager::app = nullptr;
@@ -29,13 +30,16 @@ bool LogManager::init(Application* application) {
         return false;
     }
     
+    // Get FileSystem instance
+    FileSystem* fs = FileSystem::getInstance();
+    
     // Ensure log file exists
     File logFile;
-    if (app->openFile(LOG_FILE, logFile, FILE_WRITE)) {
+    if (fs->openFile(LOG_FILE, logFile, FILE_WRITE)) {
         if (logFile.size() == 0) {
             logFile.println("=== Device Log Started ===");
         }
-        app->closeFile(logFile);
+        fs->closeFile(logFile);
     } else {
         Serial.println("Failed to access log file!");
         return false;
@@ -99,18 +103,21 @@ bool LogManager::startLogTask() {
 }
 
 void LogManager::logFlushTask(void *parameter) {
+    // Get FileSystem instance
+    FileSystem* fs = FileSystem::getInstance();
+    
     while (true) {
         if (uxQueueMessagesWaiting(logQueue) > 0) {
             // Open log file for append
             File logFile;
-            if (app->openFile(LOG_FILE, logFile, FILE_APPEND)) {
+            if (fs->openFile(LOG_FILE, logFile, FILE_APPEND)) {
                 char *pendingLog;
                 while (xQueueReceive(logQueue, &pendingLog, 0) == pdTRUE) {
                     logFile.println(pendingLog);
                     free(pendingLog);
                 }
                 logFile.flush();
-                app->closeFile(logFile);
+                fs->closeFile(logFile);
             } else {
                 Serial.println("Failed to open log file for batch flush!");
                 // Free the memory for all pending messages since we couldn't write them

@@ -33,6 +33,8 @@
 #define SD_SPEED 20000000       // SD card SPI frequency (20 MHz)
 #define LOG_FILE "/device.log"  // System log file path
 #define TIME_FILE "/time.txt"   // Stored time file path
+#define MAX_FILES_PER_DIR 1000  // Maximum number of files to keep per directory
+#define MAX_QUEUE_FILES 500     // Maximum number of files in upload queue
 
 /**********************************
  *      TASK & QUEUE SETTINGS     *
