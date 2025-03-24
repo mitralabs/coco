@@ -13,7 +13,6 @@
 #include <freertos/task.h>
 #include <freertos/queue.h>
 #include <freertos/semphr.h>
-#include <WiFi.h>
 #include <HTTPClient.h>
 #include <time.h>
 
@@ -24,6 +23,7 @@
 #include "TimeManager.h" // Include TimeManager module
 #include "FileSystem.h" // Include FileSystem module
 #include "PowerManager.h" // Include PowerManager module
+#include "WifiManager.h" // Include new WifiManager module
 
 /***********************************************
  *     GLOBAL VARIABLES AND DATA STRUCTURES    *
@@ -55,13 +55,9 @@ void ErrorBlinkLED(int interval);
 void stackMonitorTask(void *parameter);
 void monitorStackUsage(TaskHandle_t taskHandle);
 
-// Removing initDeepSleep prototype since it's now in PowerManager
-
-void wifiConnectionTask(void *parameter);
-void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info);
-void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info);
-bool checkBackendReachability();
+// Removing WiFi-related function prototypes since they're now in WifiManager
 void backendReachabilityTask(void *parameter);
+bool checkBackendReachability();
 
 
 /**********************************
@@ -252,6 +248,12 @@ void setup_from_boot() {
     ErrorBlinkLED(100);
   }
   
+  // Initialize WifiManager
+  if (!WifiManager::init(app)) {
+    LogManager::log("Failed to initialize WifiManager!");
+    ErrorBlinkLED(100);
+  }
+  
   attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), handleButtonPress, FALLING);  // Attach interrupt to the button pin
 
   // Initialize recording mode through app
@@ -277,12 +279,11 @@ void setup_from_boot() {
   }
   app->setAudioFileTaskHandle(audioFileTaskHandle);
 
-  TaskHandle_t wifiConnectionTaskHandle = NULL;
-  if(xTaskCreatePinnedToCore(wifiConnectionTask, "WiFi Connection", 4096, NULL, 1, &wifiConnectionTaskHandle, 0) != pdPASS ) {
-    LogManager::log("Failed to create wifiConnection task!");
+  // Start WiFi connection task using WifiManager
+  if (!WifiManager::startConnectionTask()) {
+    LogManager::log("Failed to start WiFi connection task!");
     ErrorBlinkLED(100);
   }
-  app->setWifiConnectionTaskHandle(wifiConnectionTaskHandle);
 
   // Use PowerManager to start battery monitor task
   if (!PowerManager::startBatteryMonitorTask()) {
@@ -632,146 +633,10 @@ void monitorStackUsage(TaskHandle_t taskHandle) {
 }
 
 /**********************************
- *         WIFI MANAGEMENT    *
+ *    BACKEND REACHABILITY CHECK  *
  **********************************/
-
-void wifiConnectionTask(void *parameter) {
-  // Register event handlers during task initialization
-  WiFi.onEvent(WiFiStationConnected, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_CONNECTED);
-  WiFi.onEvent(WiFiGotIP, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_GOT_IP);
-  
-  // Initial configuration
-  WiFi.mode(WIFI_STA);
-  WiFi.setAutoReconnect(false);  // We'll handle reconnection ourselves
-  
-  while (true) {
-    unsigned long currentTime = millis();
-    
-    // If we're not connected and it's time to scan
-    if (!app->isWifiConnected() && currentTime >= app->getNextWifiScanTime()) {
-      LogManager::log("Scanning for WiFi networks...");
-      
-      // Start network scan
-      int networksFound = WiFi.scanNetworks();
-      bool ssidFound = false;
-      
-      if (networksFound > 0) {
-        LogManager::log("Found " + String(networksFound) + " networks");
-        
-        // Check if our SSID is in the list
-        for (int i = 0; i < networksFound; i++) {
-          String scannedSSID = WiFi.SSID(i);
-          if (scannedSSID == String(SS_ID)) {
-            ssidFound = true;
-            LogManager::log("Target network '" + String(SS_ID) + "' found with signal strength: " + 
-                String(WiFi.RSSI(i)) + " dBm");
-            break;
-          }
-        }
-        WiFi.scanDelete(); // Clean up scan results
-        
-        // If our SSID was found, try to connect
-        if (ssidFound) {
-          LogManager::log("Attempting to connect to: " + String(SS_ID));
-          WiFi.begin(SS_ID, PASSWORD);
-        } else {
-          LogManager::log("Target network not found in scan");
-          
-          // Apply exponential backoff for next scan
-          unsigned long currentInterval = app->getCurrentScanInterval();
-          unsigned long newInterval = std::min(currentInterval * 2UL, (unsigned long)MAX_SCAN_INTERVAL);
-          app->setCurrentScanInterval(newInterval);
-          app->setNextWifiScanTime(currentTime + newInterval);
-          LogManager::log("Next scan in " + String(newInterval / 1000) + " seconds");
-        }
-      } else {
-        LogManager::log("No networks found");
-        // Apply exponential backoff for next scan
-        unsigned long currentInterval = app->getCurrentScanInterval();
-        unsigned long newInterval = std::min(currentInterval * 2UL, (unsigned long)MAX_SCAN_INTERVAL);
-        app->setCurrentScanInterval(newInterval);
-        app->setNextWifiScanTime(currentTime + newInterval);
-      }
-    }
-    
-    // If connected, reset backoff parameters
-    if (app->isWifiConnected()) {
-      app->setCurrentScanInterval(MIN_SCAN_INTERVAL);
-    }
-    vTaskDelay(pdMS_TO_TICKS(1000)); // Check again after a delay
-  }
-}
-
-void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info) {
-  LogManager::log("WiFi connected with IP: " + WiFi.localIP().toString());
-  app->setCurrentScanInterval(MIN_SCAN_INTERVAL);
-  app->setWifiConnected(true);
-  
-  // Reset backend check parameters
-  app->setNextBackendCheckTime(0); // Check immediately
-  app->setCurrentBackendInterval(MIN_SCAN_INTERVAL);
-
-  // Update time as soon as we get an IP address using TimeManager
-  if (TimeManager::updateFromNTP()) {
-    LogManager::log("Time synchronized with NTP successfully");
-  } else {
-    // Schedule a retry in 30 seconds
-    if(xTaskCreatePinnedToCore(
-      [](void* parameter) {
-        vTaskDelay(pdMS_TO_TICKS(30000)); // 30 seconds delay
-        TimeManager::updateFromNTP();
-        vTaskDelete(NULL);
-      },
-      "NTPRetry", 4096, NULL, 1, NULL, 0
-    ) != pdPASS) {
-      LogManager::log("Failed to create NTP retry task");
-    }
-  }
-
-  // Start file upload task when WiFi is connected
-  TaskHandle_t uploadTaskHandle = app->getUploadTaskHandle();
-  if (uploadTaskHandle == NULL) {
-    // Create task on Core 0
-    if(xTaskCreatePinnedToCore(
-      fileUploadTask,
-      "FileUpload",
-      8192,     // Stack size for HTTP operations
-      NULL,
-      2,        // Low priority
-      &uploadTaskHandle,
-      0         // Run on Core 0
-    ) != pdPASS) {
-      LogManager::log("Failed to create file upload task");
-    } else {
-      app->setUploadTaskHandle(uploadTaskHandle);
-    }
-  }
-
-  // Start backend reachability task when WiFi is connected
-  TaskHandle_t backendReachabilityTaskHandle = app->getBackendReachabilityTaskHandle();
-  if (backendReachabilityTaskHandle == NULL) {
-    if(xTaskCreatePinnedToCore(
-      backendReachabilityTask,
-      "Backend Check", 
-      4096,
-      NULL,
-      1,        // Normal priority
-      &backendReachabilityTaskHandle,
-      0         // Run on Core 0
-    ) != pdPASS) {
-      LogManager::log("Failed to create backend reachability task");
-    } else {
-      app->setBackendReachabilityTaskHandle(backendReachabilityTaskHandle);
-    }
-  } 
-}
-
-void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info) {
-  LogManager::log("Connected to WiFi access point");
-}
-
 bool checkBackendReachability() {
-  if (!app->isWifiConnected()) {
+  if (!WifiManager::isConnected()) {
     return false;
   }
   
@@ -804,7 +669,7 @@ void backendReachabilityTask(void *parameter) {
     bool shouldCheck = false;
     
     // Only check backend if WiFi is connected
-    if (app->isWifiConnected()) {
+    if (WifiManager::isConnected()) {
       // Check if:
       // 1. Backend status is unknown (not reachable) OR
       // 2. It's time for a periodic recheck when connected
