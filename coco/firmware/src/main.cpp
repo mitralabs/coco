@@ -20,6 +20,7 @@
 #include "config.h"  // New configuration header
 #include "secrets.h"
 #include "LogManager.h" // Include new LogManager
+#include "TimeManager.h" // Include TimeManager module
 
 /***********************************************
  *     GLOBAL VARIABLES AND DATA STRUCTURES    *
@@ -34,8 +35,6 @@ File logFile;
 int bootSession = 0;
 int logFileIndex = 0;
 int audioFileIndex = 0;
-
-time_t storedTime = 0;
 
 unsigned long nextWifiScanTime = 0; // Next time to scan for networks
 unsigned long currentScanInterval = MIN_SCAN_INTERVAL; // Current backoff interval
@@ -115,15 +114,9 @@ void monitorStackUsage(TaskHandle_t taskHandle);
 
 void initDeepSleep();
 
-void initTime();
-void storeCurrentTime();
-void persistTimeTask(void *parameter);
-String getTimestamp();
-
 void wifiConnectionTask(void *parameter);
 void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info);
 void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info);
-//void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info);
 bool checkBackendReachability();
 void backendReachabilityTask(void *parameter);
 
@@ -266,7 +259,15 @@ void setup_from_boot() {
   
   // Set the boot session and timestamp provider
   LogManager::setBootSession(bootSession);
-  LogManager::setTimestampProvider(getTimestamp);
+  
+  // Initialize TimeManager and use its timestamp provider for LogManager
+  if (!TimeManager::init(sdMutex)) {
+    LogManager::log("Failed to initialize TimeManager!");
+    ErrorBlinkLED(100);
+  }
+  
+  // Set the timestamp provider to use TimeManager's getTimestamp
+  LogManager::setTimestampProvider(TimeManager::getTimestamp);
   
   // Start the log task
   if (!LogManager::startLogTask()) {
@@ -277,8 +278,12 @@ void setup_from_boot() {
   LogManager::log("\n\n\n======= Boot session: " + String(bootSession) + "=======");
 
   audioFileIndex = 0;  // Reset audio file index on boot
-
-  initTime();
+  
+  // Start the time persistence task
+  if (!TimeManager::startPersistenceTask()) {
+    LogManager::log("Failed to start time persistence task!");
+    ErrorBlinkLED(100);
+  }
   
   attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), handleButtonPress, FALLING);  // Attach interrupt to the button pin
 
@@ -298,11 +303,6 @@ void setup_from_boot() {
   }
 
   // Tasks on Core 0
-  if(xTaskCreatePinnedToCore(persistTimeTask, "Persist Time", 4096, NULL, 1, &persistTimeTaskHandle, 0) != pdPASS ) {
-    LogManager::log("Failed to create persistTime task!");
-    ErrorBlinkLED(100);
-  }
-  
   if(xTaskCreatePinnedToCore(audioFileTask, "Audio File Save", 4096, NULL, 4, &audioFileTaskHandle, 0) != pdPASS ) {
     LogManager::log("Failed to create audioFile task!");
     ErrorBlinkLED(100);
@@ -361,7 +361,8 @@ void recordAudio(void *parameter) {
       isRecording = true;
       AudioBuffer audio;
 
-      String ts = getTimestamp();
+      // Use TimeManager for timestamp
+      String ts = TimeManager::getTimestamp();
       snprintf(audio.timestamp, sizeof(audio.timestamp), "%s", ts.c_str());
       
       // Use "start" marker for the first chunk, then MIDDLE afterwards.
@@ -381,7 +382,7 @@ void recordAudio(void *parameter) {
       // If we were recording but recording is now off, record a final chunk with "end" marker.
       if (wasRecording) {
         AudioBuffer audio;
-        String ts = getTimestamp();
+        String ts = TimeManager::getTimestamp();
         snprintf(audio.timestamp, sizeof(audio.timestamp), "%s", ts.c_str());
         audio.type = END;
         audio.buffer = i2s.recordWAV(RECORD_TIME, &audio.size);
@@ -658,6 +659,7 @@ bool uploadFileFromBuffer(uint8_t *buffer, size_t size, const String &filename) 
   String bareFilename = filename.substring(filename.lastIndexOf('/') + 1);
   
   // Initialize HTTP client
+
   HTTPClient client;
 
   // Check WiFi connection before proceeding
@@ -816,120 +818,9 @@ void initDeepSleep() {
     delay(10);
   }
 
-  storeCurrentTime(); // Persist current time before sleep.  
+  // Use TimeManager to store current time before sleep
+  TimeManager::storeCurrentTime();
   esp_deep_sleep_start(); // Enter deep sleep.
-}
-
-/**********************************
- *         TIME MANAGEMENT    *
- **********************************/
-
- void initTime() {
-  // Set timezone
-  setenv("TZ", TIMEZONE, 1);
-  tzset();
-  
-  struct timeval tv;
-  time_t currentRtcTime = time(NULL);
-  time_t persistedTime = 0;
-  
-  // Check if time file exists on SD card
-  if (xSemaphoreTake(sdMutex, portMAX_DELAY) == pdPASS) {
-    if (SD.exists(TIME_FILE)) {
-      File timeFile = SD.open(TIME_FILE, FILE_READ);
-      if (timeFile) {
-        String timeStr = timeFile.readStringUntil('\n');
-        timeFile.close();
-        persistedTime = (time_t)timeStr.toInt();
-        LogManager::log("Read persisted time from SD card: " + String(persistedTime));
-      }
-    }
-    xSemaphoreGive(sdMutex);
-  }
-
-  // Determine which time source to use
-  if (persistedTime == 0) {
-    // No persisted time: use default time
-    tv.tv_sec = DEFAULT_TIME;
-    tv.tv_usec = 0;
-    settimeofday(&tv, NULL);
-    storedTime = DEFAULT_TIME;
-    LogManager::log("Default time set: " + String(storedTime));
-  } else {
-    // Check if RTC has a valid updated time
-    if (currentRtcTime > persistedTime) {
-      storedTime = currentRtcTime;
-      LogManager::log("System time updated from RTC: " + String(storedTime));
-    } else {
-      storedTime = persistedTime;
-      LogManager::log("System time updated from persisted time: " + String(storedTime));
-    }
-    tv.tv_sec = storedTime;
-    tv.tv_usec = 0;
-    settimeofday(&tv, NULL);
-  }
-  
-  // Store time immediately to SD card to ensure consistency
-  storeCurrentTime();
-}
-
-bool updateTimeFromNTP() {
-  if (WiFi.status() != WL_CONNECTED) {
-    LogManager::log("Cannot update time: WiFi not connected");
-    return false;
-  }
-  
-  LogManager::log("Updating time from NTP servers...");
-  configTime(0, 0, "pool.ntp.org", "time.google.com", "time.nist.gov");
-  struct tm timeinfo;
-
-  if (getLocalTime(&timeinfo)) {
-    storedTime = mktime(&timeinfo);
-    LogManager::log("Current time obtained.");
-    storeCurrentTime();
-    return true;
-  } else {
-    LogManager::log("Failed to obtain time.");
-    return false;
-  }
-}
-
-void persistTimeTask(void *parameter) {
-  while (true) {
-      storeCurrentTime();
-      vTaskDelay(pdMS_TO_TICKS(TIME_PERSIST_INTERVAL));
-  }
-}
-
-void storeCurrentTime() {
-  time_t current = time(NULL);
-  storedTime = current;
-  
-  // Store time to SD card
-  if (xSemaphoreTake(sdMutex, portMAX_DELAY) == pdPASS) {
-    File timeFile = SD.open(TIME_FILE, FILE_WRITE);
-    if (timeFile) {
-      timeFile.println(String(current));
-      timeFile.close();
-      LogManager::log("Stored current time to SD card: " + String(current));
-    } else {
-      LogManager::log("Failed to open time file for writing");
-    }
-    xSemaphoreGive(sdMutex);
-  } else {
-    LogManager::log("Failed to take SD mutex for time storage");
-  }
-}
-
-String getTimestamp() {
-  struct tm timeinfo;
-  if(getLocalTime(&timeinfo)) {
-    char buffer[20];
-    strftime(buffer, sizeof(buffer), "%y-%m-%d_%H-%M-%S", &timeinfo);
-    // Serial.println("Timestamp from getTimeStamp(): " + String(buffer));
-    return String(buffer);
-  }
-  return "unknown";
 }
 
 /**********************************
@@ -1009,16 +900,16 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info) {
   nextBackendCheckTime = 0; // Check immediately
   currentBackendInterval = MIN_SCAN_INTERVAL;
 
-  // Update time as soon as we get an IP address
-  if (updateTimeFromNTP()) {
+  // Update time as soon as we get an IP address using TimeManager
+  if (TimeManager::updateFromNTP()) {
     LogManager::log("Time synchronized with NTP successfully");
   } else {
     // Schedule a retry in 30 seconds
     if(xTaskCreatePinnedToCore(
       [](void* parameter) {
-      vTaskDelay(pdMS_TO_TICKS(30000)); // 30 seconds delay
-      updateTimeFromNTP();
-      vTaskDelete(NULL);
+        vTaskDelay(pdMS_TO_TICKS(30000)); // 30 seconds delay
+        TimeManager::updateFromNTP();
+        vTaskDelete(NULL);
       },
       "NTPRetry", 4096, NULL, 1, NULL, 0
     ) != pdPASS) {
