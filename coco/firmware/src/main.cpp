@@ -23,6 +23,7 @@
 #include "LogManager.h" // Include new LogManager
 #include "TimeManager.h" // Include TimeManager module
 #include "FileSystem.h" // Include FileSystem module
+#include "PowerManager.h" // Include PowerManager module
 
 /***********************************************
  *     GLOBAL VARIABLES AND DATA STRUCTURES    *
@@ -49,12 +50,12 @@ bool removeFirstFromUploadQueue();
 void fileUploadTask(void *parameter);
 bool uploadFileFromBuffer(uint8_t *buffer, size_t size, const String &filename);
 
-void batteryMonitorTask(void *parameter);
+// Removing the batteryMonitorTask prototype since it's now in PowerManager
 void ErrorBlinkLED(int interval);
 void stackMonitorTask(void *parameter);
 void monitorStackUsage(TaskHandle_t taskHandle);
 
-void initDeepSleep();
+// Removing initDeepSleep prototype since it's now in PowerManager
 
 void wifiConnectionTask(void *parameter);
 void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info);
@@ -134,7 +135,14 @@ void setup() {
   // Create and set timer
   buttonTimer = xTimerCreate("ButtonTimer", pdMS_TO_TICKS(BUTTON_PRESS_TIME), pdFALSE, NULL, buttonTimerCallback);
   
-  esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
+  // Initialize PowerManager
+  if (!PowerManager::init()) {
+    Serial.println("Failed to initialize PowerManager!");
+    while(1) { delay(100); } // Halt
+  }
+  
+  // Check wakeup cause using PowerManager
+  esp_sleep_wakeup_cause_t wakeup_reason = PowerManager::getWakeupCause();
 
   switch (wakeup_reason) {
     case ESP_SLEEP_WAKEUP_TIMER:
@@ -165,7 +173,7 @@ void setup_from_timer() {
     logFile.flush();
     fs->closeFile(logFile);
   }
-  initDeepSleep();
+  PowerManager::initDeepSleep();
 }
 
 void setup_from_external() {
@@ -198,7 +206,7 @@ void setup_from_external() {
       logFile.flush();
       fs->closeFile(logFile);
     }
-    initDeepSleep();
+    PowerManager::initDeepSleep();
   }
 }
 
@@ -276,12 +284,14 @@ void setup_from_boot() {
   }
   app->setWifiConnectionTaskHandle(wifiConnectionTaskHandle);
 
-  TaskHandle_t batteryMonitorTaskHandle = NULL;
-  if(xTaskCreatePinnedToCore(batteryMonitorTask, "Battery Monitor", 4096, NULL, 1, &batteryMonitorTaskHandle, 0) != pdPASS ) {
-    LogManager::log("Failed to create batteryMonitor task!");
+  // Use PowerManager to start battery monitor task
+  if (!PowerManager::startBatteryMonitorTask()) {
+    LogManager::log("Failed to start battery monitor task!");
     ErrorBlinkLED(100);
   }
-  app->setBatteryMonitorTaskHandle(batteryMonitorTaskHandle);
+  
+  // Store the task handle in the app for stack monitoring
+  app->setBatteryMonitorTaskHandle(PowerManager::getBatteryMonitorTaskHandle());
   
   // This task can be used to monitor the stack usage. It can be commented / uncommented as needed.
   // if(xTaskCreatePinnedToCore(stackMonitorTask, "Stack Monitor", 4096, NULL, 1, NULL, 0) != pdPASS ) {
@@ -416,7 +426,7 @@ void audioFileTask(void *parameter) {
       if (!LogManager::hasPendingLogs()) {
         LogManager::log("Recording stopped and all data processed. Entering deep sleep.");
         vTaskDelay(pdMS_TO_TICKS(500)); // Short delay to allow log to be written
-        initDeepSleep();
+        PowerManager::initDeepSleep();
       }
     }
 
@@ -584,31 +594,6 @@ bool uploadFileFromBuffer(uint8_t *buffer, size_t size, const String &filename) 
  *       UTILITY FUNCTIONS        *
  **********************************/
 
-void batteryMonitorTask(void *parameter) {
-  // Board-specific ADC setup
-  pinMode(BATTERY_PIN, INPUT);
-  // Set the ADC attenuation to 11dB so that the full-scale voltage is ~3.3V.
-  analogSetAttenuation(ADC_11db);
-  const int sampleCount = 10;  // Number of ADC samples for averaging
-
-  while (true) {
-    long total = 0;
-    for (int i = 0; i < sampleCount; i++) {
-      total += analogRead(BATTERY_PIN);
-      vTaskDelay(pdMS_TO_TICKS(5));  // Brief delay between readings to stabilize ADC
-    }
-    int averagedRawValue = total / sampleCount;
-
-    // Convert averaged raw value to voltage.
-    // For a 12-bit ADC with a 3.3V reference and a voltage divider with 2x 10k resistors:
-    float voltage = ((float)averagedRawValue / 4095.0) * 3.3 * 2;
-    LogManager::log("Battery voltage: " + String(voltage, 3) + "V");
-
-    // Wait before next measurement.
-    vTaskDelay(pdMS_TO_TICKS(BATTERY_MONITOR_INTERVAL));
-  }
-}
-
 void ErrorBlinkLED(int interval) {
   // stop recording as well
   app->setRecordingRequested(false);
@@ -630,7 +615,7 @@ void stackMonitorTask(void *parameter) {
     monitorStackUsage(app->getRecordAudioTaskHandle());
     monitorStackUsage(app->getAudioFileTaskHandle());
     monitorStackUsage(app->getWifiConnectionTaskHandle());
-    monitorStackUsage(app->getBatteryMonitorTaskHandle());
+    monitorStackUsage(PowerManager::getBatteryMonitorTaskHandle()); // Use the getter instead of directly accessing private member
     monitorStackUsage(app->getUploadTaskHandle());
     monitorStackUsage(app->getBackendReachabilityTaskHandle());
     vTaskDelay(pdMS_TO_TICKS(10000)); // Check every 10 seconds
@@ -644,25 +629,6 @@ void monitorStackUsage(TaskHandle_t taskHandle) {
   }
   UBaseType_t highWaterMark = uxTaskGetStackHighWaterMark(taskHandle);
   LogManager::log("Task " + String(pcTaskGetName(taskHandle)) + " high water mark: " + String(highWaterMark));
-}
-
-/**********************************
- *         DEEP SLEEP             *
- **********************************/
-
-void initDeepSleep() {
-  // Prepare wakeup sources: 
-  esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(BUTTON_PIN), 0); // Use EXT0 wakeup on BUTTON_PIN: trigger when the pin reads LOW.
-  esp_sleep_enable_timer_wakeup(SLEEP_TIMEOUT_SEC * 1000000ULL); // Timer wakeup after SLEEP_TIMEOUT_SEC seconds
-
-  // Wait until there are no pending logs
-  while (LogManager::hasPendingLogs()) {
-    delay(10);
-  }
-
-  // Use TimeManager to store current time before sleep
-  TimeManager::storeCurrentTime();
-  esp_deep_sleep_start(); // Enter deep sleep.
 }
 
 /**********************************
