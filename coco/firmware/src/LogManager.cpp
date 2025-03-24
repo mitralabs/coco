@@ -6,59 +6,56 @@
 #include "LogManager.h"
 
 // Initialize static members
+Application* LogManager::app = nullptr;
 QueueHandle_t LogManager::logQueue = NULL;
-SemaphoreHandle_t LogManager::sdMutex = NULL;
 int LogManager::bootSession = 0;
 int LogManager::logIndex = 0;
 TaskHandle_t LogManager::logTaskHandle = NULL;
 bool LogManager::initialized = false;
 String (*LogManager::getTimestampFunc)() = NULL;
 
-bool LogManager::init(SemaphoreHandle_t sdCardMutex) {
-    // Store SD card mutex
-    sdMutex = sdCardMutex;
+// Allow early logging before full initialization
+bool LogManager::init(Application* application) {
+    // Store application reference
+    app = application;
     
-    // Create log queue
-    logQueue = xQueueCreate(LOG_QUEUE_SIZE, sizeof(char*));
+    // Set initialized flag early for basic logging
+    initialized = true;
+    
+    // Use the queue created by the Application
+    logQueue = app->getLogQueue();
     if (logQueue == NULL) {
-        Serial.println("Failed to create log queue!");
+        Serial.println("Log queue not available!");
         return false;
     }
     
     // Ensure log file exists
-    if (xSemaphoreTake(sdMutex, portMAX_DELAY) == pdPASS) {
-        if (!SD.exists(LOG_FILE)) {
-            File file = SD.open(LOG_FILE, FILE_WRITE);
-            if (file) {
-                file.println("=== Device Log Started ===");
-                file.flush();
-                file.close();
-            } else {
-                xSemaphoreGive(sdMutex);
-                return false;
-            }
+    File logFile;
+    if (app->openFile(LOG_FILE, logFile, FILE_WRITE)) {
+        if (logFile.size() == 0) {
+            logFile.println("=== Device Log Started ===");
         }
-        xSemaphoreGive(sdMutex);
+        app->closeFile(logFile);
     } else {
+        Serial.println("Failed to access log file!");
         return false;
     }
     
     // Reset log index
     logIndex = 0;
     
-    // Set initialization flag
-    initialized = true;
-    
     return true;
 }
 
 void LogManager::log(const String &message) {
-    if (!initialized) {
-        Serial.println("LogManager not initialized!");
+    // Always print to Serial regardless of initialization state
+    if (!initialized || !app) {
+        String simpleMessage = "Not initialized: " + message;
+        Serial.println(simpleMessage);
         return;
     }
     
-    // Get timestamp using the provided function
+    // Get timestamp using the provided function - use a fallback if not set
     String timestamp = getTimestampFunc ? getTimestampFunc() : "unknown";
     
     String logMessage = String(bootSession) + "_" + String(logIndex) + "_" + timestamp + ": " + message;
@@ -67,11 +64,14 @@ void LogManager::log(const String &message) {
     // Print to Serial for debugging
     Serial.println(logMessage);
     
-    // Allocate a copy on the heap
-    char *msgCopy = strdup(logMessage.c_str());
-    if (xQueueSend(logQueue, &msgCopy, portMAX_DELAY) != pdPASS) {
-        Serial.println("Failed to enqueue log message!");
-        free(msgCopy);
+    // If queue is available, use it
+    if (logQueue != NULL) {
+        // Allocate a copy on the heap
+        char *msgCopy = strdup(logMessage.c_str());
+        if (xQueueSend(logQueue, &msgCopy, portMAX_DELAY) != pdPASS) {
+            Serial.println("Failed to enqueue log message!");
+            free(msgCopy);
+        }
     }
 }
 
@@ -101,24 +101,23 @@ bool LogManager::startLogTask() {
 void LogManager::logFlushTask(void *parameter) {
     while (true) {
         if (uxQueueMessagesWaiting(logQueue) > 0) {
-            if (xSemaphoreTake(sdMutex, portMAX_DELAY) == pdPASS) {
-                File logFile = SD.open(LOG_FILE, FILE_APPEND);
-                if (logFile) {
-                    char *pendingLog;
-                    while (xQueueReceive(logQueue, &pendingLog, 0) == pdTRUE) {
-                        logFile.println(pendingLog);
-                        free(pendingLog);
-                    }
-                    logFile.flush();
-                    logFile.close();
-                } else {
-                    Serial.println("Failed to open log file for batch flush!");
-                    char *pendingLog;
-                    while (xQueueReceive(logQueue, &pendingLog, 0) == pdTRUE) {
-                        free(pendingLog);
-                    }
+            // Open log file for append
+            File logFile;
+            if (app->openFile(LOG_FILE, logFile, FILE_APPEND)) {
+                char *pendingLog;
+                while (xQueueReceive(logQueue, &pendingLog, 0) == pdTRUE) {
+                    logFile.println(pendingLog);
+                    free(pendingLog);
                 }
-                xSemaphoreGive(sdMutex);
+                logFile.flush();
+                app->closeFile(logFile);
+            } else {
+                Serial.println("Failed to open log file for batch flush!");
+                // Free the memory for all pending messages since we couldn't write them
+                char *pendingLog;
+                while (xQueueReceive(logQueue, &pendingLog, 0) == pdTRUE) {
+                    free(pendingLog);
+                }
             }
         }
         vTaskDelay(pdMS_TO_TICKS(10));

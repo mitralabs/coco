@@ -8,14 +8,14 @@
 #include <WiFi.h> // Include WiFi library for connectivity checks
 
 // Initialize static members
-SemaphoreHandle_t TimeManager::sdMutex = NULL;
+Application* TimeManager::app = NULL;
 time_t TimeManager::storedTime = 0;
 TaskHandle_t TimeManager::persistTimeTaskHandle = NULL;
 bool TimeManager::initialized = false;
 
-bool TimeManager::init(SemaphoreHandle_t sdCardMutex) {
-    // Store SD card mutex
-    sdMutex = sdCardMutex;
+bool TimeManager::init(Application* application) {
+    // Store application instance
+    app = application;
     
     // Set timezone
     setenv("TZ", TIMEZONE, 1);
@@ -26,6 +26,7 @@ bool TimeManager::init(SemaphoreHandle_t sdCardMutex) {
     time_t persistedTime = 0;
     
     // Check if time file exists on SD card
+    SemaphoreHandle_t sdMutex = app->getSDMutex();
     if (xSemaphoreTake(sdMutex, portMAX_DELAY) == pdPASS) {
         if (SD.exists(TIME_FILE)) {
             File timeFile = SD.open(TIME_FILE, FILE_READ);
@@ -108,31 +109,52 @@ bool TimeManager::updateFromNTP() {
 }
 
 bool TimeManager::storeCurrentTime() {
+    if (!initialized) {
+        Serial.println("TimeManager not properly initialized for storing time!");
+        return false;
+    }
+    
+    if (!app) {
+        Serial.println("TimeManager app reference is null!");
+        return false;
+    }
+    
     time_t current = time(NULL);
     storedTime = current;
     
     // Store time to SD card
+    SemaphoreHandle_t sdMutex = app->getSDMutex();
     if (xSemaphoreTake(sdMutex, portMAX_DELAY) == pdPASS) {
         File timeFile = SD.open(TIME_FILE, FILE_WRITE);
         if (timeFile) {
             timeFile.println(String(current));
             timeFile.close();
-            LogManager::log("Stored current time to SD card: " + String(current));
+            // Use Serial instead of LogManager to avoid circular dependency issues early in boot
+            if (initialized)
+                LogManager::log("Stored current time to SD card: " + String(current));
+            else
+                Serial.println("Stored current time to SD card: " + String(current));
             xSemaphoreGive(sdMutex);
             return true;
         } else {
-            LogManager::log("Failed to open time file for writing");
+            if (initialized)
+                LogManager::log("Failed to open time file for writing");
+            else
+                Serial.println("Failed to open time file for writing");
             xSemaphoreGive(sdMutex);
             return false;
         }
     } else {
-        LogManager::log("Failed to take SD mutex for time storage");
+        if (initialized)
+            LogManager::log("Failed to take SD mutex for time storage");
+        else
+            Serial.println("Failed to take SD mutex for time storage");
         return false;
     }
 }
 
 bool TimeManager::startPersistenceTask() {
-    if (!initialized) {
+    if (!initialized || !app) {
         LogManager::log("TimeManager not initialized!");
         return false;
     }

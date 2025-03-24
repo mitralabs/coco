@@ -16,15 +16,16 @@
 #include <SD.h>
 #include <time.h>
 #include "config.h"
+#include "Application.h"
 
 class TimeManager {
 public:
     /**
      * Initialize the time management system
-     * @param sdCardMutex Mutex for SD card access
+     * @param app Reference to the Application singleton
      * @return True if initialization succeeded, false otherwise
      */
-    static bool init(SemaphoreHandle_t sdCardMutex);
+    static bool init(Application* app);
     
     /**
      * Get current time as formatted string (no-parameter version for LogManager compatibility)
@@ -71,7 +72,7 @@ private:
     static void persistTimeTask(void *parameter);
     
     // Static state variables
-    static SemaphoreHandle_t sdMutex;
+    static Application* app;
     static time_t storedTime;
     static TaskHandle_t persistTimeTaskHandle;
     static bool initialized;

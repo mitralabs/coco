@@ -1,9 +1,9 @@
 /**
  * @file LogManager.h
- * @brief Logging infrastructure for the Coco firmware
+ * @brief Log management system for the Coco firmware
  * 
- * This module provides a centralized logging system with queue-based
- * asynchronous file writing to avoid blocking operations.
+ * This module handles structured logging, with queue-based asynchronous writes
+ * to maintain system performance while ensuring logs are properly stored.
  */
 
 #ifndef LOG_MANAGER_H
@@ -11,23 +11,25 @@
 
 #include <Arduino.h>
 #include <freertos/FreeRTOS.h>
-#include <freertos/queue.h>
 #include <freertos/semphr.h>
 #include <freertos/task.h>
+#include <freertos/queue.h>
 #include <SD.h>
 #include "config.h"
+#include "Application.h"
 
 class LogManager {
 public:
     /**
-     * Initialize the logging system
-     * @param sdCardMutex Mutex for SD card access
+     * Initialize the log management system
+     * @param app Pointer to the Application singleton
      * @return True if initialization succeeded, false otherwise
      */
-    static bool init(SemaphoreHandle_t sdCardMutex);
+    static bool init(Application* app);
     
     /**
-     * Log a message
+     * Log a message to the log file
+     * The message will be enqueued and written asynchronously
      * @param message The message to log
      */
     static void log(const String &message);
@@ -39,20 +41,20 @@ public:
     static bool startLogTask();
     
     /**
-     * Check if there are pending log messages
-     * @return True if there are messages in the queue, false otherwise
+     * Check if there are pending logs in the queue
+     * @return True if there are logs waiting to be written, false otherwise
      */
     static bool hasPendingLogs();
     
     /**
-     * Set the boot session ID
-     * @param session The boot session ID
+     * Set the current boot session number
+     * @param session The boot session number
      */
     static void setBootSession(int session);
     
     /**
-     * Set the timestamp function
-     * @param timestampFunc Function that returns timestamps as Strings
+     * Set a function to provide timestamps for log entries
+     * @param timestampFunc Function pointer that returns a timestamp string
      */
     static void setTimestampProvider(String (*timestampFunc)());
 
@@ -64,13 +66,13 @@ private:
     static void logFlushTask(void *parameter);
     
     // Static state variables
-    static QueueHandle_t logQueue;
-    static SemaphoreHandle_t sdMutex;
-    static int bootSession;
-    static int logIndex;
-    static TaskHandle_t logTaskHandle;
-    static bool initialized;
-    static String (*getTimestampFunc)();
+    static Application* app;        // Reference to the Application singleton
+    static QueueHandle_t logQueue;  // Queue for pending log messages
+    static int bootSession;         // Current boot session number
+    static int logIndex;            // Index for log entries
+    static TaskHandle_t logTaskHandle;  // Task handle for the log flush task
+    static bool initialized;        // Initialization flag
+    static String (*getTimestampFunc)(); // Function pointer for timestamp provider
 };
 
 #endif // LOG_MANAGER_H
