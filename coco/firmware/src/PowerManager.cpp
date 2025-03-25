@@ -78,10 +78,10 @@ void PowerManager::updateBatteryStatus() {
 }
 
 void PowerManager::enterDeepSleep(uint64_t sleepTimeMs) {
-    LogManager::log("Entering deep sleep for " + String(sleepTimeMs / 1000) + " seconds");
+    LogManager::log("Entering deep sleep for " + String(sleepTimeMs / 1000000) + " seconds");
     
     // Configure time-based wakeup
-    esp_sleep_enable_timer_wakeup(sleepTimeMs * 1000ULL); // Convert to microseconds
+    esp_sleep_enable_timer_wakeup(sleepTimeMs); // Convert to microseconds
     
     // Final log before sleep
     LogManager::log("Going to sleep now. Goodnight!");
