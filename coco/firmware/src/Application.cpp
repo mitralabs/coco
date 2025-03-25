@@ -3,6 +3,7 @@
 #include "LogManager.h"
 #include "TimeManager.h"
 #include "FileSystem.h" // Added for using FileSystem
+#include "AudioManager.h" // Add AudioManager include
 
 // Initialize static instance to nullptr
 Application* Application::_instance = nullptr;
@@ -75,10 +76,7 @@ bool Application::init() {
         return false;
     }
     
-    if (!initI2S()) {
-        LogManager::log("Failed to initialize I2S!");
-        return false;
-    }
+    // Removed initI2S() call as it's now handled by AudioManager
     
     return true;
 }
@@ -116,31 +114,6 @@ bool Application::initSD() {
     return true;
 }
 
-// Initialize I2S for microphone
-bool Application::initI2S() {
-    // The error shows we need to use I2S0 instead of I2S1 for PDM
-    // ESP32-S3 has multiple I2S controllers, we need to make sure we're using I2S0
-    LogManager::log("Initializing PDM Microphone on I2S0...");
-    
-    // Make sure pins are reset before configuration
-    i2s.end();
-    
-    // Explicitly configure for I2S0 controller
-    i2s.setPinsPdmRx(42, 41, I2S_NUM_0);  // Specify I2S0
-    
-    // Create a short delay to ensure pin reconfiguration takes effect
-    delay(10);
-    
-    if (!i2s.begin(I2S_MODE_PDM_RX, SAMPLING_RATE, I2S_DATA_BIT_WIDTH_16BIT,
-                 I2S_SLOT_MODE_MONO)) {
-        LogManager::log("Failed to initialize I2S! Error code: " + String(esp_err_to_name(i2s.lastError())));
-        return false;
-    }
-    
-    LogManager::log("Mic initialized successfully.");
-    return true;
-}
-
 // Initialize preferences
 bool Application::initPreferences() {
     preferences.begin("boot", false);
@@ -153,7 +126,8 @@ bool Application::initPreferences() {
 
 // Initialize recording mode
 bool Application::initRecordingMode() {
-    if (!initI2S()) {
+    // Use AudioManager for audio initialization
+    if (!AudioManager::init(this)) {
         return false;
     }
     
@@ -297,7 +271,8 @@ void Application::setExternalWakeValid(int valid) {
 
 // Accessors for components
 I2SClass* Application::getI2S() {
-    return &i2s;
+    // Return AudioManager's I2S instance instead
+    return AudioManager::getI2S();
 }
 
 Preferences* Application::getPreferences() {

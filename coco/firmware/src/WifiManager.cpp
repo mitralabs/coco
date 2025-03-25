@@ -67,6 +67,7 @@ bool WifiManager::connect() {
     
     LogManager::log("Attempting to connect to: " + String(SS_ID));
     WiFi.begin(SS_ID, PASSWORD);
+    WiFi.setTxPower(WIFI_POWER_8_5dBm); // Highest: WIFI_POWER_19_5dBm, Lowest: WIFI_POWER_2dBm (logarithmic)
     return true;
 }
 
@@ -93,11 +94,44 @@ void WifiManager::wifiConnectionTask(void *parameter) {
         return;
     }
 
+    // Connection state tracking variables
+    bool connectionInProgress = false;
+    unsigned long connectionStartTime = 0;
+    const unsigned long CONNECTION_TIMEOUT = 15000; // 15 seconds timeout for connection attempts
+
     while (true) {
         unsigned long currentTime = millis();
         
-        // If we're not connected and it's time to scan
-        if (!app->isWifiConnected() && currentTime >= app->getNextWifiScanTime()) {
+        // Handle active connection attempts
+        if (connectionInProgress) {
+            // If we've successfully connected
+            if (app->isWifiConnected()) {
+                LogManager::log("Connection attempt succeeded");
+                connectionInProgress = false;
+                app->setCurrentScanInterval(MIN_SCAN_INTERVAL);
+            } 
+            // If connection attempt has timed out
+            else if (currentTime - connectionStartTime > CONNECTION_TIMEOUT) {
+                LogManager::log("WiFi connection attempt timed out after " + 
+                               String(CONNECTION_TIMEOUT/1000) + " seconds");
+                connectionInProgress = false;
+                // Schedule next scan with backoff
+                unsigned long currentInterval = app->getCurrentScanInterval();
+                unsigned long newInterval = std::min(currentInterval * 2UL, (unsigned long)MAX_SCAN_INTERVAL);
+                app->setCurrentScanInterval(newInterval);
+                app->setNextWifiScanTime(currentTime + newInterval);
+                LogManager::log("Next scan in " + String(newInterval / 1000) + " seconds");
+            } 
+            // Still waiting for connection
+            else {
+                // Wait and continue the loop without scanning
+                vTaskDelay(pdMS_TO_TICKS(1000));
+                continue;
+            }
+        }
+        
+        // Only scan if not connected, not in connection progress, and it's time to scan
+        if (!app->isWifiConnected() && !connectionInProgress && currentTime >= app->getNextWifiScanTime()) {
             LogManager::log("Scanning for WiFi networks...");
             
             // Start network scan
@@ -122,6 +156,11 @@ void WifiManager::wifiConnectionTask(void *parameter) {
                 // If our SSID was found, try to connect
                 if (ssidFound) {
                     connect();
+                    // Mark connection as in progress and record start time
+                    connectionInProgress = true;
+                    connectionStartTime = currentTime;
+                    LogManager::log("Connection attempt started, waiting up to " + 
+                                   String(CONNECTION_TIMEOUT/1000) + " seconds...");
                 } else {
                     LogManager::log("Target network not found in scan");
                     
@@ -139,11 +178,12 @@ void WifiManager::wifiConnectionTask(void *parameter) {
                 unsigned long newInterval = std::min(currentInterval * 2UL, (unsigned long)MAX_SCAN_INTERVAL);
                 app->setCurrentScanInterval(newInterval);
                 app->setNextWifiScanTime(currentTime + newInterval);
+                LogManager::log("Next scan in " + String(newInterval / 1000) + " seconds");
             }
         }
         
         // If connected, reset backoff parameters
-        if (app->isWifiConnected()) {
+        if (app->isWifiConnected() && !connectionInProgress) {
             app->setCurrentScanInterval(MIN_SCAN_INTERVAL);
         }
         

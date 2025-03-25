@@ -24,6 +24,8 @@
 #include "FileSystem.h" // Include FileSystem module
 #include "PowerManager.h" // Include PowerManager module
 #include "WifiManager.h" // Include new WifiManager module
+#include "AudioManager.h" // Add this include
+#include "BackendClient.h" // Include BackendClient module
 
 /***********************************************
  *     GLOBAL VARIABLES AND DATA STRUCTURES    *
@@ -41,23 +43,21 @@ void setup_from_timer();
 void setup_from_external();
 void setup_from_boot();
 
-void recordAudio(void *parameter);
-void audioFileTask(void *parameter);
-bool addToUploadQueue(const String &filename);
-
-String getNextUploadFile();
-bool removeFirstFromUploadQueue();
-void fileUploadTask(void *parameter);
-bool uploadFileFromBuffer(uint8_t *buffer, size_t size, const String &filename);
+// Removing these function prototypes since they're now in BackendClient
+// bool addToUploadQueue(const String &filename);
+// String getNextUploadFile();
+// bool removeFirstFromUploadQueue();
+// void fileUploadTask(void *parameter);
+// bool uploadFileFromBuffer(uint8_t *buffer, size_t size, const String &filename);
 
 // Removing the batteryMonitorTask prototype since it's now in PowerManager
 void ErrorBlinkLED(int interval);
 void stackMonitorTask(void *parameter);
 void monitorStackUsage(TaskHandle_t taskHandle);
 
-// Removing WiFi-related function prototypes since they're now in WifiManager
-void backendReachabilityTask(void *parameter);
-bool checkBackendReachability();
+// Removing backend-related function prototypes since they're now in BackendClient
+// void backendReachabilityTask(void *parameter);
+// bool checkBackendReachability();
 
 
 /**********************************
@@ -162,13 +162,8 @@ void setup_from_timer() {
   }
   
   // Write to log and enter deep sleep again.
-  File logFile;
-  if (fs->openFile(LOG_FILE, logFile, FILE_APPEND)) {
-    logFile.println("Woke from deep sleep (timer).");
-    logFile.println("Timer wake up routine not yet implemented. Going back to sleep.");
-    logFile.flush();
-    fs->closeFile(logFile);
-  }
+  // Replace direct file operations with addToFile()
+  fs->addToFile(LOG_FILE, "Woke from deep sleep (timer).\nTimer wake up routine not yet implemented. Going back to sleep.\n");
   PowerManager::initDeepSleep();
 }
 
@@ -195,13 +190,8 @@ void setup_from_external() {
       while(1) { delay(100); } // Halt
     }
     
-    // Write to log and enter deep sleep again.
-    File logFile;
-    if (fs->openFile(LOG_FILE, logFile, FILE_APPEND)) {
-      logFile.println("Invalid external wake, entering deep sleep again.");
-      logFile.flush();
-      fs->closeFile(logFile);
-    }
+    // Replace direct file operations with addToFile()
+    fs->addToFile(LOG_FILE, "Invalid external wake, entering deep sleep again.\n");
     PowerManager::initDeepSleep();
   }
 }
@@ -254,30 +244,39 @@ void setup_from_boot() {
     ErrorBlinkLED(100);
   }
   
+  // Initialize AudioManager - let AudioManager fully handle audio initialization
+  if (!AudioManager::init(app)) {
+    LogManager::log("Failed to initialize AudioManager!");
+    ErrorBlinkLED(100);
+  }
+  
+  // Initialize BackendClient
+  if (!BackendClient::init(app)) {
+    LogManager::log("Failed to initialize BackendClient!");
+    ErrorBlinkLED(100);
+  }
+  
   attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), handleButtonPress, FALLING);  // Attach interrupt to the button pin
 
-  // Initialize recording mode through app
+  // Initialize recording mode (this now delegates audio init to AudioManager)
   if (!app->initRecordingMode()) {
     LogManager::log("Failed to initialize recording mode!");
     ErrorBlinkLED(100);
   }
   
-  // Tasks on Core 1
-  // Name, Stack size, Priority, Task handle, Core
-  TaskHandle_t recordAudioTaskHandle = NULL;
-  if(xTaskCreatePinnedToCore(recordAudio, "Record Loop", 4096, NULL, 1, &recordAudioTaskHandle, 1) != pdPASS ) {
+  // Start the audio recording task using AudioManager
+  if (!AudioManager::startRecordingTask()) {
     LogManager::log("Failed to create recordAudio task!");
     ErrorBlinkLED(100);
   }
-  app->setRecordAudioTaskHandle(recordAudioTaskHandle);
+  app->setRecordAudioTaskHandle(AudioManager::getRecordAudioTaskHandle());
 
-  // Tasks on Core 0
-  TaskHandle_t audioFileTaskHandle = NULL;
-  if(xTaskCreatePinnedToCore(audioFileTask, "Audio File Save", 4096, NULL, 4, &audioFileTaskHandle, 0) != pdPASS ) {
+  // Start the audio file task using AudioManager
+  if (!AudioManager::startAudioFileTask()) {
     LogManager::log("Failed to create audioFile task!");
     ErrorBlinkLED(100);
   }
-  app->setAudioFileTaskHandle(audioFileTaskHandle);
+  app->setAudioFileTaskHandle(AudioManager::getAudioFileTaskHandle());
 
   // Start WiFi connection task using WifiManager
   if (!WifiManager::startConnectionTask()) {
@@ -294,6 +293,18 @@ void setup_from_boot() {
   // Store the task handle in the app for stack monitoring
   app->setBatteryMonitorTaskHandle(PowerManager::getBatteryMonitorTaskHandle());
   
+  // Start the file upload task using BackendClient
+  if (!BackendClient::startUploadTask()) {
+    LogManager::log("Failed to start file upload task!");
+    ErrorBlinkLED(100);
+  }
+  
+  // Start the backend reachability task using BackendClient
+  if (!BackendClient::startReachabilityTask()) {
+    LogManager::log("Failed to start backend reachability task!");
+    ErrorBlinkLED(100);
+  }
+  
   // This task can be used to monitor the stack usage. It can be commented / uncommented as needed.
   // if(xTaskCreatePinnedToCore(stackMonitorTask, "Stack Monitor", 4096, NULL, 1, NULL, 0) != pdPASS ) {
   //   LogManager::log("Failed to create stackMonitor task!");
@@ -305,297 +316,18 @@ void loop() {
   // Empty loop as tasks are running on different cores
 }
 
-/**********************************
- *         RECORDING FUNCTIONS    *
- **********************************/
-void recordAudio(void *parameter) {
-  static bool wasRecording = false;
-  static unsigned long lastRecordStart = 0;
-  
-  while (true) {
-    bool currentlyRequested = app->isRecordingRequested();
-    
-    if (currentlyRequested) {
-      lastRecordStart = millis(); // Track when recording started
-      AudioBuffer audio;
 
-      // Use TimeManager for timestamp
-      String ts = TimeManager::getTimestamp();
-      snprintf(audio.timestamp, sizeof(audio.timestamp), "%s", ts.c_str());
-      
-      // Use "start" marker for the first chunk, then MIDDLE afterwards.
-      if (!wasRecording) {
-        wasRecording = true;
-        audio.type = START;
-        LogManager::log("Started audio recording");
-      } else {
-        audio.type = MIDDLE;
-      }
-      
-      audio.buffer = app->getI2S()->recordWAV(RECORD_TIME, &audio.size);
-      
-      if (audio.buffer == NULL || audio.size == 0) {
-        LogManager::log("Failed to record audio: buffer is empty");
-        free(audio.buffer); // Just in case
-        vTaskDelay(pdMS_TO_TICKS(10));
-        continue;
-      }
-      
-      if (xQueueSend(app->getAudioQueue(), &audio, pdMS_TO_TICKS(1000)) != pdPASS) {
-        LogManager::log("Failed to enqueue audio buffer!");
-        free(audio.buffer);
-      }
-    } else {
-      // If we were recording but recording is now off, record a final chunk with "end" marker.
-      if (wasRecording) {
-        AudioBuffer audio;
-        String ts = TimeManager::getTimestamp();
-        snprintf(audio.timestamp, sizeof(audio.timestamp), "%s", ts.c_str());
-        audio.type = END;
-        audio.buffer = app->getI2S()->recordWAV(RECORD_TIME, &audio.size);
-        
-        if (audio.buffer == NULL || audio.size == 0) {
-          LogManager::log("Failed to record final audio: buffer is empty");
-          wasRecording = false;
-          free(audio.buffer); // Just in case
-          continue;
-        }
-        
-        if (xQueueSend(app->getAudioQueue(), &audio, pdMS_TO_TICKS(1000)) != pdPASS) {
-          LogManager::log("Failed to enqueue final audio buffer!");
-          free(audio.buffer);
-        }
-        wasRecording = false;
-        LogManager::log("Ended audio recording");
-      }
-    }
-    vTaskDelay(pdMS_TO_TICKS(1));
-  }
-}
 
-void audioFileTask(void *parameter) {
-  AudioBuffer audio;
-  FileSystem* fs = FileSystem::getInstance();
-  
-  while (true) {
-    QueueHandle_t audioQueue = app->getAudioQueue();
-    while (xQueueReceive(audioQueue, &audio, pdMS_TO_TICKS(10)) == pdTRUE) {
-      String prefix = "_";
-      if (audio.type == START)
-        prefix += "start";
-      else if (audio.type == END)
-        prefix += "end";
-      else if (audio.type == MIDDLE)
-        prefix += "middle";
-        
-      String fileName = String(RECORDINGS_DIR) + "/" +
-                        String(app->getBootSession()) + "_" +
-                        String(app->getAudioFileIndex()) + "_" +
-                        String(audio.timestamp) +
-                        prefix + ".wav";
-      app->setAudioFileIndex(app->getAudioFileIndex() + 1);
 
-      File curr_file;
-      if (fs->openFile(fileName, curr_file, FILE_WRITE)) {
-        if (curr_file.write(audio.buffer, audio.size) != audio.size) {
-          LogManager::log("Failed to write audio data to file: " + fileName);
-        } else {
-          LogManager::log("Audio recorded and saved: " + fileName);
-          app->setWavFilesAvailable(true);
 
-          // Add to upload queue while we have the mutex
-          if (fs->addToUploadQueue(fileName)) {
-            LogManager::log("Added to upload queue: " + fileName);
-          } else {
-            LogManager::log("Failed to add to upload queue: " + fileName);
-          }
-        }
-        fs->closeFile(curr_file);
-      } else {
-        LogManager::log("Failed to open file for writing: " + fileName);
-      }
-      free(audio.buffer);
-    }
 
-    // Check if we should enter deep sleep
-    if (app->isReadyForDeepSleep() && 
-        !app->isRecordingRequested() && 
-        !app->isRecordingActive() &&
-        uxQueueMessagesWaiting(app->getAudioQueue()) == 0) {
-    
-      // Make sure log queue is also empty before sleep
-      if (!LogManager::hasPendingLogs()) {
-        LogManager::log("Recording stopped and all data processed. Entering deep sleep.");
-        vTaskDelay(pdMS_TO_TICKS(500)); // Short delay to allow log to be written
-        PowerManager::initDeepSleep();
-      }
-    }
 
-    vTaskDelay(pdMS_TO_TICKS(10));
-  }
-}
-
-void fileUploadTask(void *parameter) {
-  FileSystem* fs = FileSystem::getInstance();
-  
-  while (true) {
-    // Only proceed if WiFi is connected
-    if (app->isWifiConnected() && app->isBackendReachable()) {
-      // Check if we're already uploading
-      SemaphoreHandle_t uploadMutex = app->getUploadMutex();
-      if (xSemaphoreTake(uploadMutex, 0) == pdTRUE) {
-        app->setUploadInProgress(true);
-        
-        // Get the next file to upload from queue
-        String nextFile = fs->getNextUploadFile();
-        
-        if (nextFile.length() > 0) {
-          LogManager::log("Processing next file from queue: " + nextFile);
-          
-          // Try to take SD card mutex
-          SemaphoreHandle_t sdMutex = fs->getSDMutex();
-          if (xSemaphoreTake(sdMutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
-            UploadBuffer uploadBuffer = {NULL, 0, ""};
-            
-            if (SD.exists(nextFile)) {
-              File file = SD.open(nextFile);
-              if (file) {
-                uploadBuffer.filename = nextFile;
-                uploadBuffer.size = file.size();
-                
-                // Allocate memory for the file content
-                uploadBuffer.buffer = (uint8_t*)malloc(uploadBuffer.size);
-                if (uploadBuffer.buffer) {
-                  // Read the entire file into RAM
-                  size_t bytesRead = file.read(uploadBuffer.buffer, uploadBuffer.size);
-                  if (bytesRead != uploadBuffer.size) {
-                    LogManager::log("Error reading file into buffer");
-                    free(uploadBuffer.buffer);
-                    uploadBuffer.buffer = NULL;
-                  }
-                } else {
-                  LogManager::log("Failed to allocate memory for file upload");
-                }
-                
-                file.close();
-              }
-            }
-            
-            // Release SD mutex before uploading
-            xSemaphoreGive(sdMutex);
-            
-            if (uploadBuffer.buffer) {
-              // Upload the file from RAM
-              LogManager::log("Uploading file from buffer: " + uploadBuffer.filename);
-              bool uploadSuccess = uploadFileFromBuffer(uploadBuffer.buffer, uploadBuffer.size, uploadBuffer.filename);
-              
-              // If upload was successful, delete the file and remove from queue
-              if (uploadSuccess) {
-                LogManager::log("Upload successful, deleting file");
-                
-                // Take SD mutex again just for deletion
-                if (xSemaphoreTake(sdMutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
-                  if (SD.remove(uploadBuffer.filename)) {
-                    LogManager::log("File deleted: " + uploadBuffer.filename);
-                  } else {
-                    LogManager::log("Failed to delete file: " + uploadBuffer.filename);
-                  }
-                  xSemaphoreGive(sdMutex);
-                }
-                
-                // Remove from queue
-                fs->removeFirstFromUploadQueue();
-              } else {
-                LogManager::log("Upload failed for: " + uploadBuffer.filename);
-              }
-              
-              // Free the buffer memory
-              free(uploadBuffer.buffer);
-            }
-          } else {
-            LogManager::log("Could not get SD card mutex for file upload");
-          }
-        } else {
-          // No files in queue
-          app->setWavFilesAvailable(false);
-          LogManager::log("No files in upload queue");
-        }
-        
-        app->setUploadInProgress(false);
-        xSemaphoreGive(uploadMutex);
-      }
-    }
-    
-    vTaskDelay(pdMS_TO_TICKS(UPLOAD_CHECK_INTERVAL));
-  }
-}
-
-bool uploadFileFromBuffer(uint8_t *buffer, size_t size, const String &filename) {
-  if (!buffer || size == 0) {
-    return false;
-  }
-  
-  SemaphoreHandle_t httpMutex = app->getHttpMutex();
-  if (xSemaphoreTake(httpMutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
-    LogManager::log("Could not get HTTP mutex for file upload");
-    return false;
-  }
-  
-  // Extract just the filename without the path for the request
-  String bareFilename = filename.substring(filename.lastIndexOf('/') + 1);
-  
-  // Initialize HTTP client
-  HTTPClient client;
-
-  // Check WiFi connection before proceeding
-  if (WiFi.status() != WL_CONNECTED) {
-    LogManager::log("WiFi not connected, aborting upload");
-    xSemaphoreGive(httpMutex);
-    return false;
-  }
-  
-  // Add timeout settings
-  client.setTimeout(HTTP_TIMEOUT);
-
-  client.begin(API_ENDPOINT);
-  client.addHeader("Content-Type", "audio/wav");
-  client.addHeader("X-API-Key", API_KEY);  // Add the API key as a custom header
-  client.addHeader("Content-Disposition",
-                   "form-data; name=\"file\"; filename=\"" +
-                       String(bareFilename) + "\"");
-
-  // Send the request with the file data from buffer
-  int httpResponseCode = client.sendRequest("POST", buffer, size);
-  
-  if (httpResponseCode > 0) {
-    LogManager::log("HTTP Response code: " + String(httpResponseCode));
-    String response = client.getString();
-    LogManager::log("Server response: " + response);
-    client.end();
-    bool success = (httpResponseCode == HTTP_CODE_OK || httpResponseCode == HTTP_CODE_CREATED);
-    if (!success) {
-      // If we get an HTTP error response, mark backend as unavailable
-      app->setBackendReachable(false);
-      app->setNextBackendCheckTime(millis()); // Trigger an immediate recheck
-    }
-    xSemaphoreGive(httpMutex);
-    return success;
-  } else {
-    LogManager::log("Error on HTTP request: " + String(client.errorToString(httpResponseCode).c_str()));
-    client.end();
-    // Network error, mark backend as unavailable
-    app->setBackendReachable(false);
-    app->setNextBackendCheckTime(millis()); // Trigger an immediate recheck
-    xSemaphoreGive(httpMutex);
-    return false;
-  }
-}
 
 /**********************************
  *       UTILITY FUNCTIONS        *
  **********************************/
 
-void ErrorBlinkLED(int interval) {
+ void ErrorBlinkLED(int interval) {
   // stop recording as well
   app->setRecordingRequested(false);
 
@@ -630,86 +362,4 @@ void monitorStackUsage(TaskHandle_t taskHandle) {
   }
   UBaseType_t highWaterMark = uxTaskGetStackHighWaterMark(taskHandle);
   LogManager::log("Task " + String(pcTaskGetName(taskHandle)) + " high water mark: " + String(highWaterMark));
-}
-
-/**********************************
- *    BACKEND REACHABILITY CHECK  *
- **********************************/
-bool checkBackendReachability() {
-  if (!WifiManager::isConnected()) {
-    return false;
-  }
-  
-  SemaphoreHandle_t httpMutex = app->getHttpMutex();
-  if (xSemaphoreTake(httpMutex, pdMS_TO_TICKS(2000)) != pdTRUE) {
-    LogManager::log("HTTP mutex busy, skipping backend check");
-    return app->isBackendReachable();  // Return current state
-  }
-  
-  HTTPClient http;
-  http.setTimeout(HTTP_TIMEOUT);
-  http.begin(TEST_ENDPOINT);
-
-  http.addHeader("X-API-Key", API_KEY);  // Add the API key as a custom header
-
-  int httpResponseCode = http.GET();
-  LogManager::log("Backend check response: " + String(httpResponseCode));
-  
-  http.end();
-  xSemaphoreGive(httpMutex);
-  return httpResponseCode == 200;
-}
-
-void backendReachabilityTask(void *parameter) {
-  const unsigned long RECHECK_INTERVAL = 600000; // Recheck every 10 minutes even when connected
-  unsigned long lastSuccessfulCheck = 0;
-  
-  while (true) {
-    unsigned long currentTime = millis();
-    bool shouldCheck = false;
-    
-    // Only check backend if WiFi is connected
-    if (WifiManager::isConnected()) {
-      // Check if:
-      // 1. Backend status is unknown (not reachable) OR
-      // 2. It's time for a periodic recheck when connected
-      if (!app->isBackendReachable() || 
-          (app->isBackendReachable() && (currentTime - lastSuccessfulCheck >= RECHECK_INTERVAL))) {
-        
-        // Check if it's time according to our backoff strategy
-        if (currentTime >= app->getNextBackendCheckTime()) {
-          shouldCheck = true;
-        }
-      }
-      
-      if (shouldCheck) {
-        LogManager::log("Checking backend reachability...");
-        
-        if (checkBackendReachability()) {
-          LogManager::log("Backend is reachable");
-          app->setBackendReachable(true);
-          // Reset backoff on success
-          app->setCurrentBackendInterval(MIN_SCAN_INTERVAL);
-          // Record successful check time
-          lastSuccessfulCheck = currentTime;
-        } else {
-          LogManager::log("Backend is not reachable");
-          app->setBackendReachable(false);
-          
-          // Apply exponential backoff for next check
-          unsigned long currentInterval = app->getCurrentBackendInterval();
-          unsigned long newInterval = std::min(currentInterval * 2UL, (unsigned long)MAX_SCAN_INTERVAL);
-          app->setCurrentBackendInterval(newInterval);
-          LogManager::log("Next backend check in " + String(newInterval / 1000) + " seconds");
-        }
-        
-        app->setNextBackendCheckTime(currentTime + app->getCurrentBackendInterval());
-      }
-    } else {
-      // Reset status if WiFi disconnects
-      app->setBackendReachable(false);
-    }
-    
-    vTaskDelay(pdMS_TO_TICKS(5000)); // Task yield interval
-  }
 }

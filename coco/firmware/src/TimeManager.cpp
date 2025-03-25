@@ -27,11 +27,14 @@ bool TimeManager::init(Application* application) {
     
     // Check if time file exists and read it using FileSystem
     FileSystem* fs = FileSystem::getInstance();
-    File timeFile;
+    String timeStr = fs->readFile(TIME_FILE);
     
-    if (fs->openFile(TIME_FILE, timeFile, FILE_READ)) {
-        String timeStr = timeFile.readStringUntil('\n');
-        fs->closeFile(timeFile);
+    if (!timeStr.isEmpty()) {
+        // Extract the first line (in case there are multiple lines)
+        int newlinePos = timeStr.indexOf('\n');
+        if (newlinePos != -1) {
+            timeStr = timeStr.substring(0, newlinePos);
+        }
         persistedTime = (time_t)timeStr.toInt();
         LogManager::log("Read persisted time from SD card: " + String(persistedTime));
     }
@@ -117,12 +120,7 @@ bool TimeManager::storeCurrentTime() {
     
     // Store time to SD card using FileSystem
     FileSystem* fs = FileSystem::getInstance();
-    File timeFile;
-    
-    if (fs->openFile(TIME_FILE, timeFile, FILE_WRITE)) {
-        timeFile.println(String(current));
-        fs->closeFile(timeFile);
-        
+    if (fs->overwriteFile(TIME_FILE, String(current) + "\n")) {
         // Use Serial instead of LogManager to avoid circular dependency issues early in boot
         if (initialized)
             LogManager::log("Stored current time to SD card: " + String(current));
@@ -131,9 +129,9 @@ bool TimeManager::storeCurrentTime() {
         return true;
     } else {
         if (initialized)
-            LogManager::log("Failed to open time file for writing");
+            LogManager::log("Failed to write time file");
         else
-            Serial.println("Failed to open time file for writing");
+            Serial.println("Failed to write time file");
         return false;
     }
 }

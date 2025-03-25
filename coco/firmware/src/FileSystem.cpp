@@ -9,6 +9,21 @@
 // Initialize static member
 FileSystem* FileSystem::_instance = nullptr;
 
+// Private helper class for RAII mutex handling
+class SDLockGuard {
+private:
+    SemaphoreHandle_t& _mutex;
+    bool _locked;
+public:
+    SDLockGuard(SemaphoreHandle_t& mutex) : _mutex(mutex), _locked(false) {
+        _locked = (xSemaphoreTake(_mutex, pdMS_TO_TICKS(5000)) == pdTRUE);
+    }
+    ~SDLockGuard() {
+        if (_locked) xSemaphoreGive(_mutex);
+    }
+    bool isLocked() const { return _locked; }
+};
+
 FileSystem* FileSystem::getInstance() {
     if (_instance == nullptr) {
         _instance = new FileSystem();
@@ -34,7 +49,8 @@ bool FileSystem::init() {
         return false;
     }
 
-    if (xSemaphoreTake(_sdMutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+    SDLockGuard lock(_sdMutex);
+    if (!lock.isLocked()) {
         Serial.println("ERROR: Failed to take SD card mutex during initialization");
         return false;
     }
@@ -63,14 +79,12 @@ bool FileSystem::init() {
     
     if (!sdInitialized) {
         Serial.println("ERROR: SD Card initialization failed after multiple attempts!");
-        xSemaphoreGive(_sdMutex);
         return false;
     }
 
     uint8_t cardType = SD.cardType();
     if (cardType == CARD_NONE) {
         Serial.println("ERROR: No SD card attached");
-        xSemaphoreGive(_sdMutex);
         return false;
     }
 
@@ -88,28 +102,14 @@ bool FileSystem::init() {
     uint64_t cardSize = SD.cardSize() / (1024 * 1024);
     Serial.printf("SD Card Size: %lluMB\n", cardSize);
 
-    // Create necessary directories
-    ensureDirectory(RECORDINGS_DIR);
-
-    // Initialize upload queue file if it doesn't exist
-    if (!SD.exists(UPLOAD_QUEUE_FILE)) {
-        File queueFile = SD.open(UPLOAD_QUEUE_FILE, FILE_WRITE);
-        if (queueFile) {
-            queueFile.close();
-        } else {
-            Serial.println("ERROR: Failed to create upload queue file");
-            xSemaphoreGive(_sdMutex);
-            return false;
-        }
-    }
-
-    xSemaphoreGive(_sdMutex);
     _initialized = true;
     return true;
 }
 
 bool FileSystem::ensureDirectory(const char* path) {
-    if (xSemaphoreTake(_sdMutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+    SDLockGuard lock(_sdMutex);
+    if (!lock.isLocked()) {
+        Serial.printf("ERROR: Failed to take SD card mutex for directory creation: %s\n", path);
         return false;
     }
 
@@ -123,222 +123,237 @@ bool FileSystem::ensureDirectory(const char* path) {
         }
     }
 
-    xSemaphoreGive(_sdMutex);
     return result;
 }
 
-bool FileSystem::openFile(const String& path, File& file, const char* mode) {
+bool FileSystem::addToFile(const String& path, const String& content, bool isUploadQueue) {
     if (!_initialized) {
         Serial.println("ERROR: FileSystem not initialized");
         return false;
     }
 
-    if (xSemaphoreTake(_sdMutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
-        Serial.println("ERROR: Failed to take SD card mutex for file operation");
+    // Ensure parent directory exists
+    int lastSlash = path.lastIndexOf('/');
+    if (lastSlash > 0) {
+        String dirPath = path.substring(0, lastSlash);
+        if (!ensureDirectory(dirPath.c_str())) {
+            LogManager::log("ERROR: Failed to create parent directory for " + path);
+            return false;
+        }
+    }
+
+    SDLockGuard lock(_sdMutex);
+    if (!lock.isLocked()) {
+        LogManager::log("ERROR: Failed to take SD card mutex for file append operation");
         return false;
     }
 
-    file = SD.open(path, mode);
+    File file = SD.open(path, FILE_APPEND);
     if (!file) {
-        Serial.printf("ERROR: Failed to open file: %s\n", path.c_str());
-        xSemaphoreGive(_sdMutex);
+        LogManager::log("ERROR: Failed to open file for appending: " + path);
+        return false;
+    }
+
+    size_t bytesWritten = file.print(content);
+    file.close();
+
+    if (bytesWritten != content.length()) {
+        LogManager::log("ERROR: Failed to write all data to file: " + path);
+        return false;
+    }
+
+    if (isUploadQueue) {
+        LogManager::log("Added to upload queue: " + content.substring(0, content.length() - 1)); // Remove newline
+    }
+
+    return true;
+}
+
+bool FileSystem::overwriteFile(const String& path, const String& content) {
+    if (!_initialized) {
+        Serial.println("ERROR: FileSystem not initialized");
+        return false;
+    }
+
+    // Ensure parent directory exists
+    int lastSlash = path.lastIndexOf('/');
+    if (lastSlash > 0) {
+        String dirPath = path.substring(0, lastSlash);
+        if (!ensureDirectory(dirPath.c_str())) {
+            LogManager::log("ERROR: Failed to create parent directory for " + path);
+            return false;
+        }
+    }
+
+    SDLockGuard lock(_sdMutex);
+    if (!lock.isLocked()) {
+        LogManager::log("ERROR: Failed to take SD card mutex for file write operation");
+        return false;
+    }
+
+    File file = SD.open(path, FILE_WRITE);
+    if (!file) {
+        LogManager::log("ERROR: Failed to open file for writing: " + path);
+        return false;
+    }
+
+    size_t bytesWritten = file.print(content);
+    file.close();
+
+    if (bytesWritten != content.length()) {
+        LogManager::log("ERROR: Failed to write all data to file: " + path);
         return false;
     }
 
     return true;
 }
 
-void FileSystem::closeFile(File& file) {
-    if (file) {
-        file.close();
-        xSemaphoreGive(_sdMutex);
+String FileSystem::readFile(const String& path) {
+    String content = "";
+    
+    if (!_initialized) {
+        Serial.println("ERROR: FileSystem not initialized");
+        return content;
     }
+
+    SDLockGuard lock(_sdMutex);
+    if (!lock.isLocked()) {
+        LogManager::log("ERROR: Failed to take SD card mutex for file read operation");
+        return content;
+    }
+
+    if (!SD.exists(path)) {
+        return content; // Return empty string if file doesn't exist
+    }
+
+    File file = SD.open(path, FILE_READ);
+    if (!file) {
+        LogManager::log("ERROR: Failed to open file for reading: " + path);
+        return content;
+    }
+
+    content = file.readString();
+    file.close();
+    
+    return content;
+}
+
+bool FileSystem::deleteFile(const String& path) {
+    if (!_initialized) {
+        Serial.println("ERROR: FileSystem not initialized");
+        return false;
+    }
+
+    SDLockGuard lock(_sdMutex);
+    if (!lock.isLocked()) {
+        LogManager::log("ERROR: Failed to take SD card mutex for file delete operation");
+        return false;
+    }
+
+    if (!SD.exists(path)) {
+        return true; // File doesn't exist, consider it "successfully deleted"
+    }
+
+    if (!SD.remove(path)) {
+        LogManager::log("ERROR: Failed to delete file: " + path);
+        return false;
+    }
+
+    return true;
 }
 
 bool FileSystem::addToUploadQueue(const String &filename) {
-    File queueFile;
-    bool success = openFile(UPLOAD_QUEUE_FILE, queueFile, FILE_APPEND);
-    if (!success) {
-        LogManager::log("Failed to open upload queue file for writing");
+    // Basic validation
+    if (filename.length() == 0) {
+        LogManager::log("ERROR: Cannot add empty filename to upload queue");
         return false;
     }
+
+    // Use the existing method to check for duplicates
+    // if (isFileInUploadQueue(filename)) {
+    //     LogManager::log("File already in upload queue: " + filename);
+    //     return true; // Not an error, file is already queued
+    // }
     
-    queueFile.println(filename);
-    closeFile(queueFile);
-    return true;
+    // Add to queue using addToFile method
+    return addToFile(UPLOAD_QUEUE_FILE, filename + "\n", true);
 }
 
 String FileSystem::getNextUploadFile() {
-    String nextFile = "";
-    
-    File queueFile;
-    if (openFile(UPLOAD_QUEUE_FILE, queueFile, FILE_READ)) {
-        if (queueFile.available()) {
-            nextFile = queueFile.readStringUntil('\n');
-            nextFile.trim(); // Remove any newline characters
-        }
-        closeFile(queueFile);
+    String content = readFile(UPLOAD_QUEUE_FILE);
+    if (content.isEmpty()) {
+        return "";
     }
     
-    return nextFile;
+    // Extract first line
+    int newlinePos = content.indexOf('\n');
+    if (newlinePos == -1) {
+        return content; // No newline, return entire content
+    }
+    
+    return content.substring(0, newlinePos);
 }
 
 bool FileSystem::removeFirstFromUploadQueue() {
-    if (xSemaphoreTake(_sdMutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+    String content = readFile(UPLOAD_QUEUE_FILE);
+    if (content.isEmpty()) {
+        LogManager::log("ERROR: Cannot remove from empty upload queue");
         return false;
     }
     
-    if (!SD.exists(UPLOAD_QUEUE_FILE)) {
-        xSemaphoreGive(_sdMutex);
-        return false;
+    // Find first newline
+    int newlinePos = content.indexOf('\n');
+    if (newlinePos == -1) {
+        // No newline, queue has just one entry
+        return deleteFile(UPLOAD_QUEUE_FILE);
     }
     
-    File queueFile = SD.open(UPLOAD_QUEUE_FILE, FILE_READ);
-    if (!queueFile) {
-        xSemaphoreGive(_sdMutex);
-        return false;
+    // Get the file that will be removed for logging
+    String removedFile = content.substring(0, newlinePos);
+    
+    // Extract remaining content (skip the newline)
+    String remaining = content.substring(newlinePos + 1);
+    
+    // Overwrite the file with remaining content
+    bool success = overwriteFile(UPLOAD_QUEUE_FILE, remaining);
+    
+    if (success) {
+        LogManager::log("Removed from upload queue: " + removedFile);
     }
     
-    // Create a temporary file
-    File tempFile = SD.open(UPLOAD_QUEUE_TEMP, FILE_WRITE);
-    if (!tempFile) {
-        queueFile.close();
-        xSemaphoreGive(_sdMutex);
-        return false;
-    }
-    
-    // Skip the first line and copy the rest
-    bool firstLine = true;
-    String line;
-    
-    while (queueFile.available()) {
-        line = queueFile.readStringUntil('\n');
-        
-        if (firstLine) {
-            firstLine = false;
-            // Skip the first line (we're removing it)
-            continue;
-        }
-        
-        tempFile.println(line);
-    }
-    
-    queueFile.close();
-    tempFile.close();
-    
-    // Replace original file with temp file
-    SD.remove(UPLOAD_QUEUE_FILE);
-    SD.rename(UPLOAD_QUEUE_TEMP, UPLOAD_QUEUE_FILE);
-    
-    xSemaphoreGive(_sdMutex);
-    return true;
+    return success;
 }
 
 bool FileSystem::isUploadQueueEmpty() {
-    String nextFile = getNextUploadFile();
-    return nextFile.length() == 0;
+    String content = readFile(UPLOAD_QUEUE_FILE);
+    return content.isEmpty();
 }
 
-int FileSystem::getFileCount(const char* dirPath) {
-    if (xSemaphoreTake(_sdMutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
-        return -1;
+bool FileSystem::isFileInUploadQueue(const String &filename) {
+    String content = readFile(UPLOAD_QUEUE_FILE);
+    if (content.isEmpty()) {
+        return false;
     }
     
-    File root = SD.open(dirPath);
-    if (!root || !root.isDirectory()) {
-        if (root) root.close();
-        xSemaphoreGive(_sdMutex);
-        return -1;
-    }
-    
-    int count = 0;
-    File file = root.openNextFile();
-    
-    while (file) {
-        if (!file.isDirectory()) {
-            count++;
+    int pos = 0;
+    while (pos < content.length()) {
+        int newlinePos = content.indexOf('\n', pos);
+        
+        // If no more newlines, check the rest of the string
+        if (newlinePos == -1) {
+            String line = content.substring(pos);
+            return (line == filename);
         }
-        file.close();
-        file = root.openNextFile();
-    }
-    
-    root.close();
-    xSemaphoreGive(_sdMutex);
-    return count;
-}
-
-int FileSystem::pruneOldestFiles(const char* dirPath, int maxFiles) {
-    int fileCount = getFileCount(dirPath);
-    if (fileCount <= maxFiles || fileCount < 0) {
-        return 0;
-    }
-    
-    if (xSemaphoreTake(_sdMutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
-        return 0;
-    }
-    
-    // List all files with their creation time
-    struct FileInfo {
-        String path;
-        time_t ctime;
-    };
-    
-    // Allocate array for all files
-    FileInfo* files = new FileInfo[fileCount];
-    if (!files) {
-        xSemaphoreGive(_sdMutex);
-        return 0;
-    }
-    
-    // Get all files and their creation time
-    File root = SD.open(dirPath);
-    if (!root || !root.isDirectory()) {
-        if (root) root.close();
-        delete[] files;
-        xSemaphoreGive(_sdMutex);
-        return 0;
-    }
-    
-    int index = 0;
-    File file = root.openNextFile();
-    
-    while (file && index < fileCount) {
-        if (!file.isDirectory()) {
-            files[index].path = String(dirPath) + "/" + file.name();
-            files[index].ctime = file.getLastWrite();
-            index++;
+        
+        // Check the current line
+        String line = content.substring(pos, newlinePos);
+        if (line == filename) {
+            return true;
         }
-        file.close();
-        file = root.openNextFile();
+        
+        // Move to next line
+        pos = newlinePos + 1;
     }
     
-    root.close();
-    
-    // Sort files by creation time (oldest first)
-    for (int i = 0; i < index - 1; i++) {
-        for (int j = 0; j < index - i - 1; j++) {
-            if (files[j].ctime > files[j + 1].ctime) {
-                FileInfo temp = files[j];
-                files[j] = files[j + 1];
-                files[j + 1] = temp;
-            }
-        }
-    }
-    
-    // Delete the oldest files
-    int filesToDelete = index - maxFiles;
-    int deleted = 0;
-    
-    for (int i = 0; i < filesToDelete; i++) {
-        LogManager::log("Pruning old file: " + files[i].path);
-        if (SD.remove(files[i].path.c_str())) {
-            deleted++;
-        } else {
-            LogManager::log("Failed to delete file: " + files[i].path);
-        }
-    }
-    
-    delete[] files;
-    xSemaphoreGive(_sdMutex);
-    return deleted;
+    return false;
 }

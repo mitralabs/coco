@@ -18,6 +18,7 @@
 // Forward declarations
 class LogManager;
 class TimeManager;
+class AudioManager; // Add this forward declaration
 
 // AudioBuffer and UploadBuffer struct definitions
 enum AudioChunkType { START, MIDDLE, END };
@@ -45,7 +46,7 @@ private:
     
     // System components
     Preferences preferences;
-    I2SClass i2s;
+    // Removed I2SClass i2s; - Now using AudioManager's I2S instance instead
     
     // Counters and indexes
     int bootSession;
@@ -103,7 +104,6 @@ public:
     // Initialization methods
     bool init();
     bool initSD();
-    bool initI2S();
     bool initPreferences();
     bool initMutexes();
     bool initQueues();

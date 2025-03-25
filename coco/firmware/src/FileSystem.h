@@ -33,8 +33,11 @@ public:
      * @return true if initialization was successful, false otherwise
      */
     bool init();
-    
-    // Add getter for SD mutex
+
+    /**
+     * @brief Get the mutex for SD card operations
+     * @return Semaphore handle for SD card mutex
+     */
     SemaphoreHandle_t getSDMutex() const { return _sdMutex; }
 
     /**
@@ -45,25 +48,35 @@ public:
     bool ensureDirectory(const char* path);
 
     /**
-     * @brief Open a file safely with mutex protection
+     * @brief Add content to a file (append)
      * @param path File path
-     * @param file Reference to File object
-     * @param mode File access mode (FILE_READ, FILE_WRITE, FILE_APPEND)
-     * @return true if file was opened successfully, false otherwise
+     * @param content String content to add
+     * @param isUploadQueue Whether this is an upload queue operation
+     * @return true if operation was successful, false otherwise
      */
-    bool openFile(const String& path, File& file, const char* mode);
+    bool addToFile(const String& path, const String& content, bool isUploadQueue = false);
 
     /**
-     * @brief Close a file safely
-     * @param file File object to close
+     * @brief Overwrite a file with new content
+     * @param path File path
+     * @param content String content to write
+     * @return true if operation was successful, false otherwise
      */
-    void closeFile(File& file);
-    
+    bool overwriteFile(const String& path, const String& content);
+
     /**
-     * @brief Get the mutex for SD card operations
-     * @return Semaphore handle for SD card mutex
+     * @brief Read entire file content
+     * @param path File path
+     * @return String containing file content, or empty string on error
      */
-    SemaphoreHandle_t getSDMutex() { return _sdMutex; }
+    String readFile(const String& path);
+
+    /**
+     * @brief Delete a file
+     * @param path File path
+     * @return true if file was deleted successfully, false otherwise
+     */
+    bool deleteFile(const String& path);
 
     /**
      * @brief Add a file to the upload queue
@@ -91,19 +104,11 @@ public:
     bool isUploadQueueEmpty();
 
     /**
-     * @brief Get total file count in a directory
-     * @param dirPath Directory path to check
-     * @return Number of files in the directory
+     * @brief Check if a file is in the upload queue
+     * @param filename Full path of the file to check
+     * @return true if file is in the queue, false otherwise
      */
-    int getFileCount(const char* dirPath);
-
-    /**
-     * @brief Delete oldest files if count exceeds limit
-     * @param dirPath Directory to manage
-     * @param maxFiles Maximum number of files to keep
-     * @return Number of files deleted
-     */
-    int pruneOldestFiles(const char* dirPath, int maxFiles);
+    bool isFileInUploadQueue(const String &filename);
 
 private:
     // Private constructor for singleton pattern

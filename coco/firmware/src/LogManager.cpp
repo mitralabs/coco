@@ -34,15 +34,13 @@ bool LogManager::init(Application* application) {
     FileSystem* fs = FileSystem::getInstance();
     
     // Ensure log file exists
-    File logFile;
-    if (fs->openFile(LOG_FILE, logFile, FILE_WRITE)) {
-        if (logFile.size() == 0) {
-            logFile.println("=== Device Log Started ===");
+    String currentLogContent = fs->readFile(LOG_FILE);
+    if (currentLogContent.isEmpty()) {
+        // Create initial log file if it doesn't exist or is empty
+        if (!fs->overwriteFile(LOG_FILE, "=== Device Log Started ===\n")) {
+            Serial.println("Failed to initialize log file!");
+            return false;
         }
-        fs->closeFile(logFile);
-    } else {
-        Serial.println("Failed to access log file!");
-        return false;
     }
     
     // Reset log index
@@ -108,22 +106,20 @@ void LogManager::logFlushTask(void *parameter) {
     
     while (true) {
         if (uxQueueMessagesWaiting(logQueue) > 0) {
-            // Open log file for append
-            File logFile;
-            if (fs->openFile(LOG_FILE, logFile, FILE_APPEND)) {
-                char *pendingLog;
-                while (xQueueReceive(logQueue, &pendingLog, 0) == pdTRUE) {
-                    logFile.println(pendingLog);
-                    free(pendingLog);
-                }
-                logFile.flush();
-                fs->closeFile(logFile);
-            } else {
-                Serial.println("Failed to open log file for batch flush!");
-                // Free the memory for all pending messages since we couldn't write them
-                char *pendingLog;
-                while (xQueueReceive(logQueue, &pendingLog, 0) == pdTRUE) {
-                    free(pendingLog);
+            // Collect all pending messages
+            String pendingLogs = "";
+            char *pendingLog;
+            
+            // Dequeue all messages into a string
+            while (xQueueReceive(logQueue, &pendingLog, 0) == pdTRUE) {
+                pendingLogs += String(pendingLog) + "\n";
+                free(pendingLog);
+            }
+            
+            // Append collected logs to the log file
+            if (!pendingLogs.isEmpty()) {
+                if (!fs->addToFile(LOG_FILE, pendingLogs)) {
+                    Serial.println("Failed to write logs to file!");
                 }
             }
         }

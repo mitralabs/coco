@@ -32,6 +32,7 @@ Never use priority 25 (reserved for system tasks)
 - [ ] Include WiFiMulti, so that multiple Networks are known.
 - [ ] Integrate WiFi, and Timezone on SD Card (although this poses security risks, if device is lost, and card inspected.)
 - [ ] Look into File Compression like LZ77H (common in HTTP headers)
+- [ ] Deepsleep stuff is in the AudioManager.
 
 
 ---
