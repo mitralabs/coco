@@ -1,6 +1,3 @@
-// Introducing improved WiFi Handling, Clean Up, File Transfer, and Stack Monitoring.
-// This version currently doesn't use the DEEPSLEEP mode, but this will be implemented shortly.
-
 /**********************************
  *           INCLUDES             *
  **********************************/
@@ -43,21 +40,10 @@ void setup_from_timer();
 void setup_from_external();
 void setup_from_boot();
 
-// Removing these function prototypes since they're now in BackendClient
-// bool addToUploadQueue(const String &filename);
-// String getNextUploadFile();
-// bool removeFirstFromUploadQueue();
-// void fileUploadTask(void *parameter);
-// bool uploadFileFromBuffer(uint8_t *buffer, size_t size, const String &filename);
-
-// Removing the batteryMonitorTask prototype since it's now in PowerManager
 void ErrorBlinkLED(int interval);
 void stackMonitorTask(void *parameter);
 void monitorStackUsage(TaskHandle_t taskHandle);
 
-// Removing backend-related function prototypes since they're now in BackendClient
-// void backendReachabilityTask(void *parameter);
-// bool checkBackendReachability();
 
 
 /**********************************

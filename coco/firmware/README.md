@@ -23,16 +23,21 @@ System Critical Tasks: 18-24
 Never use priority 25 (reserved for system tasks)
 
 ## ToDo
-- [ ] Solve Device shutdown on FileUpload. Currently the device sometimes crashes when it tries to send the file...
-- [ ] Überarbeite Setup and Init (maybe find a routine for initial boot or boot from complete power loss). Consider removing the "if task creation fails" parts.
-- [ ] Check if there is a possibility that audio queue get's lost on the SD card. E.g. when the new one is being written and the device loses power.
-- [ ] Integrate Routine which brings device to deepsleep, when Voltage below a certain threshold.
 - [ ] Find a handle for SD Card Error to reset device utilizing the button. Factory Reset Button will mostlikely not be reachable, since inside of case.
-- [ ] Rewrite logging. It's currently pretty wild.
-- [ ] Include WiFiMulti, so that multiple Networks are known.
+
+- [ ] Understand Setup and Init functions.
+
+- [ ] Thoroughly test firmware, if unexpected shutdowns occur.
+
+
+- [ ] Integrate Routine which brings device to deepsleep, when Voltage below a certain threshold.
+- [ ] Find routine for time triggered wake up to initiate file transfer etc.
+
+
 - [ ] Integrate WiFi, and Timezone on SD Card (although this poses security risks, if device is lost, and card inspected.)
+- [ ] Include WiFiMulti, so that multiple Networks are known.
+- [ ] Rewrite logging. It's currently pretty wild.
 - [ ] Look into File Compression like LZ77H (common in HTTP headers)
-- [ ] Deepsleep stuff is in the AudioManager.
 
 
 ---
