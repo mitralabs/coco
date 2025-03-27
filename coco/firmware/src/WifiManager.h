@@ -66,6 +66,30 @@ public:
      * @return String representation of IP address
      */
     static String getLocalIP();
+    
+    /**
+     * Get the current scan interval
+     * @return Current scan interval in milliseconds
+     */
+    static unsigned long getCurrentScanInterval();
+    
+    /**
+     * Set the current scan interval
+     * @param interval New scan interval in milliseconds
+     */
+    static void setCurrentScanInterval(unsigned long interval);
+    
+    /**
+     * Get the next WiFi scan time
+     * @return Next scheduled scan time in milliseconds
+     */
+    static unsigned long getNextWifiScanTime();
+    
+    /**
+     * Set the next WiFi scan time
+     * @param time Next scan time in milliseconds
+     */
+    static void setNextWifiScanTime(unsigned long time);
 
 private:
     // Private constructor - singleton pattern
@@ -83,6 +107,8 @@ private:
     static Application* app;
     static TaskHandle_t wifiConnectionTaskHandle;
     static bool initialized;
+    static unsigned long currentScanInterval;
+    static unsigned long nextWifiScanTime;
 };
 
 #endif // WIFI_MANAGER_H

@@ -14,6 +14,9 @@ private:
     static TaskHandle_t uploadTaskHandle;
     static TaskHandle_t reachabilityTaskHandle;
     static Application* app;
+    static SemaphoreHandle_t uploadMutex;
+    static unsigned long nextBackendCheckTime;
+    static unsigned long currentBackendInterval;
     
     // Private constructor (singleton pattern enforcement)
     BackendClient() = default;
@@ -39,6 +42,15 @@ public:
     // Task handle getters
     static TaskHandle_t getUploadTaskHandle();
     static TaskHandle_t getReachabilityTaskHandle();
+    
+    // Mutex management
+    static SemaphoreHandle_t getUploadMutex();
+    
+    // Backend check interval management
+    static void setNextBackendCheckTime(unsigned long time);
+    static unsigned long getNextBackendCheckTime();
+    static void setCurrentBackendInterval(unsigned long interval);
+    static unsigned long getCurrentBackendInterval();
     
     // Public API functions
     static bool isReachable();

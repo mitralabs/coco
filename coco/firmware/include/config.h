@@ -13,7 +13,7 @@
 /**********************************
  *       PIN DEFINITIONS          *
  **********************************/
-#define LED_PIN 2               // Onboard LED pin
+#define LED_PIN 2           // LED pin
 #define BUTTON_PIN GPIO_NUM_1   // Button input pin
 #define BATTERY_PIN 4           // ADC pin for battery voltage monitoring
 

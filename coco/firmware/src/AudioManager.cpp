@@ -13,6 +13,8 @@ TaskHandle_t AudioManager::_audioFileTaskHandle = NULL;
 volatile bool AudioManager::_isRecording = false;
 volatile bool AudioManager::_wasRecording = false;
 unsigned long AudioManager::_lastRecordStart = 0;
+QueueHandle_t AudioManager::_audioQueue = NULL;
+int AudioManager::_audioFileIndex = 0;
 
 bool AudioManager::init(Application* app) {
     if (_initialized) {
@@ -23,6 +25,15 @@ bool AudioManager::init(Application* app) {
         _app = Application::getInstance();
     } else {
         _app = app;
+    }
+    
+    // Initialize audio queue if not already created
+    if (_audioQueue == NULL) {
+        _audioQueue = xQueueCreate(10, sizeof(AudioBuffer));
+        if (_audioQueue == NULL) {
+            LogManager::log("Failed to create audio queue!");
+            return false;
+        }
     }
     
     // Initialize I2S for audio recording
@@ -167,7 +178,7 @@ void AudioManager::recordAudioTask(void* parameter) {
                 continue;
             }
             
-            if (xQueueSend(_app->getAudioQueue(), &audio, pdMS_TO_TICKS(1000)) != pdPASS) {
+            if (xQueueSend(_audioQueue, &audio, pdMS_TO_TICKS(1000)) != pdPASS) {
                 LogManager::log("Failed to enqueue audio buffer!");
                 free(audio.buffer);
             }
@@ -187,7 +198,7 @@ void AudioManager::recordAudioTask(void* parameter) {
                     continue;
                 }
                 
-                if (xQueueSend(_app->getAudioQueue(), &audio, pdMS_TO_TICKS(1000)) != pdPASS) {
+                if (xQueueSend(_audioQueue, &audio, pdMS_TO_TICKS(1000)) != pdPASS) {
                     LogManager::log("Failed to enqueue final audio buffer!");
                     free(audio.buffer);
                 }
@@ -208,8 +219,7 @@ void AudioManager::audioFileTask(void* parameter) {
     FileSystem* fs = FileSystem::getInstance();
     
     while (true) {
-        QueueHandle_t audioQueue = _app->getAudioQueue();
-        while (xQueueReceive(audioQueue, &audio, pdMS_TO_TICKS(10)) == pdTRUE) {
+        while (xQueueReceive(_audioQueue, &audio, pdMS_TO_TICKS(10)) == pdTRUE) {
             String prefix = "_";
             if (audio.type == START)
                 prefix += "start";
@@ -220,10 +230,10 @@ void AudioManager::audioFileTask(void* parameter) {
                 
             String fileName = String(RECORDINGS_DIR) + "/" +
                               String(_app->getBootSession()) + "_" +
-                              String(_app->getAudioFileIndex()) + "_" +
+                              String(_audioFileIndex) + "_" +
                               String(audio.timestamp) +
                               prefix + ".wav";
-            _app->setAudioFileIndex(_app->getAudioFileIndex() + 1);
+            setAudioFileIndex(_audioFileIndex + 1);
 
             // Instead of opening and writing to the file directly,
             // use the overwriteFile method with the raw bytes
@@ -265,8 +275,8 @@ void AudioManager::audioFileTask(void* parameter) {
         // Check if we should enter deep sleep
         if (_app->isReadyForDeepSleep() && 
             !_app->isRecordingRequested() && 
-            !_app->isRecordingActive() &&
-            uxQueueMessagesWaiting(_app->getAudioQueue()) == 0) {
+            !isRecordingActive() &&
+            uxQueueMessagesWaiting(_audioQueue) == 0) {
         
             // Make sure log queue is also empty before sleep
             if (!LogManager::hasPendingLogs()) {
@@ -301,4 +311,20 @@ uint8_t* AudioManager::recordWAV(unsigned long recordTimeMs, size_t* size) {
         init();
     }
     return _i2s.recordWAV(recordTimeMs, size);
+}
+
+QueueHandle_t AudioManager::getAudioQueue() {
+    return _audioQueue;
+}
+
+void AudioManager::setAudioQueue(QueueHandle_t queue) {
+    _audioQueue = queue;
+}
+
+int AudioManager::getAudioFileIndex() {
+    return _audioFileIndex;
+}
+
+void AudioManager::setAudioFileIndex(int index) {
+    _audioFileIndex = index;
 }

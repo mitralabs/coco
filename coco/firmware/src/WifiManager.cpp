@@ -11,6 +11,25 @@
 Application* WifiManager::app = NULL;
 TaskHandle_t WifiManager::wifiConnectionTaskHandle = NULL;
 bool WifiManager::initialized = false;
+unsigned long WifiManager::currentScanInterval = MIN_SCAN_INTERVAL;
+unsigned long WifiManager::nextWifiScanTime = 0;
+
+// Getter and setter implementations for new properties
+unsigned long WifiManager::getCurrentScanInterval() {
+    return currentScanInterval;
+}
+
+void WifiManager::setCurrentScanInterval(unsigned long interval) {
+    currentScanInterval = interval;
+}
+
+unsigned long WifiManager::getNextWifiScanTime() {
+    return nextWifiScanTime;
+}
+
+void WifiManager::setNextWifiScanTime(unsigned long time) {
+    nextWifiScanTime = time;
+}
 
 bool WifiManager::init(Application* application) {
     // Store application instance
@@ -24,6 +43,10 @@ bool WifiManager::init(Application* application) {
     WiFi.onEvent(WiFiStationConnected, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_CONNECTED);
     WiFi.onEvent(WiFiGotIP, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_GOT_IP);
     WiFi.onEvent(WiFiDisconnected, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
+    
+    // Initialize scan interval and time
+    currentScanInterval = MIN_SCAN_INTERVAL;
+    nextWifiScanTime = millis();
     
     LogManager::log("WifiManager initialized");
     initialized = true;
@@ -50,7 +73,6 @@ bool WifiManager::startConnectionTask() {
         return false;
     }
     
-    app->setWifiConnectionTaskHandle(wifiConnectionTaskHandle);
     return true;
 }
 
@@ -108,7 +130,7 @@ void WifiManager::wifiConnectionTask(void *parameter) {
             if (app->isWifiConnected()) {
                 LogManager::log("Connection attempt succeeded");
                 connectionInProgress = false;
-                app->setCurrentScanInterval(MIN_SCAN_INTERVAL);
+                setCurrentScanInterval(MIN_SCAN_INTERVAL);
             } 
             // If connection attempt has timed out
             else if (currentTime - connectionStartTime > CONNECTION_TIMEOUT) {
@@ -116,10 +138,9 @@ void WifiManager::wifiConnectionTask(void *parameter) {
                                String(CONNECTION_TIMEOUT/1000) + " seconds");
                 connectionInProgress = false;
                 // Schedule next scan with backoff
-                unsigned long currentInterval = app->getCurrentScanInterval();
-                unsigned long newInterval = std::min(currentInterval * 2UL, (unsigned long)MAX_SCAN_INTERVAL);
-                app->setCurrentScanInterval(newInterval);
-                app->setNextWifiScanTime(currentTime + newInterval);
+                unsigned long newInterval = std::min(getCurrentScanInterval() * 2UL, (unsigned long)MAX_SCAN_INTERVAL);
+                setCurrentScanInterval(newInterval);
+                setNextWifiScanTime(currentTime + newInterval);
                 LogManager::log("Next scan in " + String(newInterval / 1000) + " seconds");
             } 
             // Still waiting for connection
@@ -131,7 +152,7 @@ void WifiManager::wifiConnectionTask(void *parameter) {
         }
         
         // Only scan if not connected, not in connection progress, and it's time to scan
-        if (!app->isWifiConnected() && !connectionInProgress && currentTime >= app->getNextWifiScanTime()) {
+        if (!app->isWifiConnected() && !connectionInProgress && currentTime >= getNextWifiScanTime()) {
             LogManager::log("Scanning for WiFi networks...");
             
             // Start network scan
@@ -165,26 +186,24 @@ void WifiManager::wifiConnectionTask(void *parameter) {
                     LogManager::log("Target network not found in scan");
                     
                     // Apply exponential backoff for next scan
-                    unsigned long currentInterval = app->getCurrentScanInterval();
-                    unsigned long newInterval = std::min(currentInterval * 2UL, (unsigned long)MAX_SCAN_INTERVAL);
-                    app->setCurrentScanInterval(newInterval);
-                    app->setNextWifiScanTime(currentTime + newInterval);
+                    unsigned long newInterval = std::min(getCurrentScanInterval() * 2UL, (unsigned long)MAX_SCAN_INTERVAL);
+                    setCurrentScanInterval(newInterval);
+                    setNextWifiScanTime(currentTime + newInterval);
                     LogManager::log("Next scan in " + String(newInterval / 1000) + " seconds");
                 }
             } else {
                 LogManager::log("No networks found");
                 // Apply exponential backoff for next scan
-                unsigned long currentInterval = app->getCurrentScanInterval();
-                unsigned long newInterval = std::min(currentInterval * 2UL, (unsigned long)MAX_SCAN_INTERVAL);
-                app->setCurrentScanInterval(newInterval);
-                app->setNextWifiScanTime(currentTime + newInterval);
+                unsigned long newInterval = std::min(getCurrentScanInterval() * 2UL, (unsigned long)MAX_SCAN_INTERVAL);
+                setCurrentScanInterval(newInterval);
+                setNextWifiScanTime(currentTime + newInterval);
                 LogManager::log("Next scan in " + String(newInterval / 1000) + " seconds");
             }
         }
         
         // If connected, reset backoff parameters
         if (app->isWifiConnected() && !connectionInProgress) {
-            app->setCurrentScanInterval(MIN_SCAN_INTERVAL);
+            setCurrentScanInterval(MIN_SCAN_INTERVAL);
         }
         
         vTaskDelay(pdMS_TO_TICKS(1000)); // Check again after a delay
@@ -197,7 +216,7 @@ void WifiManager::WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info) 
 
 void WifiManager::WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info) {
     LogManager::log("WiFi connected with IP: " + WiFi.localIP().toString());
-    app->setCurrentScanInterval(MIN_SCAN_INTERVAL);
+    setCurrentScanInterval(MIN_SCAN_INTERVAL);
     app->setWifiConnected(true);
     
     // Update time as soon as we get an IP address using TimeManager
@@ -223,6 +242,6 @@ void WifiManager::WiFiDisconnected(WiFiEvent_t event, WiFiEventInfo_t info) {
     app->setWifiConnected(false);
     
     // Reset scan interval to minimum when disconnected to attempt reconnection faster
-    app->setCurrentScanInterval(MIN_SCAN_INTERVAL);
-    app->setNextWifiScanTime(millis() + MIN_SCAN_INTERVAL);
+    setCurrentScanInterval(MIN_SCAN_INTERVAL);
+    setNextWifiScanTime(millis() + MIN_SCAN_INTERVAL);
 }

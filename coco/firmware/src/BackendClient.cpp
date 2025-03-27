@@ -10,6 +10,9 @@ bool BackendClient::initialized = false;
 TaskHandle_t BackendClient::uploadTaskHandle = nullptr;
 TaskHandle_t BackendClient::reachabilityTaskHandle = nullptr;
 Application* BackendClient::app = nullptr;
+SemaphoreHandle_t BackendClient::uploadMutex = nullptr;
+unsigned long BackendClient::nextBackendCheckTime = 0;
+unsigned long BackendClient::currentBackendInterval = MIN_SCAN_INTERVAL;
 
 bool BackendClient::init(Application* application) {
     // Check if already initialized
@@ -24,6 +27,16 @@ bool BackendClient::init(Application* application) {
         LogManager::log("BackendClient: Application instance is null");
         return false;
     }
+    
+    // Initialize backend client properties
+    uploadMutex = xSemaphoreCreateMutex();
+    if (!uploadMutex) {
+        LogManager::log("BackendClient: Failed to create upload mutex");
+        return false;
+    }
+    
+    nextBackendCheckTime = 0;
+    currentBackendInterval = MIN_SCAN_INTERVAL;
     
     LogManager::log("BackendClient: Initialized");
     initialized = true;
@@ -52,9 +65,6 @@ bool BackendClient::startUploadTask() {
         return false;
     }
     
-    // Store the handle in the app for monitoring
-    app->setUploadTaskHandle(uploadTaskHandle);
-    
     LogManager::log("BackendClient: File upload task started");
     return true;
 }
@@ -81,9 +91,6 @@ bool BackendClient::startReachabilityTask() {
         return false;
     }
     
-    // Store the handle in the app for monitoring
-    app->setBackendReachabilityTaskHandle(reachabilityTaskHandle);
-    
     LogManager::log("BackendClient: Backend reachability task started");
     return true;
 }
@@ -94,6 +101,26 @@ TaskHandle_t BackendClient::getUploadTaskHandle() {
 
 TaskHandle_t BackendClient::getReachabilityTaskHandle() {
     return reachabilityTaskHandle;
+}
+
+SemaphoreHandle_t BackendClient::getUploadMutex() {
+    return uploadMutex;
+}
+
+void BackendClient::setNextBackendCheckTime(unsigned long time) {
+    nextBackendCheckTime = time;
+}
+
+unsigned long BackendClient::getNextBackendCheckTime() {
+    return nextBackendCheckTime;
+}
+
+void BackendClient::setCurrentBackendInterval(unsigned long interval) {
+    currentBackendInterval = interval;
+}
+
+unsigned long BackendClient::getCurrentBackendInterval() {
+    return currentBackendInterval;
 }
 
 bool BackendClient::isReachable() {
@@ -117,7 +144,6 @@ void BackendClient::fileUploadTaskFunction(void* parameter) {
         // Only proceed if WiFi is connected
         if (app->isWifiConnected() && app->isBackendReachable()) {
             // Check if we're already uploading
-            SemaphoreHandle_t uploadMutex = app->getUploadMutex();
             if (xSemaphoreTake(uploadMutex, 0) == pdTRUE) {
                 app->setUploadInProgress(true);
                 
@@ -247,7 +273,7 @@ bool BackendClient::uploadFileFromBuffer(uint8_t* buffer, size_t size, const Str
         if (!success) {
             // If we get an HTTP error response, mark backend as unavailable
             app->setBackendReachable(false);
-            app->setNextBackendCheckTime(millis()); // Trigger an immediate recheck
+            setNextBackendCheckTime(millis()); // Trigger an immediate recheck
         }
         xSemaphoreGive(httpMutex);
         return success;
@@ -256,7 +282,7 @@ bool BackendClient::uploadFileFromBuffer(uint8_t* buffer, size_t size, const Str
         client.end();
         // Network error, mark backend as unavailable
         app->setBackendReachable(false);
-        app->setNextBackendCheckTime(millis()); // Trigger an immediate recheck
+        setNextBackendCheckTime(millis()); // Trigger an immediate recheck
         xSemaphoreGive(httpMutex);
         return false;
     }
@@ -304,7 +330,7 @@ void BackendClient::backendReachabilityTaskFunction(void* parameter) {
                 (app->isBackendReachable() && (currentTime - lastSuccessfulCheck >= RECHECK_INTERVAL))) {
                 
                 // Check if it's time according to our backoff strategy
-                if (currentTime >= app->getNextBackendCheckTime()) {
+                if (currentTime >= getNextBackendCheckTime()) {
                     shouldCheck = true;
                 }
             }
@@ -316,7 +342,7 @@ void BackendClient::backendReachabilityTaskFunction(void* parameter) {
                     LogManager::log("Backend is reachable");
                     app->setBackendReachable(true);
                     // Reset backoff on success
-                    app->setCurrentBackendInterval(MIN_SCAN_INTERVAL);
+                    setCurrentBackendInterval(MIN_SCAN_INTERVAL);
                     // Record successful check time
                     lastSuccessfulCheck = currentTime;
                 } else {
@@ -324,13 +350,13 @@ void BackendClient::backendReachabilityTaskFunction(void* parameter) {
                     app->setBackendReachable(false);
                     
                     // Apply exponential backoff for next check
-                    unsigned long currentInterval = app->getCurrentBackendInterval();
+                    unsigned long currentInterval = getCurrentBackendInterval();
                     unsigned long newInterval = std::min(currentInterval * 2UL, (unsigned long)MAX_SCAN_INTERVAL);
-                    app->setCurrentBackendInterval(newInterval);
+                    setCurrentBackendInterval(newInterval);
                     LogManager::log("Next backend check in " + String(newInterval / 1000) + " seconds");
                 }
                 
-                app->setNextBackendCheckTime(currentTime + app->getCurrentBackendInterval());
+                setNextBackendCheckTime(currentTime + getCurrentBackendInterval());
             }
         } else {
             // Reset status if WiFi disconnects

@@ -18,6 +18,7 @@
 #include "config.h"
 #include "Application.h"
 
+
 class LogManager {
 public:
     /**
@@ -67,7 +68,7 @@ private:
     
     // Static state variables
     static Application* app;        // Reference to the Application singleton
-    static QueueHandle_t logQueue;  // Queue for pending log messages
+    static QueueHandle_t logQueue;  // Queue managed by LogManager
     static int bootSession;         // Current boot session number
     static int logIndex;            // Index for log entries
     static TaskHandle_t logTaskHandle;  // Task handle for the log flush task

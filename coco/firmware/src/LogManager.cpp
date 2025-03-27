@@ -20,15 +20,15 @@ bool LogManager::init(Application* application) {
     // Store application reference
     app = application;
     
-    // Set initialized flag early for basic logging
-    initialized = true;
-    
-    // Use the queue created by the Application
-    logQueue = app->getLogQueue();
+    // Create our own log queue
+    logQueue = xQueueCreate(LOG_QUEUE_SIZE, sizeof(char*));
     if (logQueue == NULL) {
-        Serial.println("Log queue not available!");
+        Serial.println("Failed to create log queue!");
         return false;
     }
+    
+    // Set initialized flag early for basic logging
+    initialized = true;
     
     // Get FileSystem instance
     FileSystem* fs = FileSystem::getInstance();

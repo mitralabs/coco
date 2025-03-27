@@ -168,12 +168,9 @@ void PowerManager::initDeepSleep() {
     while (LogManager::hasPendingLogs()) {
         delay(10);
     }
-    
-    // Store current time before sleep (assuming TimeManager is available)
-    if (TimeManager::storeCurrentTime) {
-        TimeManager::storeCurrentTime();
-    }
-    
+
+    TimeManager::storeCurrentTime();
+
     // Enter deep sleep
     enterDeepSleep(SLEEP_TIMEOUT_SEC * 1000000ULL);
     // This function doesn't return

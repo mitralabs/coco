@@ -28,6 +28,14 @@ public:
     // I2S management
     static bool initI2S();
     static I2SClass* getI2S();
+    
+    // Audio queue management
+    static QueueHandle_t getAudioQueue();
+    static void setAudioQueue(QueueHandle_t queue);
+    
+    // Audio file index management
+    static int getAudioFileIndex();
+    static void setAudioFileIndex(int index);
 
 private:
     // Private static variables for state
@@ -41,6 +49,10 @@ private:
     // Audio recording state
     static volatile bool _wasRecording;
     static unsigned long _lastRecordStart;
+    
+    // Audio queue and file index
+    static QueueHandle_t _audioQueue;
+    static int _audioFileIndex;
 };
 
 #endif // AUDIO_MANAGER_H
