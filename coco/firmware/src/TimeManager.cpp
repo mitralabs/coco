@@ -1,16 +1,17 @@
 /**
  * @file TimeManager.cpp
  * @brief Implementation of the TimeManager class
+ * 
+ * Provides implementation for time initialization, synchronization,
+ * formatting, and persistence functions.
  */
 
 #include "TimeManager.h"
-#include "LogManager.h" // Include LogManager for consistent logging
-#include <WiFi.h> // Include WiFi library for connectivity checks
 
 // Initialize static members
-Application* TimeManager::app = NULL;
+Application* TimeManager::app = nullptr;
 time_t TimeManager::storedTime = 0;
-TaskHandle_t TimeManager::persistTimeTaskHandle = NULL;
+TaskHandle_t TimeManager::persistTimeTaskHandle = nullptr;
 bool TimeManager::initialized = false;
 
 bool TimeManager::init(Application* application) {
@@ -25,9 +26,8 @@ bool TimeManager::init(Application* application) {
     time_t currentRtcTime = time(NULL);
     time_t persistedTime = 0;
     
-    // Check if time file exists and read it using FileSystem
-    FileSystem* fs = FileSystem::getInstance();
-    String timeStr = fs->readFile(TIME_FILE);
+    // Check if time file exists and read it using Application wrapper
+    String timeStr = app->readFile(TIME_FILE);
     
     if (!timeStr.isEmpty()) {
         // Extract the first line (in case there are multiple lines)
@@ -36,7 +36,7 @@ bool TimeManager::init(Application* application) {
             timeStr = timeStr.substring(0, newlinePos);
         }
         persistedTime = (time_t)timeStr.toInt();
-        LogManager::log("Read persisted time from SD card: " + String(persistedTime));
+        app->log("Read persisted time from SD card: " + String(persistedTime));
     }
 
     // Determine which time source to use
@@ -46,15 +46,15 @@ bool TimeManager::init(Application* application) {
         tv.tv_usec = 0;
         settimeofday(&tv, NULL);
         storedTime = DEFAULT_TIME;
-        LogManager::log("Default time set: " + String(storedTime));
+        app->log("Default time set: " + String(storedTime));
     } else {
         // Check if RTC has a valid updated time
         if (currentRtcTime > persistedTime) {
             storedTime = currentRtcTime;
-            LogManager::log("System time updated from RTC: " + String(storedTime));
+            app->log("System time updated from RTC: " + String(storedTime));
         } else {
             storedTime = persistedTime;
-            LogManager::log("System time updated from persisted time: " + String(storedTime));
+            app->log("System time updated from persisted time: " + String(storedTime));
         }
         tv.tv_sec = storedTime;
         tv.tv_usec = 0;
@@ -68,7 +68,6 @@ bool TimeManager::init(Application* application) {
     return true;
 }
 
-// Implementation of the no-parameter overload for compatibility with LogManager
 String TimeManager::getTimestamp() {
     return getTimestamp("%y-%m-%d_%H-%M-%S");
 }
@@ -83,23 +82,27 @@ String TimeManager::getTimestamp(const char* format) {
     return "unknown";
 }
 
+time_t TimeManager::getCurrentTime() {
+    return time(NULL);
+}
+
 bool TimeManager::updateFromNTP() {
     if (WiFi.status() != WL_CONNECTED) {
-        LogManager::log("Cannot update time: WiFi not connected");
+        app->log("Cannot update time: WiFi not connected");
         return false;
     }
     
-    LogManager::log("Updating time from NTP servers...");
+    app->log("Updating time from NTP servers...");
     configTime(0, 0, "pool.ntp.org", "time.google.com", "time.nist.gov");
     struct tm timeinfo;
 
     if (getLocalTime(&timeinfo)) {
         storedTime = mktime(&timeinfo);
-        LogManager::log("Current time obtained from NTP.");
+        app->log("Current time obtained from NTP.");
         storeCurrentTime();
         return true;
     } else {
-        LogManager::log("Failed to obtain time from NTP.");
+        app->log("Failed to obtain time from NTP.");
         return false;
     }
 }
@@ -118,18 +121,17 @@ bool TimeManager::storeCurrentTime() {
     time_t current = time(NULL);
     storedTime = current;
     
-    // Store time to SD card using FileSystem
-    FileSystem* fs = FileSystem::getInstance();
-    if (fs->overwriteFile(TIME_FILE, String(current) + "\n")) {
+    // Store time to SD card using Application wrapper
+    if (app->overwriteFile(TIME_FILE, String(current) + "\n")) {
         // Use Serial instead of LogManager to avoid circular dependency issues early in boot
         if (initialized)
-            LogManager::log("Stored current time to SD card: " + String(current));
+            app->log("Stored current time to SD card: " + String(current));
         else
             Serial.println("Stored current time to SD card: " + String(current));
         return true;
     } else {
         if (initialized)
-            LogManager::log("Failed to write time file");
+            app->log("Failed to write time file");
         else
             Serial.println("Failed to write time file");
         return false;
@@ -138,7 +140,7 @@ bool TimeManager::storeCurrentTime() {
 
 bool TimeManager::startPersistenceTask() {
     if (!initialized || !app) {
-        LogManager::log("TimeManager not initialized!");
+        app->log("TimeManager not initialized!");
         return false;
     }
     
@@ -152,7 +154,7 @@ bool TimeManager::startPersistenceTask() {
         &persistTimeTaskHandle,
         0  // Run on Core 0
     ) != pdPASS) {
-        LogManager::log("Failed to create time persistence task!");
+        app->log("Failed to create time persistence task!");
         return false;
     }
     
@@ -172,11 +174,7 @@ void TimeManager::persistTimeTask(void *parameter) {
         } else {
             // If failed, try again sooner but add a small delay to avoid tight loop
             vTaskDelay(pdMS_TO_TICKS(5000)); // Try again in 5 seconds
-            LogManager::log("Retrying time persistence after failure");
+            app->log("Retrying time persistence after failure");
         }
     }
-}
-
-time_t TimeManager::getCurrentTime() {
-    return time(NULL);
 }

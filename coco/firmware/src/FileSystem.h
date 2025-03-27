@@ -15,37 +15,41 @@
 #include <SD.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
+
+#include "Application.h"
 #include "config.h"
 
 /**
- * Singleton class for file system operations
+ * Static class for file system operations
  */
 class FileSystem {
 public:
     /**
-     * @brief Get the singleton instance of the FileSystem
-     * @return Pointer to the FileSystem instance
-     */
-    static FileSystem* getInstance();
-
-    /**
      * @brief Initialize the file system module
+     * @param app Pointer to Application instance
      * @return true if initialization was successful, false otherwise
      */
-    bool init();
+    static bool init(Application* app = nullptr);
 
     /**
      * @brief Get the mutex for SD card operations
      * @return Semaphore handle for SD card mutex
      */
-    SemaphoreHandle_t getSDMutex() const { return _sdMutex; }
+    static SemaphoreHandle_t getSDMutex();
 
     /**
      * @brief Create a directory if it doesn't exist
      * @param path Directory path to create
      * @return true if directory exists or was created successfully, false otherwise
      */
-    bool ensureDirectory(const char* path);
+    static bool ensureDirectory(const char* path);
+    
+    /**
+     * @brief Create a directory if it doesn't exist (String overload)
+     * @param path Directory path to create
+     * @return true if directory exists or was created successfully, false otherwise
+     */
+    static bool ensureDirectory(const String& path);
 
     /**
      * @brief Add content to a file (append)
@@ -54,7 +58,14 @@ public:
      * @param isUploadQueue Whether this is an upload queue operation
      * @return true if operation was successful, false otherwise
      */
-    bool addToFile(const String& path, const String& content, bool isUploadQueue = false);
+    static bool addToFile(const String& path, const String& content, bool isUploadQueue = false);
+
+    /**
+     * @brief Create an empty file
+     * @param path File path
+     * @return true if file was created successfully, false otherwise
+     */
+    static bool createEmptyFile(const String& path);
 
     /**
      * @brief Overwrite a file with new content
@@ -62,68 +73,76 @@ public:
      * @param content String content to write
      * @return true if operation was successful, false otherwise
      */
-    bool overwriteFile(const String& path, const String& content);
+    static bool overwriteFile(const String& path, const String& content);
 
     /**
      * @brief Read entire file content
      * @param path File path
      * @return String containing file content, or empty string on error
      */
-    String readFile(const String& path);
+    static String readFile(const String& path);
+
+    /**
+     * @brief Read a file into a binary buffer
+     * @param path File path
+     * @param buffer Pointer to buffer pointer that will be allocated
+     * @param size Reference to size variable that will be set
+     * @return true if file was read successfully, false otherwise
+     * @note Caller is responsible for freeing the allocated buffer
+     */
+    static bool readFileToBuffer(const String& path, uint8_t** buffer, size_t& size);
 
     /**
      * @brief Delete a file
      * @param path File path
      * @return true if file was deleted successfully, false otherwise
      */
-    bool deleteFile(const String& path);
+    static bool deleteFile(const String& path);
 
     /**
      * @brief Add a file to the upload queue
      * @param filename Full path of the file to add
      * @return true if file was added successfully, false otherwise
      */
-    bool addToUploadQueue(const String &filename);
+    static bool addToUploadQueue(const String &filename);
 
     /**
      * @brief Get the next file from the upload queue
      * @return String containing the file path, or empty string if queue is empty
      */
-    String getNextUploadFile();
+    static String getNextUploadFile();
 
     /**
      * @brief Remove the first file from the upload queue
      * @return true if file was removed successfully, false otherwise
      */
-    bool removeFirstFromUploadQueue();
+    static bool removeFirstFromUploadQueue();
 
     /**
      * @brief Check if the upload queue is empty
      * @return true if queue is empty, false otherwise
      */
-    bool isUploadQueueEmpty();
+    static bool isUploadQueueEmpty();
 
     /**
      * @brief Check if a file is in the upload queue
      * @param filename Full path of the file to check
      * @return true if file is in the queue, false otherwise
      */
-    bool isFileInUploadQueue(const String &filename);
+    static bool isFileInUploadQueue(const String &filename);
 
-private:
-    // Private constructor for singleton pattern
-    FileSystem();
-    
-    // Delete copy constructor and assignment operator
+    // Prevent copying and assignment
     FileSystem(const FileSystem&) = delete;
-    void operator=(const FileSystem&) = delete;
+    FileSystem& operator=(const FileSystem&) = delete;
     
-    // Filesystem state
-    bool _initialized;
-    SemaphoreHandle_t _sdMutex;
+private:
+    // Private static state
+    static bool initialized;
+    static SemaphoreHandle_t sdMutex;
+    static Application* app;
     
-    // Singleton instance
-    static FileSystem* _instance;
+    // Private constructor (singleton pattern enforcement)
+    FileSystem() = default;
 };
 
 #endif // FILESYSTEM_H

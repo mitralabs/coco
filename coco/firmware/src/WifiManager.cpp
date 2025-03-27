@@ -1,20 +1,22 @@
 /**
  * @file WifiManager.cpp
  * @brief Implementation of the WifiManager class
+ * 
+ * This file contains the implementation of WiFi connection management functionality
+ * including scanning, connection handling, and automatic reconnection with
+ * exponential backoff.
  */
 
 #include "WifiManager.h"
-#include "TimeManager.h" // For NTP time updates when connected
-#include "secrets.h"
 
 // Initialize static members
-Application* WifiManager::app = NULL;
-TaskHandle_t WifiManager::wifiConnectionTaskHandle = NULL;
+Application* WifiManager::app = nullptr;
+TaskHandle_t WifiManager::wifiConnectionTaskHandle = nullptr;
 bool WifiManager::initialized = false;
 unsigned long WifiManager::currentScanInterval = MIN_SCAN_INTERVAL;
 unsigned long WifiManager::nextWifiScanTime = 0;
 
-// Getter and setter implementations for new properties
+// Getter and setter implementations for state properties
 unsigned long WifiManager::getCurrentScanInterval() {
     return currentScanInterval;
 }
@@ -35,6 +37,10 @@ bool WifiManager::init(Application* application) {
     // Store application instance
     app = application;
     
+    if (!app) {
+        return false;
+    }
+    
     // Initialize WiFi in station mode
     WiFi.mode(WIFI_STA);
     WiFi.setAutoReconnect(false);  // We'll handle reconnection ourselves
@@ -48,14 +54,14 @@ bool WifiManager::init(Application* application) {
     currentScanInterval = MIN_SCAN_INTERVAL;
     nextWifiScanTime = millis();
     
-    LogManager::log("WifiManager initialized");
+    app->log("WifiManager initialized");
     initialized = true;
     return true;
 }
 
 bool WifiManager::startConnectionTask() {
     if (!initialized || !app) {
-        LogManager::log("WifiManager not initialized!");
+        if (app) app->log("WifiManager not initialized!");
         return false;
     }
     
@@ -64,12 +70,12 @@ bool WifiManager::startConnectionTask() {
         wifiConnectionTask,
         "WiFi Connection",
         4096,
-        NULL,
+        nullptr,
         1,
         &wifiConnectionTaskHandle,
         0  // Run on Core 0
     ) != pdPASS) {
-        LogManager::log("Failed to create WiFi connection task!");
+        app->log("Failed to create WiFi connection task!");
         return false;
     }
     
@@ -77,17 +83,17 @@ bool WifiManager::startConnectionTask() {
 }
 
 int WifiManager::scanNetworks() {
-    LogManager::log("Scanning for WiFi networks...");
+    if (app) app->log("Scanning for WiFi networks...");
     return WiFi.scanNetworks();
 }
 
 bool WifiManager::connect() {
     if (!initialized) {
-        LogManager::log("WifiManager not initialized!");
+        if (app) app->log("WifiManager not initialized!");
         return false;
     }
     
-    LogManager::log("Attempting to connect to: " + String(SS_ID));
+    app->log("Attempting to connect to: " + String(SS_ID));
     WiFi.begin(SS_ID, PASSWORD);
     WiFi.setTxPower(WIFI_POWER_8_5dBm); // Highest: WIFI_POWER_19_5dBm, Lowest: WIFI_POWER_2dBm (logarithmic)
     return true;
@@ -111,8 +117,8 @@ String WifiManager::getLocalIP() {
 
 void WifiManager::wifiConnectionTask(void *parameter) {
     if (!initialized || !app) {
-        LogManager::log("WifiManager not properly initialized for connection task!");
-        vTaskDelete(NULL);
+        if (app) app->log("WifiManager not properly initialized for connection task!");
+        vTaskDelete(nullptr);
         return;
     }
 
@@ -128,20 +134,20 @@ void WifiManager::wifiConnectionTask(void *parameter) {
         if (connectionInProgress) {
             // If we've successfully connected
             if (app->isWifiConnected()) {
-                LogManager::log("Connection attempt succeeded");
+                app->log("Connection attempt succeeded");
                 connectionInProgress = false;
                 setCurrentScanInterval(MIN_SCAN_INTERVAL);
             } 
             // If connection attempt has timed out
             else if (currentTime - connectionStartTime > CONNECTION_TIMEOUT) {
-                LogManager::log("WiFi connection attempt timed out after " + 
+                app->log("WiFi connection attempt timed out after " + 
                                String(CONNECTION_TIMEOUT/1000) + " seconds");
                 connectionInProgress = false;
                 // Schedule next scan with backoff
                 unsigned long newInterval = std::min(getCurrentScanInterval() * 2UL, (unsigned long)MAX_SCAN_INTERVAL);
                 setCurrentScanInterval(newInterval);
                 setNextWifiScanTime(currentTime + newInterval);
-                LogManager::log("Next scan in " + String(newInterval / 1000) + " seconds");
+                app->log("Next scan in " + String(newInterval / 1000) + " seconds");
             } 
             // Still waiting for connection
             else {
@@ -153,21 +159,21 @@ void WifiManager::wifiConnectionTask(void *parameter) {
         
         // Only scan if not connected, not in connection progress, and it's time to scan
         if (!app->isWifiConnected() && !connectionInProgress && currentTime >= getNextWifiScanTime()) {
-            LogManager::log("Scanning for WiFi networks...");
+            app->log("Scanning for WiFi networks...");
             
             // Start network scan
             int networksFound = scanNetworks();
             bool ssidFound = false;
             
             if (networksFound > 0) {
-                LogManager::log("Found " + String(networksFound) + " networks");
+                app->log("Found " + String(networksFound) + " networks");
                 
                 // Check if our SSID is in the list
                 for (int i = 0; i < networksFound; i++) {
                     String scannedSSID = WiFi.SSID(i);
                     if (scannedSSID == String(SS_ID)) {
                         ssidFound = true;
-                        LogManager::log("Target network '" + String(SS_ID) + "' found with signal strength: " + 
+                        app->log("Target network '" + String(SS_ID) + "' found with signal strength: " + 
                             String(WiFi.RSSI(i)) + " dBm");
                         break;
                     }
@@ -180,24 +186,24 @@ void WifiManager::wifiConnectionTask(void *parameter) {
                     // Mark connection as in progress and record start time
                     connectionInProgress = true;
                     connectionStartTime = currentTime;
-                    LogManager::log("Connection attempt started, waiting up to " + 
+                    app->log("Connection attempt started, waiting up to " + 
                                    String(CONNECTION_TIMEOUT/1000) + " seconds...");
                 } else {
-                    LogManager::log("Target network not found in scan");
+                    app->log("Target network not found in scan");
                     
                     // Apply exponential backoff for next scan
                     unsigned long newInterval = std::min(getCurrentScanInterval() * 2UL, (unsigned long)MAX_SCAN_INTERVAL);
                     setCurrentScanInterval(newInterval);
                     setNextWifiScanTime(currentTime + newInterval);
-                    LogManager::log("Next scan in " + String(newInterval / 1000) + " seconds");
+                    app->log("Next scan in " + String(newInterval / 1000) + " seconds");
                 }
             } else {
-                LogManager::log("No networks found");
+                app->log("No networks found");
                 // Apply exponential backoff for next scan
                 unsigned long newInterval = std::min(getCurrentScanInterval() * 2UL, (unsigned long)MAX_SCAN_INTERVAL);
                 setCurrentScanInterval(newInterval);
                 setNextWifiScanTime(currentTime + newInterval);
-                LogManager::log("Next scan in " + String(newInterval / 1000) + " seconds");
+                app->log("Next scan in " + String(newInterval / 1000) + " seconds");
             }
         }
         
@@ -211,34 +217,38 @@ void WifiManager::wifiConnectionTask(void *parameter) {
 }
 
 void WifiManager::WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info) {
-    LogManager::log("Connected to WiFi access point");
+    if (app) app->log("Connected to WiFi access point");
 }
 
 void WifiManager::WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info) {
-    LogManager::log("WiFi connected with IP: " + WiFi.localIP().toString());
+    if (!app) return;
+    
+    app->log("WiFi connected with IP: " + WiFi.localIP().toString());
     setCurrentScanInterval(MIN_SCAN_INTERVAL);
     app->setWifiConnected(true);
     
-    // Update time as soon as we get an IP address using TimeManager
-    if (TimeManager::updateFromNTP()) {
-        LogManager::log("Time synchronized with NTP successfully");
+    // Update time as soon as we get an IP address using Application wrapper
+    if (app->updateFromNTP()) {
+        app->log("Time synchronized with NTP successfully");
     } else {
         // Schedule a retry in 30 seconds
         if(xTaskCreatePinnedToCore(
             [](void* parameter) {
                 vTaskDelay(pdMS_TO_TICKS(30000)); // 30 seconds delay
-                TimeManager::updateFromNTP();
+                app->updateFromNTP();
                 vTaskDelete(NULL);
             },
             "NTPRetry", 4096, NULL, 1, NULL, 0
         ) != pdPASS) {
-            LogManager::log("Failed to create NTP retry task");
+            app->log("Failed to create NTP retry task");
         }
     }
 }
 
 void WifiManager::WiFiDisconnected(WiFiEvent_t event, WiFiEventInfo_t info) {
-    LogManager::log("Disconnected from WiFi access point");
+    if (!app) return;
+    
+    app->log("Disconnected from WiFi access point");
     app->setWifiConnected(false);
     
     // Reset scan interval to minimum when disconnected to attempt reconnection faster

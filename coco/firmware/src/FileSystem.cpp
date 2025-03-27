@@ -1,57 +1,59 @@
 /**
  * @file FileSystem.cpp
  * @brief Implementation of file system management module
+ * 
+ * Handles SD card operations, file manipulations, and upload queue management.
  */
 
 #include "FileSystem.h"
-#include "LogManager.h"
 
-// Initialize static member
-FileSystem* FileSystem::_instance = nullptr;
+// Initialize static variables
+bool FileSystem::initialized = false;
+SemaphoreHandle_t FileSystem::sdMutex = nullptr;
+Application* FileSystem::app = nullptr;
 
 // Private helper class for RAII mutex handling
 class SDLockGuard {
 private:
-    SemaphoreHandle_t& _mutex;
-    bool _locked;
+    SemaphoreHandle_t& mutex;
+    bool locked;
 public:
-    SDLockGuard(SemaphoreHandle_t& mutex) : _mutex(mutex), _locked(false) {
-        _locked = (xSemaphoreTake(_mutex, pdMS_TO_TICKS(5000)) == pdTRUE);
+    SDLockGuard(SemaphoreHandle_t& mutex) : mutex(mutex), locked(false) {
+        locked = (xSemaphoreTake(mutex, pdMS_TO_TICKS(5000)) == pdTRUE);
     }
     ~SDLockGuard() {
-        if (_locked) xSemaphoreGive(_mutex);
+        if (locked) xSemaphoreGive(mutex);
     }
-    bool isLocked() const { return _locked; }
+    bool isLocked() const { return locked; }
 };
 
-FileSystem* FileSystem::getInstance() {
-    if (_instance == nullptr) {
-        _instance = new FileSystem();
-    }
-    return _instance;
-}
-
-FileSystem::FileSystem() : _initialized(false), _sdMutex(nullptr) {
-    // Initialize mutex
-    _sdMutex = xSemaphoreCreateMutex();
-    if (_sdMutex == nullptr) {
-        Serial.println("ERROR: Failed to create SD card mutex");
-    }
-}
-
-bool FileSystem::init() {
-    if (_initialized) {
+bool FileSystem::init(Application* appInstance) {
+    if (initialized) {
         return true;
     }
-
-    if (_sdMutex == nullptr) {
-        Serial.println("ERROR: SD card mutex is not initialized");
+    
+    // Store application instance with fallback to singleton
+    if (appInstance == nullptr) {
+        app = Application::getInstance();
+    } else {
+        app = appInstance;
+    }
+    
+    if (!app) {
+        Serial.println("ERROR: Failed to get Application instance");
+        return false;
+    }
+    
+    // Initialize mutex
+    sdMutex = xSemaphoreCreateMutex();
+    if (sdMutex == nullptr) {
+        app->log("ERROR: Failed to create SD card mutex");
         return false;
     }
 
-    SDLockGuard lock(_sdMutex);
+    SDLockGuard lock(sdMutex);
     if (!lock.isLocked()) {
-        Serial.println("ERROR: Failed to take SD card mutex during initialization");
+        app->log("ERROR: Failed to take SD card mutex during initialization");
         return false;
     }
 
@@ -62,7 +64,7 @@ bool FileSystem::init() {
     
     while (!sdInitialized && retryCount < maxRetries) {
         // Attempt to initialize the SD card
-        Serial.printf("Initializing SD card (attempt %d of %d)...\n", retryCount + 1, maxRetries);
+        app->log("Initializing SD card (attempt " + String(retryCount + 1) + " of " + String(maxRetries) + ")...");
         
         // Try initializing with different speeds if we're retrying
         uint32_t sdSpeed = (retryCount == 0) ? SD_SPEED : (SD_SPEED / (retryCount + 1));
@@ -70,7 +72,7 @@ bool FileSystem::init() {
         if (SD.begin(21, SPI, sdSpeed)) {
             sdInitialized = true;
         } else {
-            Serial.println("SD Card initialization failed, retrying...");
+            app->log("SD Card initialization failed, retrying...");
             retryCount++;
             // Short delay before retry
             delay(500);
@@ -78,38 +80,46 @@ bool FileSystem::init() {
     }
     
     if (!sdInitialized) {
-        Serial.println("ERROR: SD Card initialization failed after multiple attempts!");
+        app->log("ERROR: SD Card initialization failed after multiple attempts!");
         return false;
     }
 
     uint8_t cardType = SD.cardType();
     if (cardType == CARD_NONE) {
-        Serial.println("ERROR: No SD card attached");
+        app->log("ERROR: No SD card attached");
         return false;
     }
 
-    Serial.print("SD Card Type: ");
+    String cardTypeStr = "UNKNOWN";
     if (cardType == CARD_MMC) {
-        Serial.println("MMC");
+        cardTypeStr = "MMC";
     } else if (cardType == CARD_SD) {
-        Serial.println("SDSC");
+        cardTypeStr = "SDSC";
     } else if (cardType == CARD_SDHC) {
-        Serial.println("SDHC");
-    } else {
-        Serial.println("UNKNOWN");
+        cardTypeStr = "SDHC";
     }
+    app->log("SD Card Type: " + cardTypeStr);
 
     uint64_t cardSize = SD.cardSize() / (1024 * 1024);
-    Serial.printf("SD Card Size: %lluMB\n", cardSize);
+    app->log("SD Card Size: " + String((unsigned long)cardSize) + "MB");
 
-    _initialized = true;
+    initialized = true;
+    app->log("FileSystem initialized successfully");
     return true;
 }
 
+SemaphoreHandle_t FileSystem::getSDMutex() {
+    return sdMutex;
+}
+
 bool FileSystem::ensureDirectory(const char* path) {
-    SDLockGuard lock(_sdMutex);
+    if (!initialized && !init()) {
+        return false;
+    }
+    
+    SDLockGuard lock(sdMutex);
     if (!lock.isLocked()) {
-        Serial.printf("ERROR: Failed to take SD card mutex for directory creation: %s\n", path);
+        app->log("ERROR: Failed to take SD card mutex for directory creation: " + String(path));
         return false;
     }
 
@@ -117,18 +127,25 @@ bool FileSystem::ensureDirectory(const char* path) {
     if (!SD.exists(path)) {
         result = SD.mkdir(path);
         if (result) {
-            Serial.printf("Created directory: %s\n", path);
+            app->log("Created directory: " + String(path));
         } else {
-            Serial.printf("ERROR: Failed to create directory: %s\n", path);
+            app->log("ERROR: Failed to create directory: " + String(path));
         }
     }
 
     return result;
 }
 
+bool FileSystem::ensureDirectory(const String& path) {
+    return ensureDirectory(path.c_str());
+}
+
+bool FileSystem::createEmptyFile(const String& path) {
+    return overwriteFile(path, "");
+}
+
 bool FileSystem::addToFile(const String& path, const String& content, bool isUploadQueue) {
-    if (!_initialized) {
-        Serial.println("ERROR: FileSystem not initialized");
+    if (!initialized && !init()) {
         return false;
     }
 
@@ -137,20 +154,20 @@ bool FileSystem::addToFile(const String& path, const String& content, bool isUpl
     if (lastSlash > 0) {
         String dirPath = path.substring(0, lastSlash);
         if (!ensureDirectory(dirPath.c_str())) {
-            LogManager::log("ERROR: Failed to create parent directory for " + path);
+            app->log("ERROR: Failed to create parent directory for " + path);
             return false;
         }
     }
 
-    SDLockGuard lock(_sdMutex);
+    SDLockGuard lock(sdMutex);
     if (!lock.isLocked()) {
-        LogManager::log("ERROR: Failed to take SD card mutex for file append operation");
+        app->log("ERROR: Failed to take SD card mutex for file append operation");
         return false;
     }
 
     File file = SD.open(path, FILE_APPEND);
     if (!file) {
-        LogManager::log("ERROR: Failed to open file for appending: " + path);
+        app->log("ERROR: Failed to open file for appending: " + path);
         return false;
     }
 
@@ -158,20 +175,19 @@ bool FileSystem::addToFile(const String& path, const String& content, bool isUpl
     file.close();
 
     if (bytesWritten != content.length()) {
-        LogManager::log("ERROR: Failed to write all data to file: " + path);
+        app->log("ERROR: Failed to write all data to file: " + path);
         return false;
     }
 
     if (isUploadQueue) {
-        LogManager::log("Added to upload queue: " + content.substring(0, content.length() - 1)); // Remove newline
+        app->log("Added to upload queue: " + content.substring(0, content.length() - 1)); // Remove newline
     }
 
     return true;
 }
 
 bool FileSystem::overwriteFile(const String& path, const String& content) {
-    if (!_initialized) {
-        Serial.println("ERROR: FileSystem not initialized");
+    if (!initialized && !init()) {
         return false;
     }
 
@@ -180,20 +196,20 @@ bool FileSystem::overwriteFile(const String& path, const String& content) {
     if (lastSlash > 0) {
         String dirPath = path.substring(0, lastSlash);
         if (!ensureDirectory(dirPath.c_str())) {
-            LogManager::log("ERROR: Failed to create parent directory for " + path);
+            app->log("ERROR: Failed to create parent directory for " + path);
             return false;
         }
     }
 
-    SDLockGuard lock(_sdMutex);
+    SDLockGuard lock(sdMutex);
     if (!lock.isLocked()) {
-        LogManager::log("ERROR: Failed to take SD card mutex for file write operation");
+        app->log("ERROR: Failed to take SD card mutex for file write operation");
         return false;
     }
 
     File file = SD.open(path, FILE_WRITE);
     if (!file) {
-        LogManager::log("ERROR: Failed to open file for writing: " + path);
+        app->log("ERROR: Failed to open file for writing: " + path);
         return false;
     }
 
@@ -201,7 +217,7 @@ bool FileSystem::overwriteFile(const String& path, const String& content) {
     file.close();
 
     if (bytesWritten != content.length()) {
-        LogManager::log("ERROR: Failed to write all data to file: " + path);
+        app->log("ERROR: Failed to write all data to file: " + path);
         return false;
     }
 
@@ -211,14 +227,13 @@ bool FileSystem::overwriteFile(const String& path, const String& content) {
 String FileSystem::readFile(const String& path) {
     String content = "";
     
-    if (!_initialized) {
-        Serial.println("ERROR: FileSystem not initialized");
+    if (!initialized && !init()) {
         return content;
     }
 
-    SDLockGuard lock(_sdMutex);
+    SDLockGuard lock(sdMutex);
     if (!lock.isLocked()) {
-        LogManager::log("ERROR: Failed to take SD card mutex for file read operation");
+        app->log("ERROR: Failed to take SD card mutex for file read operation");
         return content;
     }
 
@@ -228,7 +243,7 @@ String FileSystem::readFile(const String& path) {
 
     File file = SD.open(path, FILE_READ);
     if (!file) {
-        LogManager::log("ERROR: Failed to open file for reading: " + path);
+        app->log("ERROR: Failed to open file for reading: " + path);
         return content;
     }
 
@@ -238,15 +253,62 @@ String FileSystem::readFile(const String& path) {
     return content;
 }
 
-bool FileSystem::deleteFile(const String& path) {
-    if (!_initialized) {
-        Serial.println("ERROR: FileSystem not initialized");
+bool FileSystem::readFileToBuffer(const String& path, uint8_t** buffer, size_t& size) {
+    if (!initialized && !init()) {
         return false;
     }
 
-    SDLockGuard lock(_sdMutex);
+    *buffer = nullptr;
+    size = 0;
+
+    SDLockGuard lock(sdMutex);
     if (!lock.isLocked()) {
-        LogManager::log("ERROR: Failed to take SD card mutex for file delete operation");
+        app->log("ERROR: Failed to take SD card mutex for file read operation");
+        return false;
+    }
+
+    if (!SD.exists(path)) {
+        app->log("ERROR: File does not exist: " + path);
+        return false;
+    }
+
+    File file = SD.open(path, FILE_READ);
+    if (!file) {
+        app->log("ERROR: Failed to open file for reading: " + path);
+        return false;
+    }
+
+    size = file.size();
+    *buffer = (uint8_t*)malloc(size);
+    
+    if (*buffer == nullptr) {
+        app->log("ERROR: Failed to allocate memory for file: " + path);
+        file.close();
+        return false;
+    }
+
+    size_t bytesRead = file.read(*buffer, size);
+    file.close();
+
+    if (bytesRead != size) {
+        app->log("ERROR: Failed to read entire file: " + path);
+        free(*buffer);
+        *buffer = nullptr;
+        size = 0;
+        return false;
+    }
+
+    return true;
+}
+
+bool FileSystem::deleteFile(const String& path) {
+    if (!initialized && !init()) {
+        return false;
+    }
+
+    SDLockGuard lock(sdMutex);
+    if (!lock.isLocked()) {
+        app->log("ERROR: Failed to take SD card mutex for file delete operation");
         return false;
     }
 
@@ -255,7 +317,7 @@ bool FileSystem::deleteFile(const String& path) {
     }
 
     if (!SD.remove(path)) {
-        LogManager::log("ERROR: Failed to delete file: " + path);
+        app->log("ERROR: Failed to delete file: " + path);
         return false;
     }
 
@@ -265,16 +327,10 @@ bool FileSystem::deleteFile(const String& path) {
 bool FileSystem::addToUploadQueue(const String &filename) {
     // Basic validation
     if (filename.length() == 0) {
-        LogManager::log("ERROR: Cannot add empty filename to upload queue");
+        app->log("ERROR: Cannot add empty filename to upload queue");
         return false;
     }
 
-    // Use the existing method to check for duplicates
-    // if (isFileInUploadQueue(filename)) {
-    //     LogManager::log("File already in upload queue: " + filename);
-    //     return true; // Not an error, file is already queued
-    // }
-    
     // Add to queue using addToFile method
     return addToFile(UPLOAD_QUEUE_FILE, filename + "\n", true);
 }
@@ -297,7 +353,7 @@ String FileSystem::getNextUploadFile() {
 bool FileSystem::removeFirstFromUploadQueue() {
     String content = readFile(UPLOAD_QUEUE_FILE);
     if (content.isEmpty()) {
-        LogManager::log("ERROR: Cannot remove from empty upload queue");
+        app->log("ERROR: Cannot remove from empty upload queue");
         return false;
     }
     
@@ -318,7 +374,7 @@ bool FileSystem::removeFirstFromUploadQueue() {
     bool success = overwriteFile(UPLOAD_QUEUE_FILE, remaining);
     
     if (success) {
-        LogManager::log("Removed from upload queue: " + removedFile);
+        app->log("Removed from upload queue: " + removedFile);
     }
     
     return success;

@@ -1,13 +1,17 @@
+/**
+ * @file PowerManager.cpp
+ * @brief Implementation of power management functionality
+ */
+
 #include "PowerManager.h"
-#include "LogManager.h"
-#include "TimeManager.h"
 
 // Initialize static member variables
-bool PowerManager::_initialized = false;
-float PowerManager::_batteryVoltage = 0.0f;
-int PowerManager::_batteryPercentage = 0;
-esp_sleep_wakeup_cause_t PowerManager::_wakeupCause = ESP_SLEEP_WAKEUP_UNDEFINED;
-TaskHandle_t PowerManager::_batteryMonitorTaskHandle = NULL;
+bool PowerManager::initialized = false;
+float PowerManager::batteryVoltage = 0.0f;
+int PowerManager::batteryPercentage = 0;
+esp_sleep_wakeup_cause_t PowerManager::wakeupCause = ESP_SLEEP_WAKEUP_UNDEFINED;
+TaskHandle_t PowerManager::batteryMonitorTaskHandle = NULL;
+Application* PowerManager::app = nullptr;
 
 // Constants definition
 const float PowerManager::BATTERY_MIN_VOLTAGE = 3.3f;   // Minimum battery voltage (empty)
@@ -15,9 +19,17 @@ const float PowerManager::BATTERY_MAX_VOLTAGE = 4.2f;   // Maximum battery volta
 const int PowerManager::BATTERY_ADC_PIN = BATTERY_PIN;  // ADC pin used for battery voltage reading (from config.h)
 const float PowerManager::VOLTAGE_DIVIDER_RATIO = 2.0f; // Based on the voltage divider used in the hardware
 
-bool PowerManager::init() {
-    if (_initialized) {
+bool PowerManager::init(Application* appInstance) {
+    if (initialized) {
         return true;
+    }
+    
+    // Store Application instance if provided
+    if (appInstance != nullptr) {
+        app = appInstance;
+    } else if (app == nullptr) {
+        // If not provided and not previously set, get the singleton instance
+        app = Application::getInstance();
     }
     
     // Configure ADC for battery monitoring
@@ -27,32 +39,34 @@ bool PowerManager::init() {
     analogSetAttenuation(ADC_11db);
     
     // Check if we woke from deep sleep
-    _wakeupCause = esp_sleep_get_wakeup_cause();
+    wakeupCause = esp_sleep_get_wakeup_cause();
     
     // Initial battery reading
     updateBatteryStatus();
     
-    LogManager::log("PowerManager initialized, battery: " + String(_batteryVoltage, 2) + "V (" + 
-                    String(_batteryPercentage) + "%)");
+    if (app) {
+        app->log("PowerManager initialized, battery: " + String(batteryVoltage, 2) + "V (" + 
+                    String(batteryPercentage) + "%)");
+    }
     
-    _initialized = true;
+    initialized = true;
     return true;
 }
 
 float PowerManager::getBatteryVoltage() {
-    if (!_initialized) {
+    if (!initialized) {
         init();
     }
     updateBatteryStatus();
-    return _batteryVoltage;
+    return batteryVoltage;
 }
 
 int PowerManager::getBatteryPercentage() {
-    if (!_initialized) {
+    if (!initialized) {
         init();
     }
     updateBatteryStatus();
-    return _batteryPercentage;
+    return batteryPercentage;
 }
 
 void PowerManager::updateBatteryStatus() {
@@ -69,22 +83,26 @@ void PowerManager::updateBatteryStatus() {
     
     // Convert ADC value to voltage
     // For a 12-bit ADC with a 3.3V reference and voltage divider
-    _batteryVoltage = ((float)averagedRawValue / 4095.0) * 3.3 * VOLTAGE_DIVIDER_RATIO;
+    batteryVoltage = ((float)averagedRawValue / 4095.0) * 3.3 * VOLTAGE_DIVIDER_RATIO;
     
     // Calculate battery percentage
-    float percentage = ((_batteryVoltage - BATTERY_MIN_VOLTAGE) / 
+    float percentage = ((batteryVoltage - BATTERY_MIN_VOLTAGE) / 
                        (BATTERY_MAX_VOLTAGE - BATTERY_MIN_VOLTAGE)) * 100.0f;
-    _batteryPercentage = constrain(percentage, 0, 100);
+    batteryPercentage = constrain(percentage, 0, 100);
 }
 
 void PowerManager::enterDeepSleep(uint64_t sleepTimeMs) {
-    LogManager::log("Entering deep sleep for " + String(sleepTimeMs / 1000000) + " seconds");
+    if (app) {
+        app->log("Entering deep sleep for " + String(sleepTimeMs / 1000000) + " seconds");
+    }
     
     // Configure time-based wakeup
     esp_sleep_enable_timer_wakeup(sleepTimeMs); // Convert to microseconds
     
     // Final log before sleep
-    LogManager::log("Going to sleep now. Goodnight!");
+    if (app) {
+        app->log("Going to sleep now. Goodnight!");
+    }
     
     // Small delay to allow logs to be written
     delay(100);
@@ -100,28 +118,32 @@ void PowerManager::configureWakeupSources(gpio_num_t wakeupPin) {
     // Configure timer wakeup as a backup
     esp_sleep_enable_timer_wakeup(SLEEP_TIMEOUT_SEC * 1000000ULL); // in microseconds
     
-    LogManager::log("Deep sleep wakeup sources configured: PIN " + String(wakeupPin) + 
+    if (app) {
+        app->log("Deep sleep wakeup sources configured: PIN " + String(wakeupPin) + 
                    " and timer for " + String(SLEEP_TIMEOUT_SEC) + " seconds");
+    }
 }
 
 bool PowerManager::wokeFromDeepSleep() {
-    if (!_initialized) {
+    if (!initialized) {
         init();
     }
-    return _wakeupCause != ESP_SLEEP_WAKEUP_UNDEFINED;
+    return wakeupCause != ESP_SLEEP_WAKEUP_UNDEFINED;
 }
 
 esp_sleep_wakeup_cause_t PowerManager::getWakeupCause() {
-    if (!_initialized) {
+    if (!initialized) {
         init();
     }
-    return _wakeupCause;
+    return wakeupCause;
 }
 
 bool PowerManager::startBatteryMonitorTask() {
-    if (!_initialized) {
+    if (!initialized) {
         if (!init()) {
-            LogManager::log("Failed to initialize PowerManager!");
+            if (app) {
+                app->log("Failed to initialize PowerManager!");
+            }
             return false;
         }
     }
@@ -133,14 +155,18 @@ bool PowerManager::startBatteryMonitorTask() {
         4096,
         NULL,
         1,
-        &_batteryMonitorTaskHandle,
+        &batteryMonitorTaskHandle,
         0  // Run on Core 0
     ) != pdPASS) {
-        LogManager::log("Failed to create battery monitoring task!");
+        if (app) {
+            app->log("Failed to create battery monitoring task!");
+        }
         return false;
     }
     
-    LogManager::log("Battery monitoring task started");
+    if (app) {
+        app->log("Battery monitoring task started");
+    }
     return true;
 }
 
@@ -149,7 +175,9 @@ void PowerManager::batteryMonitorTask(void* parameter) {
         float voltage = getBatteryVoltage();
         int percentage = getBatteryPercentage();
         
-        LogManager::log("Battery: " + String(voltage, 2) + "V (" + String(percentage) + "%)");
+        if (app) {
+            app->log("Battery: " + String(voltage, 2) + "V (" + String(percentage) + "%)");
+        }
         
         // Wait before next measurement
         vTaskDelay(pdMS_TO_TICKS(BATTERY_MONITOR_INTERVAL));
@@ -157,7 +185,7 @@ void PowerManager::batteryMonitorTask(void* parameter) {
 }
 
 TaskHandle_t PowerManager::getBatteryMonitorTaskHandle() {
-    return _batteryMonitorTaskHandle;
+    return batteryMonitorTaskHandle;
 }
 
 void PowerManager::initDeepSleep() {
@@ -165,11 +193,14 @@ void PowerManager::initDeepSleep() {
     configureWakeupSources(static_cast<gpio_num_t>(BUTTON_PIN));
     
     // Wait until there are no pending logs
-    while (LogManager::hasPendingLogs()) {
-        delay(10);
+    if (app) {
+        while (app->hasPendingLogs()) {
+            delay(10);
+        }
+        
+        // Store current time through Application wrapper
+        app->storeCurrentTime();
     }
-
-    TimeManager::storeCurrentTime();
 
     // Enter deep sleep
     enterDeepSleep(SLEEP_TIMEOUT_SEC * 1000000ULL);

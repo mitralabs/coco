@@ -1,10 +1,12 @@
 /**
  * @file LogManager.cpp
  * @brief Implementation of the LogManager class
+ * 
+ * This file contains the implementation of the log management system,
+ * including the asynchronous log writing mechanism.
  */
 
 #include "LogManager.h"
-#include "FileSystem.h"
 
 // Initialize static members
 Application* LogManager::app = nullptr;
@@ -15,7 +17,6 @@ TaskHandle_t LogManager::logTaskHandle = NULL;
 bool LogManager::initialized = false;
 String (*LogManager::getTimestampFunc)() = NULL;
 
-// Allow early logging before full initialization
 bool LogManager::init(Application* application) {
     // Store application reference
     app = application;
@@ -30,14 +31,11 @@ bool LogManager::init(Application* application) {
     // Set initialized flag early for basic logging
     initialized = true;
     
-    // Get FileSystem instance
-    FileSystem* fs = FileSystem::getInstance();
-    
-    // Ensure log file exists
-    String currentLogContent = fs->readFile(LOG_FILE);
+    // Read current log file using Application wrapper
+    String currentLogContent = app->readFile(LOG_FILE);
     if (currentLogContent.isEmpty()) {
         // Create initial log file if it doesn't exist or is empty
-        if (!fs->overwriteFile(LOG_FILE, "=== Device Log Started ===\n")) {
+        if (!app->overwriteFile(LOG_FILE, "=== Device Log Started ===\n")) {
             Serial.println("Failed to initialize log file!");
             return false;
         }
@@ -77,6 +75,21 @@ void LogManager::log(const String &message) {
     }
 }
 
+bool LogManager::hasPendingLogs() {
+    if (!initialized) {
+        return false;
+    }
+    return uxQueueMessagesWaiting(logQueue) > 0;
+}
+
+void LogManager::setBootSession(int session) {
+    bootSession = session;
+}
+
+void LogManager::setTimestampProvider(String (*timestampFunc)()) {
+    getTimestampFunc = timestampFunc;
+}
+
 bool LogManager::startLogTask() {
     if (!initialized) {
         Serial.println("LogManager not initialized!");
@@ -101,9 +114,6 @@ bool LogManager::startLogTask() {
 }
 
 void LogManager::logFlushTask(void *parameter) {
-    // Get FileSystem instance
-    FileSystem* fs = FileSystem::getInstance();
-    
     while (true) {
         if (uxQueueMessagesWaiting(logQueue) > 0) {
             // Collect all pending messages
@@ -116,28 +126,13 @@ void LogManager::logFlushTask(void *parameter) {
                 free(pendingLog);
             }
             
-            // Append collected logs to the log file
+            // Append collected logs to the log file using Application wrapper
             if (!pendingLogs.isEmpty()) {
-                if (!fs->addToFile(LOG_FILE, pendingLogs)) {
+                if (!app->addToFile(LOG_FILE, pendingLogs)) {
                     Serial.println("Failed to write logs to file!");
                 }
             }
         }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
-}
-
-bool LogManager::hasPendingLogs() {
-    if (!initialized) {
-        return false;
-    }
-    return uxQueueMessagesWaiting(logQueue) > 0;
-}
-
-void LogManager::setBootSession(int session) {
-    bootSession = session;
-}
-
-void LogManager::setTimestampProvider(String (*timestampFunc)()) {
-    getTimestampFunc = timestampFunc;
 }

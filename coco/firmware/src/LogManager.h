@@ -14,65 +14,78 @@
 #include <freertos/semphr.h>
 #include <freertos/task.h>
 #include <freertos/queue.h>
-#include <SD.h>
+
 #include "config.h"
 #include "Application.h"
-
 
 class LogManager {
 public:
     /**
-     * Initialize the log management system
+     * @brief Initialize the log management system
      * @param app Pointer to the Application singleton
      * @return True if initialization succeeded, false otherwise
      */
-    static bool init(Application* app);
+    static bool init(Application* app = nullptr);
     
     /**
-     * Log a message to the log file
+     * @brief Log a message to the log file
+     * 
      * The message will be enqueued and written asynchronously
      * @param message The message to log
      */
     static void log(const String &message);
     
     /**
-     * Start the log flush task
-     * @return True if task creation succeeded, false otherwise
-     */
-    static bool startLogTask();
-    
-    /**
-     * Check if there are pending logs in the queue
+     * @brief Check if there are pending logs in the queue
      * @return True if there are logs waiting to be written, false otherwise
      */
     static bool hasPendingLogs();
     
+    // Session management
     /**
-     * Set the current boot session number
+     * @brief Set the current boot session number
      * @param session The boot session number
      */
     static void setBootSession(int session);
     
     /**
-     * Set a function to provide timestamps for log entries
+     * @brief Set a function to provide timestamps for log entries
      * @param timestampFunc Function pointer that returns a timestamp string
      */
     static void setTimestampProvider(String (*timestampFunc)());
+    
+    // Task management
+    /**
+     * @brief Start the log flush task
+     * @return True if task creation succeeded, false otherwise
+     */
+    static bool startLogTask();
+    
+    /**
+     * @brief Get the log task handle
+     * @return TaskHandle_t for the log flush task
+     */
+    static TaskHandle_t getLogTaskHandle() { return logTaskHandle; }
 
 private:
-    // Private constructor - singleton pattern
-    LogManager() {}
+    // Singleton pattern implementation
+    LogManager() = default;
+    LogManager(const LogManager&) = delete;
+    LogManager& operator=(const LogManager&) = delete;
     
-    // Log flush task function
+    /**
+     * @brief Log flush task function
+     * @param parameter Task parameter (unused)
+     */
     static void logFlushTask(void *parameter);
     
     // Static state variables
-    static Application* app;        // Reference to the Application singleton
-    static QueueHandle_t logQueue;  // Queue managed by LogManager
-    static int bootSession;         // Current boot session number
-    static int logIndex;            // Index for log entries
-    static TaskHandle_t logTaskHandle;  // Task handle for the log flush task
-    static bool initialized;        // Initialization flag
+    static Application* app;           // Reference to the Application singleton
+    static QueueHandle_t logQueue;     // Queue managed by LogManager
+    static int bootSession;            // Current boot session number
+    static int logIndex;               // Index for log entries
+    static TaskHandle_t logTaskHandle; // Task handle for the log flush task
+    static bool initialized;           // Initialization flag
     static String (*getTimestampFunc)(); // Function pointer for timestamp provider
 };
 

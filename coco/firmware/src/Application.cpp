@@ -1,321 +1,287 @@
+/**
+ * @file Application.cpp
+ * @brief Implementation of the Application class
+ * 
+ * This file contains the implementation of the central Application class that 
+ * coordinates all system functionality.
+ */
+
+// Standard libraries
+#include <Preferences.h>
+
+// ESP libraries
+
+// Project includes
 #include "Application.h"
-#include "config.h"
+#include "AudioManager.h"
+#include "BackendClient.h"
+#include "FileSystem.h"
 #include "LogManager.h"
+#include "PowerManager.h"
 #include "TimeManager.h"
-#include "FileSystem.h" // Added for using FileSystem
-#include "AudioManager.h" // Add AudioManager include
+#include "WifiManager.h"
 
-// Initialize static instance to nullptr
-Application* Application::_instance = nullptr;
+// Initialize static instance
+Application* Application::instance = nullptr;
 
-// Singleton accessor
+// Get singleton instance
 Application* Application::getInstance() {
-    if (_instance == nullptr) {
-        _instance = new Application();
+    if (instance == nullptr) {
+        instance = new Application();
     }
-    return _instance;
+    return instance;
 }
 
 // Private constructor
-Application::Application() :
-    bootSession(0),
-    logFileIndex(0),
-    audioFileIndex(0),
-    nextWifiScanTime(0),
-    currentScanInterval(MIN_SCAN_INTERVAL),
-    nextBackendCheckTime(0),
-    currentBackendInterval(MIN_SCAN_INTERVAL),
-    isRecording(false),
-    recordingRequested(false),
-    WIFIconnected(false),
-    backendReachable(false),
-    wavFilesAvailable(false),
-    uploadInProgress(false),
-    externalWakeTriggered(false),
-    readyForDeepSleep(false),
-    externalWakeValid(-1),
-    ledMutex(nullptr),
-    uploadMutex(nullptr),
-    httpMutex(nullptr),
-    stateMutex(nullptr),
-    audioQueue(nullptr),
-    logQueue(nullptr),
-    buttonTimer(nullptr),
-    recordAudioTaskHandle(nullptr),
-    audioFileTaskHandle(nullptr),
-    logFlushTaskHandle(nullptr),
-    wifiConnectionTaskHandle(nullptr),
-    batteryMonitorTaskHandle(nullptr),
-    uploadTaskHandle(nullptr),
-    persistTimeTaskHandle(nullptr),
-    backendReachabilityTaskHandle(nullptr)
-{
-    // Constructor left intentionally minimal
-}
-
-// Main initialization
-bool Application::init() {
-    // Initialize components in correct order
-    if (!initMutexes()) {
-        Serial.println("Failed to initialize mutexes!");
-        return false;
-    }
+Application::Application() 
+    : recordingRequested(false),
+      readyForDeepSleep(false),
+      externalWakeTriggered(false),
+      externalWakeValid(-1),
+      wavFilesAvailable(false),
+      bootSession(0),
+      audioFileIndex(0),
+      backendReachable(false),
+      uploadInProgress(false),
+      wifiConnected(false),
+      recordAudioTaskHandle(NULL),
+      audioFileTaskHandle(NULL),
+      wifiConnectionTaskHandle(NULL),
+      uploadTaskHandle(NULL),
+      backendReachabilityTaskHandle(NULL),
+      batteryMonitorTaskHandle(NULL) {
     
-    if (!initSD()) {
-        Serial.println("Failed to initialize SD card!");
-        return false;
-    }
-    
-    if (!initPreferences()) {
-        LogManager::log("Failed to initialize preferences!");
-        return false;
-    }
-    
-    if (!initQueues()) {
-        LogManager::log("Failed to initialize queues!");
-        return false;
-    }
-    
-    // Removed initI2S() call as it's now handled by AudioManager
-    
-    return true;
-}
-
-// Initialize mutexes
-bool Application::initMutexes() {
+    // Create mutex
     ledMutex = xSemaphoreCreateMutex();
-    uploadMutex = xSemaphoreCreateMutex();
     httpMutex = xSemaphoreCreateMutex();
-    stateMutex = xSemaphoreCreateMutex();
-    
-    return (ledMutex != nullptr && 
-            uploadMutex != nullptr && 
-            httpMutex != nullptr &&
-            stateMutex != nullptr);
 }
 
-// Initialize queues
-bool Application::initQueues() {
-    audioQueue = xQueueCreate(AUDIO_QUEUE_SIZE, sizeof(AudioBuffer));
-    logQueue = xQueueCreate(LOG_QUEUE_SIZE, sizeof(char*));
-    
-    return (audioQueue != nullptr && logQueue != nullptr);
-}
-
-// Initialize SD card
-bool Application::initSD() {
-    // Use FileSystem module instead of direct SD initialization
-    FileSystem* fs = FileSystem::getInstance();
-    if (!fs->init()) {
-        Serial.println("Failed to initialize FileSystem for SD card access!");
+// Initialization
+bool Application::init() {
+    // Read boot session from preferences
+    Preferences preferences;
+    if (preferences.begin("app", false)) {
+        bootSession = preferences.getInt("bootSession", 0);
+        preferences.end();
+        
+        // Increment boot session
+        incrementBootSession();
+        
+        // Initialize modules in the correct order (dependency chain)
+        if (!FileSystem::init(this)) {
+            Serial.println("Failed to initialize FileSystem");
+            return false;
+        }
+        
+        if (!TimeManager::init(this)) {
+            Serial.println("Failed to initialize TimeManager");
+            return false;
+        }
+        
+        if (!LogManager::init(this)) {
+            Serial.println("Failed to initialize LogManager");
+            return false;
+        }
+        
+        // Set the boot session for log messages
+        LogManager::setBootSession(bootSession);
+        
+        // Set TimeManager as the timestamp provider for LogManager
+        LogManager::setTimestampProvider(TimeManager::getTimestamp);
+        
+        if (!PowerManager::init()) {
+            Serial.println("Failed to initialize PowerManager");
+            return false;
+        }
+        
+        return true;
+    } else {
         return false;
     }
-    Serial.println("SD card initialized through FileSystem module.");
-    return true;
 }
 
-// Initialize preferences
-bool Application::initPreferences() {
-    preferences.begin("boot", false);
-    bootSession = preferences.getInt("bootSession", 0);
-    bootSession++;  // Increment for a new boot
-    preferences.putInt("bootSession", bootSession);
-    preferences.end();
-    return true;
-}
-
-// Initialize recording mode
 bool Application::initRecordingMode() {
-    // Use AudioManager for audio initialization
-    if (!AudioManager::init(this)) {
+    // Initialize modules needed for recording
+    if (!WifiManager::init(this)) {
+        log("Failed to initialize WifiManager");
         return false;
     }
     
-    // Use FileSystem instead of local implementation
-    FileSystem* fs = FileSystem::getInstance();
-    return fs->ensureDirectory(RECORDINGS_DIR);
+    if (!AudioManager::init(this)) {
+        log("Failed to initialize AudioManager");
+        return false;
+    }
+    
+    if (!BackendClient::init(this)) {
+        log("Failed to initialize BackendClient");
+        return false;
+    }
+    
+    // Start the necessary tasks
+    if (!LogManager::startLogTask()) {
+        log("Failed to start log task");
+        return false;
+    }
+    
+    if (!TimeManager::startPersistenceTask()) {
+        log("Failed to start time persistence task");
+        return false;
+    }
+    
+    if (!AudioManager::startRecordingTask()) {
+        log("Failed to start audio recording task");
+        return false;
+    }
+    setRecordAudioTaskHandle(AudioManager::getRecordAudioTaskHandle());
+    
+    if (!AudioManager::startAudioFileTask()) {
+        log("Failed to start audio file task");
+        return false;
+    }
+    setAudioFileTaskHandle(AudioManager::getAudioFileTaskHandle());
+    
+    if (!WifiManager::startConnectionTask()) {
+        log("Failed to start WiFi connection task");
+        return false;
+    }
+    
+    if (!PowerManager::startBatteryMonitorTask()) {
+        log("Failed to start battery monitor task");
+        return false;
+    }
+    setBatteryMonitorTaskHandle(PowerManager::getBatteryMonitorTaskHandle());
+    
+    if (!BackendClient::startUploadTask()) {
+        log("Failed to start file upload task");
+        return false;
+    }
+    
+    if (!BackendClient::startReachabilityTask()) {
+        log("Failed to start backend reachability task");
+        return false;
+    }
+    
+    return true;
 }
 
-// Thread-safe state accessors
-bool Application::isRecordingActive() const {
-    return isRecording;
-}
-
+//-------------------------------------------------------------------------
+// State Management
+//-------------------------------------------------------------------------
 bool Application::isRecordingRequested() const {
-    if (xSemaphoreTake(stateMutex, portMAX_DELAY) == pdPASS) {
-        bool value = recordingRequested;
-        xSemaphoreGive(stateMutex);
-        return value;
-    }
-    return false; // Default if mutex can't be taken
+    return recordingRequested;
 }
 
-void Application::setRecordingRequested(bool requested) {
-    if (xSemaphoreTake(stateMutex, portMAX_DELAY) == pdPASS) {
-        recordingRequested = requested;
-        xSemaphoreGive(stateMutex);
-    }
-}
-
-bool Application::isWifiConnected() const {
-    if (xSemaphoreTake(stateMutex, portMAX_DELAY) == pdPASS) {
-        bool value = WIFIconnected;
-        xSemaphoreGive(stateMutex);
-        return value;
-    }
-    return false;
-}
-
-void Application::setWifiConnected(bool connected) {
-    if (xSemaphoreTake(stateMutex, portMAX_DELAY) == pdPASS) {
-        WIFIconnected = connected;
-        xSemaphoreGive(stateMutex);
-    }
-}
-
-bool Application::isBackendReachable() const {
-    if (xSemaphoreTake(stateMutex, portMAX_DELAY) == pdPASS) {
-        bool value = backendReachable;
-        xSemaphoreGive(stateMutex);
-        return value;
-    }
-    return false;
-}
-
-void Application::setBackendReachable(bool reachable) {
-    if (xSemaphoreTake(stateMutex, portMAX_DELAY) == pdPASS) {
-        backendReachable = reachable;
-        xSemaphoreGive(stateMutex);
-    }
-}
-
-bool Application::hasWavFilesAvailable() const {
-    if (xSemaphoreTake(stateMutex, portMAX_DELAY) == pdPASS) {
-        bool value = wavFilesAvailable;
-        xSemaphoreGive(stateMutex);
-        return value;
-    }
-    return false;
-}
-
-void Application::setWavFilesAvailable(bool available) {
-    if (xSemaphoreTake(stateMutex, portMAX_DELAY) == pdPASS) {
-        wavFilesAvailable = available;
-        xSemaphoreGive(stateMutex);
-    }
-}
-
-bool Application::isUploadInProgress() const {
-    if (xSemaphoreTake(stateMutex, portMAX_DELAY) == pdPASS) {
-        bool value = uploadInProgress;
-        xSemaphoreGive(stateMutex);
-        return value;
-    }
-    return false;
-}
-
-void Application::setUploadInProgress(bool inProgress) {
-    if (xSemaphoreTake(stateMutex, portMAX_DELAY) == pdPASS) {
-        uploadInProgress = inProgress;
-        xSemaphoreGive(stateMutex);
-    }
-}
-
-bool Application::isExternalWakeTriggered() const {
-    if (xSemaphoreTake(stateMutex, portMAX_DELAY) == pdPASS) {
-        bool value = externalWakeTriggered;
-        xSemaphoreGive(stateMutex);
-        return value;
-    }
-    return false;
-}
-
-void Application::setExternalWakeTriggered(bool triggered) {
-    if (xSemaphoreTake(stateMutex, portMAX_DELAY) == pdPASS) {
-        externalWakeTriggered = triggered;
-        xSemaphoreGive(stateMutex);
-    }
+void Application::setRecordingRequested(bool val) {
+    recordingRequested = val;
 }
 
 bool Application::isReadyForDeepSleep() const {
-    if (xSemaphoreTake(stateMutex, portMAX_DELAY) == pdPASS) {
-        bool value = readyForDeepSleep;
-        xSemaphoreGive(stateMutex);
-        return value;
-    }
-    return false;
+    return readyForDeepSleep;
 }
 
-void Application::setReadyForDeepSleep(bool ready) {
-    if (xSemaphoreTake(stateMutex, portMAX_DELAY) == pdPASS) {
-        readyForDeepSleep = ready;
-        xSemaphoreGive(stateMutex);
-    }
-}
-
-int Application::getExternalWakeValid() const {
-    if (xSemaphoreTake(stateMutex, portMAX_DELAY) == pdPASS) {
-        int value = externalWakeValid;
-        xSemaphoreGive(stateMutex);
-        return value;
-    }
-    return -1;
-}
-
-void Application::setExternalWakeValid(int valid) {
-    if (xSemaphoreTake(stateMutex, portMAX_DELAY) == pdPASS) {
-        externalWakeValid = valid;
-        xSemaphoreGive(stateMutex);
-    }
-}
-
-// Accessors for components
-I2SClass* Application::getI2S() {
-    // Return AudioManager's I2S instance instead
-    return AudioManager::getI2S();
-}
-
-Preferences* Application::getPreferences() {
-    return &preferences;
-}
-
-SemaphoreHandle_t Application::getLedMutex() {
-    return ledMutex;
-}
-
-// Updated to delegate to FileSystem's mutex
-SemaphoreHandle_t Application::getSDMutex() {
-    return FileSystem::getInstance()->getSDMutex();
-}
-
-SemaphoreHandle_t Application::getUploadMutex() {
-    return uploadMutex;
-}
-
-SemaphoreHandle_t Application::getHttpMutex() {
-    return httpMutex;
-}
-
-QueueHandle_t Application::getAudioQueue() {
-    return audioQueue;
-}
-
-QueueHandle_t Application::getLogQueue() {
-    return logQueue;
-}
-
-TimerHandle_t Application::getButtonTimer() {
-    return buttonTimer;
+void Application::setReadyForDeepSleep(bool val) {
+    readyForDeepSleep = val;
 }
 
 int Application::getBootSession() const {
     return bootSession;
 }
 
-void Application::setBootSession(int session) {
-    bootSession = session;
+void Application::incrementBootSession() {
+    bootSession++;
+    
+    // Save to preferences
+    Preferences preferences;
+    if (preferences.begin("app", false)) {
+        preferences.putInt("bootSession", bootSession);
+        preferences.end();
+    }
 }
 
+//-------------------------------------------------------------------------
+// Task Management
+//-------------------------------------------------------------------------
+TaskHandle_t Application::getRecordAudioTaskHandle() const {
+    return recordAudioTaskHandle;
+}
+
+void Application::setRecordAudioTaskHandle(TaskHandle_t handle) {
+    recordAudioTaskHandle = handle;
+}
+
+TaskHandle_t Application::getAudioFileTaskHandle() const {
+    return audioFileTaskHandle;
+}
+
+void Application::setAudioFileTaskHandle(TaskHandle_t handle) {
+    audioFileTaskHandle = handle;
+}
+
+TaskHandle_t Application::getWifiConnectionTaskHandle() const {
+    return wifiConnectionTaskHandle;
+}
+
+void Application::setWifiConnectionTaskHandle(TaskHandle_t handle) {
+    wifiConnectionTaskHandle = handle;
+}
+
+TaskHandle_t Application::getUploadTaskHandle() const {
+    return uploadTaskHandle;
+}
+
+void Application::setUploadTaskHandle(TaskHandle_t handle) {
+    uploadTaskHandle = handle;
+}
+
+TaskHandle_t Application::getReachabilityTaskHandle() const {
+    return backendReachabilityTaskHandle;
+}
+
+void Application::setReachabilityTaskHandle(TaskHandle_t handle) {
+    backendReachabilityTaskHandle = handle;
+}
+
+TaskHandle_t Application::getBatteryMonitorTaskHandle() const {
+    return batteryMonitorTaskHandle;
+}
+
+void Application::setBatteryMonitorTaskHandle(TaskHandle_t handle) {
+    batteryMonitorTaskHandle = handle;
+}
+
+//-------------------------------------------------------------------------
+// Resource Management
+//-------------------------------------------------------------------------
+SemaphoreHandle_t Application::getLedMutex() const {
+    return ledMutex;
+}
+
+SemaphoreHandle_t Application::getHttpMutex() const {
+    return httpMutex;
+}
+
+//-------------------------------------------------------------------------
+// External Wake Management
+//-------------------------------------------------------------------------
+bool Application::isExternalWakeTriggered() const {
+    return externalWakeTriggered;
+}
+
+void Application::setExternalWakeTriggered(bool val) {
+    externalWakeTriggered = val;
+}
+
+int Application::getExternalWakeValid() const {
+    return externalWakeValid;
+}
+
+void Application::setExternalWakeValid(int val) {
+    externalWakeValid = val;
+}
+
+//-------------------------------------------------------------------------
+// Audio File Management
+//-------------------------------------------------------------------------
 int Application::getAudioFileIndex() const {
     return audioFileIndex;
 }
@@ -324,85 +290,113 @@ void Application::setAudioFileIndex(int index) {
     audioFileIndex = index;
 }
 
-// WiFi scan timing
-unsigned long Application::getNextWifiScanTime() const {
-    return nextWifiScanTime;
+bool Application::hasWavFilesAvailable() const {
+    return wavFilesAvailable;
 }
 
-void Application::setNextWifiScanTime(unsigned long time) {
-    nextWifiScanTime = time;
+void Application::setWavFilesAvailable(bool val) {
+    wavFilesAvailable = val;
 }
 
-unsigned long Application::getCurrentScanInterval() const {
-    return currentScanInterval;
+//-------------------------------------------------------------------------
+// Network State Management
+//-------------------------------------------------------------------------
+bool Application::isWifiConnected() const {
+    return wifiConnected;
 }
 
-void Application::setCurrentScanInterval(unsigned long interval) {
-    currentScanInterval = interval;
+void Application::setWifiConnected(bool connected) {
+    wifiConnected = connected;
 }
 
-// Backend check timing
-unsigned long Application::getNextBackendCheckTime() const {
-    return nextBackendCheckTime;
+bool Application::isBackendReachable() const {
+    return backendReachable;
 }
 
-void Application::setNextBackendCheckTime(unsigned long time) {
-    nextBackendCheckTime = time;
+void Application::setBackendReachable(bool val) {
+    backendReachable = val;
 }
 
-unsigned long Application::getCurrentBackendInterval() const {
-    return currentBackendInterval;
+bool Application::isUploadInProgress() const {
+    return uploadInProgress;
 }
 
-void Application::setCurrentBackendInterval(unsigned long interval) {
-    currentBackendInterval = interval;
+void Application::setUploadInProgress(bool val) {
+    uploadInProgress = val;
 }
 
-// Task handle accessors
-void Application::setRecordAudioTaskHandle(TaskHandle_t handle) {
-    recordAudioTaskHandle = handle;
+//-------------------------------------------------------------------------
+// Module Wrapper Methods
+//-------------------------------------------------------------------------
+
+// Logging wrappers
+void Application::log(const String& message) {
+    LogManager::log(message);
 }
 
-TaskHandle_t Application::getRecordAudioTaskHandle() const {
-    return recordAudioTaskHandle;
+bool Application::hasPendingLogs() {
+    return LogManager::hasPendingLogs();
 }
 
-void Application::setAudioFileTaskHandle(TaskHandle_t handle) {
-    audioFileTaskHandle = handle;
+// Time wrappers
+String Application::getTimestamp() {
+    return TimeManager::getTimestamp();
 }
 
-TaskHandle_t Application::getAudioFileTaskHandle() const {
-    return audioFileTaskHandle;
+bool Application::storeCurrentTime() {
+    return TimeManager::storeCurrentTime();
 }
 
-void Application::setWifiConnectionTaskHandle(TaskHandle_t handle) {
-    wifiConnectionTaskHandle = handle;
+bool Application::updateFromNTP() {
+    return TimeManager::updateFromNTP();
 }
 
-TaskHandle_t Application::getWifiConnectionTaskHandle() const {
-    return wifiConnectionTaskHandle;
+// FileSystem wrappers
+bool Application::ensureDirectory(const String& directory) {
+    return FileSystem::ensureDirectory(directory);
 }
 
-void Application::setBatteryMonitorTaskHandle(TaskHandle_t handle) {
-    batteryMonitorTaskHandle = handle;
+bool Application::overwriteFile(const String& filename, const String& content) {
+    return FileSystem::overwriteFile(filename, content);
 }
 
-TaskHandle_t Application::getBatteryMonitorTaskHandle() const {
-    return batteryMonitorTaskHandle;
+String Application::readFile(const String& filename) {
+    return FileSystem::readFile(filename);
 }
 
-void Application::setUploadTaskHandle(TaskHandle_t handle) {
-    uploadTaskHandle = handle;
+bool Application::addToUploadQueue(const String& filename) {
+    return FileSystem::addToUploadQueue(filename);
 }
 
-TaskHandle_t Application::getUploadTaskHandle() const {
-    return uploadTaskHandle;
+bool Application::createEmptyFile(const String& filename) {
+    return FileSystem::createEmptyFile(filename);
 }
 
-void Application::setBackendReachabilityTaskHandle(TaskHandle_t handle) {
-    backendReachabilityTaskHandle = handle;
+bool Application::addToFile(const String& filename, const String& content) {
+    return FileSystem::addToFile(filename, content);
 }
 
-TaskHandle_t Application::getBackendReachabilityTaskHandle() const {
-    return backendReachabilityTaskHandle;
+bool Application::readFileToBuffer(const String& filename, uint8_t** buffer, size_t& size) {
+    return FileSystem::readFileToBuffer(filename, buffer, size);
+}
+
+String Application::getNextUploadFile() {
+    return FileSystem::getNextUploadFile();
+}
+
+bool Application::removeFirstFromUploadQueue() {
+    return FileSystem::removeFirstFromUploadQueue();
+}
+
+bool Application::deleteFile(const String& filename) {
+    return FileSystem::deleteFile(filename);
+}
+
+// PowerManager wrappers
+void Application::initDeepSleep() {
+    PowerManager::initDeepSleep();
+}
+
+esp_sleep_wakeup_cause_t Application::getWakeupCause() {
+    return PowerManager::getWakeupCause();
 }

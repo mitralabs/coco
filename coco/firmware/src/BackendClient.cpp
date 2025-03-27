@@ -1,9 +1,16 @@
+/**
+ * @file BackendClient.cpp
+ * @brief Implementation of the BackendClient class
+ *
+ * This file contains the implementation of all BackendClient methods,
+ * including background task functions for file uploads and backend
+ * connectivity monitoring.
+ */
+
+#include <HTTPClient.h>
+#include <WiFi.h>
+
 #include "BackendClient.h"
-#include "config.h"
-#include "LogManager.h"
-#include "FileSystem.h"
-#include "WifiManager.h"
-#include "secrets.h"
 
 // Initialize static variables
 bool BackendClient::initialized = false;
@@ -20,32 +27,35 @@ bool BackendClient::init(Application* application) {
         return true;
     }
     
-    // Store application instance
-    app = application;
+    // Store application instance with fallback to singleton
+    if (application == nullptr) {
+        app = Application::getInstance();
+    } else {
+        app = application;
+    }
     
     if (!app) {
-        LogManager::log("BackendClient: Application instance is null");
-        return false;
+        return false;  // This is still a safety check if getInstance() fails
     }
     
     // Initialize backend client properties
     uploadMutex = xSemaphoreCreateMutex();
     if (!uploadMutex) {
-        LogManager::log("BackendClient: Failed to create upload mutex");
+        app->log("BackendClient: Failed to create upload mutex");
         return false;
     }
     
     nextBackendCheckTime = 0;
     currentBackendInterval = MIN_SCAN_INTERVAL;
     
-    LogManager::log("BackendClient: Initialized");
+    app->log("BackendClient: Initialized");
     initialized = true;
     return true;
 }
 
 bool BackendClient::startUploadTask() {
     if (!initialized) {
-        LogManager::log("BackendClient: Not initialized, can't start upload task");
+        app->log("BackendClient: Not initialized, can't start upload task");
         return false;
     }
     
@@ -61,17 +71,17 @@ bool BackendClient::startUploadTask() {
     );
     
     if (result != pdPASS) {
-        LogManager::log("BackendClient: Failed to create file upload task");
+        app->log("BackendClient: Failed to create file upload task");
         return false;
     }
     
-    LogManager::log("BackendClient: File upload task started");
+    app->log("BackendClient: File upload task started");
     return true;
 }
 
 bool BackendClient::startReachabilityTask() {
     if (!initialized) {
-        LogManager::log("BackendClient: Not initialized, can't start reachability task");
+        app->log("BackendClient: Not initialized, can't start reachability task");
         return false;
     }
     
@@ -87,11 +97,11 @@ bool BackendClient::startReachabilityTask() {
     );
     
     if (result != pdPASS) {
-        LogManager::log("BackendClient: Failed to create backend reachability task");
+        app->log("BackendClient: Failed to create backend reachability task");
         return false;
     }
     
-    LogManager::log("BackendClient: Backend reachability task started");
+    app->log("BackendClient: Backend reachability task started");
     return true;
 }
 
@@ -128,18 +138,11 @@ bool BackendClient::isReachable() {
 }
 
 void BackendClient::uploadFile(const String& filename) {
-    // This is a simplified interface that could be expanded in the future
-    // Currently, the upload is handled via the queue in FileSystem
-    FileSystem* fs = FileSystem::getInstance();
-    if (fs) {
-        fs->addToUploadQueue(filename);
-    }
+    // This is a simplified interface using Application wrapper
+    app->addToUploadQueue(filename);
 }
 
-// Moved from main.cpp
 void BackendClient::fileUploadTaskFunction(void* parameter) {
-    FileSystem* fs = FileSystem::getInstance();
-    
     while (true) {
         // Only proceed if WiFi is connected
         if (app->isWifiConnected() && app->isBackendReachable()) {
@@ -148,76 +151,45 @@ void BackendClient::fileUploadTaskFunction(void* parameter) {
                 app->setUploadInProgress(true);
                 
                 // Get the next file to upload from queue
-                String nextFile = fs->getNextUploadFile();
+                String nextFile = app->getNextUploadFile();
                 
                 if (nextFile.length() > 0) {
-                    LogManager::log("Processing next file from queue: " + nextFile);
+                    app->log("Processing next file from queue: " + nextFile);
                     
-                    // Try to take SD card mutex
-                    SemaphoreHandle_t sdMutex = fs->getSDMutex();
-                    if (xSemaphoreTake(sdMutex, pdMS_TO_TICKS(5000)) == pdTRUE) {
-                        UploadBuffer uploadBuffer = {NULL, 0, ""};
+                    // Read file into buffer using Application wrapper
+                    uint8_t* fileBuffer = nullptr;
+                    size_t fileSize = 0;
+                    
+                    if (app->readFileToBuffer(nextFile, &fileBuffer, fileSize)) {
+                        // Upload the file from RAM
+                        app->log("Uploading file from buffer: " + nextFile);
+                        bool uploadSuccess = uploadFileFromBuffer(fileBuffer, fileSize, nextFile);
                         
-                        if (SD.exists(nextFile)) {
-                            // Use direct SD operations here as we're handling binary data and already have the mutex
-                            File file = SD.open(nextFile);
-                            if (file) {
-                                uploadBuffer.filename = nextFile;
-                                uploadBuffer.size = file.size();
-                                
-                                // Allocate memory for the file content
-                                uploadBuffer.buffer = (uint8_t*)malloc(uploadBuffer.size);
-                                if (uploadBuffer.buffer) {
-                                    // Read the entire file into RAM
-                                    size_t bytesRead = file.read(uploadBuffer.buffer, uploadBuffer.size);
-                                    if (bytesRead != uploadBuffer.size) {
-                                        LogManager::log("Error reading file into buffer");
-                                        free(uploadBuffer.buffer);
-                                        uploadBuffer.buffer = NULL;
-                                    }
-                                } else {
-                                    LogManager::log("Failed to allocate memory for file upload");
-                                }
-                                
-                                file.close();
-                            }
-                        }
+                        // Free the buffer memory
+                        free(fileBuffer);
                         
-                        // Release SD mutex before uploading
-                        xSemaphoreGive(sdMutex);
-                        
-                        if (uploadBuffer.buffer) {
-                            // Upload the file from RAM
-                            LogManager::log("Uploading file from buffer: " + uploadBuffer.filename);
-                            bool uploadSuccess = uploadFileFromBuffer(uploadBuffer.buffer, uploadBuffer.size, uploadBuffer.filename);
+                        // If upload was successful, delete the file and remove from queue
+                        if (uploadSuccess) {
+                            app->log("Upload successful, deleting file");
                             
-                            // If upload was successful, delete the file and remove from queue
-                            if (uploadSuccess) {
-                                LogManager::log("Upload successful, deleting file");
-                                
-                                // Use deleteFile() instead of direct SD operations
-                                if (fs->deleteFile(uploadBuffer.filename)) {
-                                    LogManager::log("File deleted: " + uploadBuffer.filename);
-                                } else {
-                                    LogManager::log("Failed to delete file: " + uploadBuffer.filename);
-                                }
-                                
-                                // Remove from queue
-                                fs->removeFirstFromUploadQueue();
+                            if (app->deleteFile(nextFile)) {
+                                app->log("File deleted: " + nextFile);
                             } else {
-                                LogManager::log("Upload failed for: " + uploadBuffer.filename);
+                                app->log("Failed to delete file: " + nextFile);
                             }
                             
-                            // Free the buffer memory
-                            free(uploadBuffer.buffer);
+                            // Remove from queue
+                            app->removeFirstFromUploadQueue();
+                        } else {
+                            app->log("Upload failed for: " + nextFile);
                         }
                     } else {
-                        LogManager::log("Could not get SD card mutex for file upload");
+                        app->log("Failed to read file into buffer: " + nextFile);
                     }
                 } else {
                     // No files in queue
                     app->setWavFilesAvailable(false);
-                    LogManager::log("No files in upload queue");
+                    app->log("No files in upload queue");
                 }
                 
                 app->setUploadInProgress(false);
@@ -236,7 +208,7 @@ bool BackendClient::uploadFileFromBuffer(uint8_t* buffer, size_t size, const Str
     
     SemaphoreHandle_t httpMutex = app->getHttpMutex();
     if (xSemaphoreTake(httpMutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
-        LogManager::log("Could not get HTTP mutex for file upload");
+        app->log("Could not get HTTP mutex for file upload");
         return false;
     }
     
@@ -244,8 +216,8 @@ bool BackendClient::uploadFileFromBuffer(uint8_t* buffer, size_t size, const Str
     String bareFilename = filename.substring(filename.lastIndexOf('/') + 1);
     
     // Check WiFi connection before proceeding
-    if (WiFi.status() != WL_CONNECTED) {
-        LogManager::log("WiFi not connected, aborting upload");
+    if (!app->isWifiConnected()) {
+        app->log("WiFi not connected, aborting upload");
         xSemaphoreGive(httpMutex);
         return false;
     }
@@ -265,9 +237,9 @@ bool BackendClient::uploadFileFromBuffer(uint8_t* buffer, size_t size, const Str
     int httpResponseCode = client.sendRequest("POST", buffer, size);
     
     if (httpResponseCode > 0) {
-        LogManager::log("HTTP Response code: " + String(httpResponseCode));
+        app->log("HTTP Response code: " + String(httpResponseCode));
         String response = client.getString();
-        LogManager::log("Server response: " + response);
+        app->log("Server response: " + response);
         client.end();
         bool success = (httpResponseCode == HTTP_CODE_OK || httpResponseCode == HTTP_CODE_CREATED);
         if (!success) {
@@ -278,7 +250,7 @@ bool BackendClient::uploadFileFromBuffer(uint8_t* buffer, size_t size, const Str
         xSemaphoreGive(httpMutex);
         return success;
     } else {
-        LogManager::log("Error on HTTP request: " + String(client.errorToString(httpResponseCode).c_str()));
+        app->log("Error on HTTP request: " + String(client.errorToString(httpResponseCode).c_str()));
         client.end();
         // Network error, mark backend as unavailable
         app->setBackendReachable(false);
@@ -289,13 +261,13 @@ bool BackendClient::uploadFileFromBuffer(uint8_t* buffer, size_t size, const Str
 }
 
 bool BackendClient::checkBackendReachability() {
-    if (!WifiManager::isConnected()) {
+    if (!app->isWifiConnected()) {
         return false;
     }
     
     SemaphoreHandle_t httpMutex = app->getHttpMutex();
     if (xSemaphoreTake(httpMutex, pdMS_TO_TICKS(2000)) != pdTRUE) {
-        LogManager::log("HTTP mutex busy, skipping backend check");
+        app->log("HTTP mutex busy, skipping backend check");
         return app->isBackendReachable();  // Return current state
     }
     
@@ -306,7 +278,7 @@ bool BackendClient::checkBackendReachability() {
     http.addHeader("X-API-Key", API_KEY);  // Add the API key as a custom header
 
     int httpResponseCode = http.GET();
-    LogManager::log("Backend check response: " + String(httpResponseCode));
+    app->log("Backend check response: " + String(httpResponseCode));
     
     http.end();
     xSemaphoreGive(httpMutex);
@@ -322,7 +294,7 @@ void BackendClient::backendReachabilityTaskFunction(void* parameter) {
         bool shouldCheck = false;
         
         // Only check backend if WiFi is connected
-        if (WifiManager::isConnected()) {
+        if (app->isWifiConnected()) {
             // Check if:
             // 1. Backend status is unknown (not reachable) OR
             // 2. It's time for a periodic recheck when connected
@@ -336,24 +308,24 @@ void BackendClient::backendReachabilityTaskFunction(void* parameter) {
             }
             
             if (shouldCheck) {
-                LogManager::log("Checking backend reachability...");
+                app->log("Checking backend reachability...");
                 
                 if (checkBackendReachability()) {
-                    LogManager::log("Backend is reachable");
+                    app->log("Backend is reachable");
                     app->setBackendReachable(true);
                     // Reset backoff on success
                     setCurrentBackendInterval(MIN_SCAN_INTERVAL);
                     // Record successful check time
                     lastSuccessfulCheck = currentTime;
                 } else {
-                    LogManager::log("Backend is not reachable");
+                    app->log("Backend is not reachable");
                     app->setBackendReachable(false);
                     
                     // Apply exponential backoff for next check
                     unsigned long currentInterval = getCurrentBackendInterval();
                     unsigned long newInterval = std::min(currentInterval * 2UL, (unsigned long)MAX_SCAN_INTERVAL);
                     setCurrentBackendInterval(newInterval);
-                    LogManager::log("Next backend check in " + String(newInterval / 1000) + " seconds");
+                    app->log("Next backend check in " + String(newInterval / 1000) + " seconds");
                 }
                 
                 setNextBackendCheckTime(currentTime + getCurrentBackendInterval());

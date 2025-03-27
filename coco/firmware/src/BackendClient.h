@@ -1,14 +1,108 @@
+/**
+ * @file BackendClient.h
+ * @brief Client for communicating with backend server
+ *
+ * This class handles all communication with the backend server,
+ * including file uploads and reachability checks. It implements
+ * a singleton pattern and manages background tasks for file uploads
+ * and connectivity monitoring.
+ */
+
 #ifndef BACKEND_CLIENT_H
 #define BACKEND_CLIENT_H
 
 #include <Arduino.h>
-#include <HTTPClient.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <HTTPClient.h>
+
 #include "Application.h"
+#include "config.h"
+#include "secrets.h"
 
 class BackendClient {
+public:
+    // Prevent copying and assignment
+    BackendClient(const BackendClient&) = delete;
+    BackendClient& operator=(const BackendClient&) = delete;
+    
+    /**
+     * @brief Initializes the BackendClient
+     * @param app Pointer to Application instance (uses singleton if nullptr)
+     * @return true if initialization succeeds, false otherwise
+     */
+    static bool init(Application* app = nullptr);
+    
+    /**
+     * @brief Starts the file upload background task
+     * @return true if task creation succeeds, false otherwise
+     */
+    static bool startUploadTask();
+    
+    /**
+     * @brief Starts the backend reachability check background task
+     * @return true if task creation succeeds, false otherwise
+     */
+    static bool startReachabilityTask();
+    
+    /**
+     * @brief Gets the handle to the upload task
+     * @return TaskHandle_t for the upload task
+     */
+    static TaskHandle_t getUploadTaskHandle();
+    
+    /**
+     * @brief Gets the handle to the reachability task
+     * @return TaskHandle_t for the reachability task
+     */
+    static TaskHandle_t getReachabilityTaskHandle();
+    
+    /**
+     * @brief Gets the mutex used to protect upload operations
+     * @return SemaphoreHandle_t for the upload mutex
+     */
+    static SemaphoreHandle_t getUploadMutex();
+    
+    /**
+     * @brief Sets the next time to check backend reachability
+     * @param time Timestamp in milliseconds for next check
+     */
+    static void setNextBackendCheckTime(unsigned long time);
+    
+    /**
+     * @brief Gets the time for the next backend check
+     * @return Timestamp in milliseconds for next check
+     */
+    static unsigned long getNextBackendCheckTime();
+    
+    /**
+     * @brief Sets the current interval for backend checks
+     * @param interval Time in milliseconds between checks
+     */
+    static void setCurrentBackendInterval(unsigned long interval);
+    
+    /**
+     * @brief Gets the current interval for backend checks
+     * @return Time in milliseconds between checks
+     */
+    static unsigned long getCurrentBackendInterval();
+    
+    /**
+     * @brief Checks if the backend is currently reachable
+     * @return true if backend is reachable, false otherwise
+     */
+    static bool isReachable();
+    
+    /**
+     * @brief Queues a file for upload to the backend
+     * @param filename Path to the file to upload
+     */
+    static void uploadFile(const String& filename);
+
 private:
+    // Private constructor (singleton pattern enforcement)
+    BackendClient() = default;
+    
     // Private static state
     static bool initialized;
     static TaskHandle_t uploadTaskHandle;
@@ -18,43 +112,11 @@ private:
     static unsigned long nextBackendCheckTime;
     static unsigned long currentBackendInterval;
     
-    // Private constructor (singleton pattern enforcement)
-    BackendClient() = default;
-    
     // Internal helper functions
     static void fileUploadTaskFunction(void* parameter);
     static void backendReachabilityTaskFunction(void* parameter);
     static bool checkBackendReachability();
     static bool uploadFileFromBuffer(uint8_t* buffer, size_t size, const String& filename);
-
-public:
-    // Prevent copying and assignment
-    BackendClient(const BackendClient&) = delete;
-    BackendClient& operator=(const BackendClient&) = delete;
-    
-    // Initialization function
-    static bool init(Application* application);
-    
-    // Task management
-    static bool startUploadTask();
-    static bool startReachabilityTask();
-    
-    // Task handle getters
-    static TaskHandle_t getUploadTaskHandle();
-    static TaskHandle_t getReachabilityTaskHandle();
-    
-    // Mutex management
-    static SemaphoreHandle_t getUploadMutex();
-    
-    // Backend check interval management
-    static void setNextBackendCheckTime(unsigned long time);
-    static unsigned long getNextBackendCheckTime();
-    static void setCurrentBackendInterval(unsigned long interval);
-    static unsigned long getCurrentBackendInterval();
-    
-    // Public API functions
-    static bool isReachable();
-    static void uploadFile(const String& filename);
 };
 
 #endif // BACKEND_CLIENT_H
