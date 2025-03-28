@@ -40,6 +40,7 @@ Never use priority 25 (reserved for system tasks)
 - [ ] Look into File Compression like LZ77H (common in HTTP headers)
 - [ ] Add timeout mechanisms to avoid deadlocks if operations fail while holding the SD mutex.
 - [ ] Adjust battery percentage to realistic voltage curve (remove linear dependency)
+- [ ] static method refactor in application class
 
 ---
 
