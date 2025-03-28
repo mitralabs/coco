@@ -52,9 +52,8 @@ public:
     // Deep sleep functions
     /**
      * @brief Enter deep sleep mode
-     * @param sleepTimeMs Sleep duration in milliseconds
      */
-    static void enterDeepSleep(uint64_t sleepTimeMs = SLEEP_TIMEOUT_SEC * 1000000ULL);
+    static void enterDeepSleep();
     
     /**
      * @brief Configure wakeup sources for deep sleep

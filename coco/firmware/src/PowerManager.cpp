@@ -95,14 +95,8 @@ void PowerManager::updateBatteryStatus() {
     batteryPercentage = constrain(percentage, 0, 100);
 }
 
-void PowerManager::enterDeepSleep(uint64_t sleepTimeMs) {
-    if (app) {
-        app->log("Entering deep sleep for " + String(sleepTimeMs / 1000000) + " seconds");
-    }
-    
-    // Configure time-based wakeup
-    esp_sleep_enable_timer_wakeup(sleepTimeMs); // Convert to microseconds
-    
+void PowerManager::enterDeepSleep() {
+
     // Final log before sleep
     if (app) {
         app->log("Going to sleep now. Goodnight!");
@@ -227,6 +221,6 @@ void PowerManager::initDeepSleep() {
     }
 
     // Enter deep sleep
-    enterDeepSleep(SLEEP_TIMEOUT_SEC * 1000000ULL);
+    enterDeepSleep();
     // This function doesn't return
 }
