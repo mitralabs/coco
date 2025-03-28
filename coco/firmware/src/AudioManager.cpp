@@ -142,15 +142,46 @@ bool AudioManager::startAudioFileTask() {
     return true;
 }
 
+bool AudioManager::isBatteryOkForRecording() {
+    if (!app) return false;
+    
+    float batteryVoltage = app->getBatteryVoltage();
+    bool isOk = batteryVoltage >= BATTERY_RECORDING_THRESHOLD;
+    
+    if (!isOk) {
+        app->log("Battery voltage too low for recording: " + String(batteryVoltage) + "V (threshold: " + 
+                String(BATTERY_RECORDING_THRESHOLD) + "V)");
+    }
+    
+    return isOk;
+}
+
+bool AudioManager::canRecord() {
+    if (!app) return false;
+    
+    // Check if recording is requested and battery level is sufficient
+    bool recordRequested = app->isRecordingRequested();
+    bool batteryOk = isBatteryOkForRecording();
+    
+    bool canProceed = recordRequested && batteryOk;
+    
+    if (recordRequested && !batteryOk) {
+        app->log("Recording requested but battery level is too low");
+        // If battery is too low, disable recording request to prevent continuous warnings
+        app->setRecordingRequested(false);
+    }
+    
+    return canProceed;
+}
+
 void AudioManager::recordAudioTask(void* parameter) {
     if (!initialized) {
         init();
     }
     
     while (true) {
-        bool currentlyRequested = app->isRecordingRequested();
         
-        if (currentlyRequested) {
+        if (canRecord()) {
             lastRecordStart = millis(); // Track when recording started
             AudioBuffer audio;
 
@@ -163,8 +194,6 @@ void AudioManager::recordAudioTask(void* parameter) {
                 wasRecording = true;
                 audio.type = AudioBuffer::START;
                 app->log("Started audio recording");
-                
-                // Removed battery level indication - now handled in buttonTimerCallback
             } else {
                 audio.type = AudioBuffer::MIDDLE;
             }
@@ -259,20 +288,6 @@ void AudioManager::audioFileTask(void* parameter) {
             }
             
             free(audio.buffer);
-        }
-
-        // Check if we should enter deep sleep
-        if (app->isReadyForDeepSleep() && 
-            !app->isRecordingRequested() && 
-            !isRecordingActive() &&
-            uxQueueMessagesWaiting(audioQueue) == 0) {
-        
-            // Make sure log queue is also empty before sleep
-            if (!app->hasPendingLogs()) {
-                app->log("Recording stopped and all data processed. Entering deep sleep.");
-                vTaskDelay(pdMS_TO_TICKS(500)); // Short delay to allow log to be written
-                app->initDeepSleep();
-            }
         }
 
         vTaskDelay(pdMS_TO_TICKS(10));

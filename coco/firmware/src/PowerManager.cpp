@@ -217,7 +217,7 @@ void PowerManager::initDeepSleep() {
     // Wait until there are no pending logs
     if (app) {
         while (app->hasPendingLogs()) {
-            delay(10);
+            vTaskDelay(pdMS_TO_TICKS(500));
         }
         
         // Store current time through Application wrapper

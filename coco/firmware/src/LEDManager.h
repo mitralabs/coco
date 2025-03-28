@@ -53,6 +53,14 @@ public:
     static void errorBlinkLED(int interval);
     
     /**
+     * @brief Blink the LED in an error pattern for a specific duration
+     * @param interval Interval between state changes in milliseconds
+     * @param duration Total duration in milliseconds to blink (0 for infinite)
+     * @return True if completed successfully
+     */
+    static bool timedErrorBlinkLED(int interval, unsigned long duration = 0);
+    
+    /**
      * @brief Get the LED mutex
      * @return LED mutex handle
      */

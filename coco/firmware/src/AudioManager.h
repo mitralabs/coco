@@ -82,6 +82,18 @@ public:
      */
     static bool isRecordingActive();
     
+    /**
+     * @brief Check if the battery level is sufficient for recording
+     * @return true if battery level is okay for recording, false otherwise
+     */
+    static bool isBatteryOkForRecording();
+    
+    /**
+     * @brief Check if recording should be allowed (combines battery check and recording request)
+     * @return true if recording is requested and battery is okay, false otherwise
+     */
+    static bool canRecord();
+    
     // I2S management
     /**
      * @brief Initialize the I2S interface for audio recording

@@ -25,15 +25,8 @@ TimerHandle_t buttonTimer = NULL;
 /**********************************
  *      FUNCTION PROTOTYPES       *
  **********************************/
-void setup_from_timer();
-void setup_from_external();
-void setup_from_boot();
-
-void ErrorBlinkLED(int interval);
-void stackMonitorTask(void *parameter);
-void monitorStackUsage(TaskHandle_t taskHandle);
-
-
+void handleWakeup();
+void HandleInitError();
 
 /**********************************
  *     INTERRUPT & CALLBACKS      *
@@ -68,11 +61,6 @@ void buttonTimerCallback(TimerHandle_t xTimer) {
   } else {
     // Normal operation: toggle recording state.
     if (digitalRead(BUTTON_PIN) == LOW) {
-      // If we're currently recording, stopping will trigger deep sleep
-      if (app->isRecordingRequested()) {
-        app->setReadyForDeepSleep(true);
-        app->log("Recording stop requested; will enter deep sleep when safe");
-      }
       app->setRecordingRequested(!app->isRecordingRequested());
       
       // Indicate battery level only when starting recording (not when stopping)
@@ -88,12 +76,13 @@ void buttonTimerCallback(TimerHandle_t xTimer) {
   app->setLEDState(app->isRecordingRequested());
 }
 
+
 /**********************************
  *       SETUP & LOOP             *
  **********************************/
 void setup() {
   Serial.begin(115200);
-  setCpuFrequencyMhz(CPU_FREQ_MHZ);  
+  setCpuFrequencyMhz(240); // Max frequency for setup phase
 
   // Initialize the application
   app = Application::getInstance();
@@ -101,76 +90,22 @@ void setup() {
   // Set up the button pin
   pinMode(BUTTON_PIN, INPUT_PULLUP);
 
-  // Initialize the application before using any of its features
+  // Initialize the application with all subsystems
   if (!app->init()) {
     Serial.println("Failed to initialize application!");
-    while(1) { delay(100); } // Halt
+    HandleInitError(); // Use new error handler
+    // This function won't return
   }
 
   // Create and set timer
   buttonTimer = xTimerCreate("ButtonTimer", pdMS_TO_TICKS(BUTTON_PRESS_TIME), pdFALSE, NULL, buttonTimerCallback);
   
-  // Check wakeup cause using Application's wrapper for PowerManager
-  esp_sleep_wakeup_cause_t wakeup_reason = app->getWakeupCause();
-
-  switch (wakeup_reason) {
-    case ESP_SLEEP_WAKEUP_TIMER:
-      setup_from_timer();
-      break;
-    case ESP_SLEEP_WAKEUP_EXT0:
-      setup_from_external();
-      break;      
-    default:
-      setup_from_boot();
-      break;
-  }
-}
-
-void setup_from_timer() {
-  // Write to log and enter deep sleep again.
-  app->log("Woke from deep sleep (timer).\nTimer wake up routine not yet implemented. Going back to sleep.");
-  app->initDeepSleep();
-}
-
-void setup_from_external() {
-  // If the wake was external, we need to wait for the button press to confirm the wake.
-  app->setExternalWakeTriggered(true);
-  xTimerStart(buttonTimer, 0);
-
-  // Wait until externalWakeValid is updated (avoid indefinite wait with a timeout)
-  unsigned long startTime = millis();
-  while (app->getExternalWakeValid() == -1 && (millis() - startTime < 2000)) {
-    delay(10);  // Small pause allowing timer callback to run.
-  }
-
-  // If decision was valid, proceed with boot.
-  if (app->getExternalWakeValid() == 1) {
-    app->log("Valid external wake, proceeding with boot.");
-    setup_from_boot();
-  } else {
-    app->log("Invalid external wake, entering deep sleep again.");
-    app->initDeepSleep();
-  }
-}
-
-void setup_from_boot() {
-  app->log("\n\n\n======= Boot session: " + String(app->getBootSession()) + "=======");
+  // Handle different wake-up scenarios
+  handleWakeup();
   
-  app->setAudioFileIndex(0);  // Reset audio file index on boot
-  
-  attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), handleButtonPress, FALLING);  // Attach interrupt to the button pin
-
-  // Initialize recording mode
-  if (!app->initRecordingMode()) {
-    app->log("Failed to initialize recording mode!");
-    ErrorBlinkLED(100);
-  }
-  
-  // Use stack monitor task as needed
-  // if(xTaskCreatePinnedToCore(stackMonitorTask, "Stack Monitor", 4096, NULL, 1, NULL, 0) != pdPASS ) {
-  //   app->log("Failed to create stackMonitor task!");
-  //   ErrorBlinkLED(100);
-  // }
+  setCpuFrequencyMhz(CPU_FREQ_MHZ); 
+  // Attach interrupt to the button pin
+  attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), handleButtonPress, FALLING);
 }
 
 void loop() {
@@ -181,32 +116,77 @@ void loop() {
  *       UTILITY FUNCTIONS        *
  **********************************/
 
-void ErrorBlinkLED(int interval) {
-  // stop recording as well
-  app->setRecordingRequested(false);
+ void handleWakeup() {
+  esp_sleep_wakeup_cause_t wakeup_reason = app->getWakeupCause();
+  unsigned long startTime; // Moved the variable declaration outside the switch
+
+  switch (wakeup_reason) {
+    case ESP_SLEEP_WAKEUP_EXT0:
+      // If the wake was external, we need to wait for the button press to confirm the wake.
+      app->setExternalWakeTriggered(true);
+      xTimerStart(buttonTimer, 0);
+
+      // Wait until externalWakeValid is updated (avoid indefinite wait with a timeout)
+      startTime = millis(); // Now just assigning value
+      while (app->getExternalWakeValid() == -1 && (millis() - startTime < 2000)) {
+        delay(10);  // Small pause allowing timer callback to run.
+      }
+
+      // If decision was invalid, system will enter deep sleep via DeepSleepTask
+      if (app->getExternalWakeValid() != 1) {
+        app->log("Invalid external wake, will enter deep sleep soon.");
+      } else {
+        app->log("Valid external wake, proceeding with normal operation.");
+      }
+      break;
+      
+    default:
+      // Normal power-on boot
+      app->log("Normal boot");
+      break;
+  }
+}
+
+void HandleInitError() {
+  // Check if the device was woken by button press using ESP API directly
+  esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
   
-  // Use LED manager for error blinking
-  app->errorBlinkLED(interval);
-  // This function does not return
-}
-
-void stackMonitorTask(void *parameter) {
-  while (true) {
-    monitorStackUsage(app->getRecordAudioTaskHandle());
-    monitorStackUsage(app->getAudioFileTaskHandle());
-    monitorStackUsage(app->getWifiConnectionTaskHandle());
-    monitorStackUsage(app->getBatteryMonitorTaskHandle());
-    monitorStackUsage(app->getUploadTaskHandle());
-    monitorStackUsage(app->getReachabilityTaskHandle());
-    vTaskDelay(pdMS_TO_TICKS(10000)); // Check every 10 seconds
+  if (wakeup_reason == ESP_SLEEP_WAKEUP_EXT0) {
+    // Device was woken by button press - blink for 10 seconds to notify user
+    Serial.println("Init error after button wake - blinking for 10 seconds");
+    
+    // Setup LED directly without using App
+    ledcAttach(LED_PIN, LED_FREQUENCY, LED_RESOLUTION);
+    
+    // Fast blinking for 10 seconds
+    unsigned long startTime = millis();
+    bool ledState = true;
+    
+    while (millis() - startTime < 5000) {
+      ledState = !ledState;
+      ledcWrite(LED_PIN, ledState ? 255 : 0);
+      delay(100); // 100ms interval
+    }
+    
+    // Turn off LED
+    ledcWrite(LED_PIN, 0);
   }
-}
+  
+  // Log the error before deep sleep
+  Serial.println("Init error - entering deep sleep");
+  
+  // Configure external wakeup on button pin
+  esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(BUTTON_PIN), 0); // 0 = LOW trigger level
+  
+  // Configure timer wakeup as a backup
+  esp_sleep_enable_timer_wakeup(SLEEP_TIMEOUT_SEC * 1000000ULL); // in microseconds
+  
+  // Brief delay to allow serial output
+  delay(100);
+  
+  // Enter deep sleep
+  esp_deep_sleep_start();
 
-void monitorStackUsage(TaskHandle_t taskHandle) {
-  if (taskHandle == NULL) {
-    app->log("Task handle is null");
-    return;
-  }
-  UBaseType_t highWaterMark = uxTaskGetStackHighWaterMark(taskHandle);
-  app->log("Task " + String(pcTaskGetName(taskHandle)) + " high water mark: " + String(highWaterMark));
+  // Code should not reach here
+  while(1) { delay(100); }
 }

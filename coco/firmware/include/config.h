@@ -38,6 +38,7 @@
  *      TASK & QUEUE SETTINGS     *
  **********************************/
 #define LOG_QUEUE_SIZE 20       // Size of the log message queue
+#define ENABLE_STACK_MONITORING false  // Enable/disable stack usage monitoring
 
 /**********************************
  *     TIMING & SLEEP SETTINGS    *
@@ -46,6 +47,7 @@
 #define SLEEP_TIMEOUT_SEC 6000   // Deep sleep period in seconds
 #define BATTERY_MONITOR_INTERVAL 60000  // Battery check interval (ms)
 #define TIME_PERSIST_INTERVAL 60000     // Time persistence interval (ms)
+#define DEEP_SLEEP_CHECK_INTERVAL 5000  // Deep sleep readiness check interval (ms)
 
 /**********************************
  *      TIME & DATE SETTINGS      *
@@ -66,5 +68,11 @@
  **********************************/
 #define LED_FREQUENCY 5000       // LED PWM frequency
 #define LED_RESOLUTION 8         // LED PWM resolution
+
+/**********************************
+ *     BATTERY SETTINGS           *
+ **********************************/
+#define BATTERY_UPLOAD_THRESHOLD 3.5  // Minimum battery voltage (V) required for file uploads
+#define BATTERY_RECORDING_THRESHOLD 3.3  // Minimum battery voltage (V) required for recording
 
 #endif // CONFIG_H

@@ -89,6 +89,35 @@ void LEDManager::errorBlinkLED(int interval) {
     }
 }
 
+bool LEDManager::timedErrorBlinkLED(int interval, unsigned long duration) {
+    if (!initialized) {
+        init();
+    }
+    
+    bool led_state = HIGH;
+    unsigned long startTime = millis();
+    bool infinite = (duration == 0);
+    
+    while (infinite || (millis() - startTime < duration)) {
+        if (xSemaphoreTake(ledMutex, portMAX_DELAY) == pdPASS) {
+            led_state = !led_state;
+            ledcWrite(ledPin, led_state ? brightness : 20);  // Use stored brightness for ON state
+            xSemaphoreGive(ledMutex);
+        }
+        
+        // Short delay to allow other tasks to run
+        vTaskDelay(pdMS_TO_TICKS(interval));
+    }
+    
+    // Turn off LED at the end
+    if (xSemaphoreTake(ledMutex, portMAX_DELAY) == pdPASS) {
+        ledcWrite(ledPin, 0);  // LED off
+        xSemaphoreGive(ledMutex);
+    }
+    
+    return true;
+}
+
 void LEDManager::indicateBatteryLevel(int batteryLevel, int blinkDuration, int pauseDuration) {
     if (!initialized) {
         init();

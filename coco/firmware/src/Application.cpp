@@ -35,7 +35,6 @@ Application* Application::getInstance() {
 // Private constructor
 Application::Application() 
     : recordingRequested(false),
-      readyForDeepSleep(false),
       externalWakeTriggered(false),
       externalWakeValid(-1),
       wavFilesAvailable(false),
@@ -49,7 +48,9 @@ Application::Application()
       wifiConnectionTaskHandle(NULL),
       uploadTaskHandle(NULL),
       backendReachabilityTaskHandle(NULL),
-      batteryMonitorTaskHandle(NULL) {
+      batteryMonitorTaskHandle(NULL),
+      deepSleepTaskHandle(NULL),
+      stackMonitorTaskHandle(NULL) {
     
     // Create mutex
     ledMutex = xSemaphoreCreateMutex();
@@ -89,6 +90,12 @@ bool Application::init() {
         // Set TimeManager as the timestamp provider for LogManager
         LogManager::setTimestampProvider(TimeManager::getTimestamp);
         
+        // Log startup information
+        log("\n\n\n======= Boot session: " + String(bootSession) + "=======");
+        
+        // Reset audio file index on boot
+        audioFileIndex = 0;
+        
         if (!PowerManager::init()) {
             Serial.println("Failed to initialize PowerManager");
             return false;
@@ -100,74 +107,82 @@ bool Application::init() {
             return false;
         }
         
+        // Initialize additional modules needed for recording
+        if (!WifiManager::init(this)) {
+            log("Failed to initialize WifiManager");
+            return false;
+        }
+        
+        if (!AudioManager::init(this)) {
+            log("Failed to initialize AudioManager");
+            return false;
+        }
+        
+        if (!BackendClient::init(this)) {
+            log("Failed to initialize BackendClient");
+            return false;
+        }
+        
+        // Start the necessary tasks
+        if (!LogManager::startLogTask()) {
+            log("Failed to start log task");
+            return false;
+        }
+        
+        if (!TimeManager::startPersistenceTask()) {
+            log("Failed to start time persistence task");
+            return false;
+        }
+        
+        if (!AudioManager::startRecordingTask()) {
+            log("Failed to start audio recording task");
+            return false;
+        }
+        setRecordAudioTaskHandle(AudioManager::getRecordAudioTaskHandle());
+        
+        if (!AudioManager::startAudioFileTask()) {
+            log("Failed to start audio file task");
+            return false;
+        }
+        setAudioFileTaskHandle(AudioManager::getAudioFileTaskHandle());
+        
+        if (!WifiManager::startConnectionTask()) {
+            log("Failed to start WiFi connection task");
+            return false;
+        }
+        
+        if (!PowerManager::startBatteryMonitorTask()) {
+            log("Failed to start battery monitor task");
+            return false;
+        }
+        setBatteryMonitorTaskHandle(PowerManager::getBatteryMonitorTaskHandle());
+        
+        if (!BackendClient::startUploadTask()) {
+            log("Failed to start file upload task");
+            return false;
+        }
+        
+        if (!BackendClient::startReachabilityTask()) {
+            log("Failed to start backend reachability task");
+            return false;
+        }
+        
+        // After starting all other tasks, start the deep sleep task
+        if (!startDeepSleepTask()) {
+            log("Failed to start deep sleep task");
+            return false;
+        }
+        
+        // Start stack monitoring task if enabled
+        if (!startStackMonitorTask()) {
+            log("Failed to start stack monitor task");
+            return false;
+        }
+        
         return true;
     } else {
         return false;
     }
-}
-
-bool Application::initRecordingMode() {
-    // Initialize modules needed for recording
-    if (!WifiManager::init(this)) {
-        log("Failed to initialize WifiManager");
-        return false;
-    }
-    
-    if (!AudioManager::init(this)) {
-        log("Failed to initialize AudioManager");
-        return false;
-    }
-    
-    if (!BackendClient::init(this)) {
-        log("Failed to initialize BackendClient");
-        return false;
-    }
-    
-    // Start the necessary tasks
-    if (!LogManager::startLogTask()) {
-        log("Failed to start log task");
-        return false;
-    }
-    
-    if (!TimeManager::startPersistenceTask()) {
-        log("Failed to start time persistence task");
-        return false;
-    }
-    
-    if (!AudioManager::startRecordingTask()) {
-        log("Failed to start audio recording task");
-        return false;
-    }
-    setRecordAudioTaskHandle(AudioManager::getRecordAudioTaskHandle());
-    
-    if (!AudioManager::startAudioFileTask()) {
-        log("Failed to start audio file task");
-        return false;
-    }
-    setAudioFileTaskHandle(AudioManager::getAudioFileTaskHandle());
-    
-    if (!WifiManager::startConnectionTask()) {
-        log("Failed to start WiFi connection task");
-        return false;
-    }
-    
-    if (!PowerManager::startBatteryMonitorTask()) {
-        log("Failed to start battery monitor task");
-        return false;
-    }
-    setBatteryMonitorTaskHandle(PowerManager::getBatteryMonitorTaskHandle());
-    
-    if (!BackendClient::startUploadTask()) {
-        log("Failed to start file upload task");
-        return false;
-    }
-    
-    if (!BackendClient::startReachabilityTask()) {
-        log("Failed to start backend reachability task");
-        return false;
-    }
-    
-    return true;
 }
 
 //-------------------------------------------------------------------------
@@ -179,14 +194,6 @@ bool Application::isRecordingRequested() const {
 
 void Application::setRecordingRequested(bool val) {
     recordingRequested = val;
-}
-
-bool Application::isReadyForDeepSleep() const {
-    return readyForDeepSleep;
-}
-
-void Application::setReadyForDeepSleep(bool val) {
-    readyForDeepSleep = val;
 }
 
 int Application::getBootSession() const {
@@ -202,6 +209,160 @@ void Application::incrementBootSession() {
         preferences.putInt("bootSession", bootSession);
         preferences.end();
     }
+}
+
+bool Application::startDeepSleepTask() {
+    // Create deep sleep monitoring task, without passing 'this' as parameter
+    if (xTaskCreatePinnedToCore(
+        deepSleepTask,
+        "Deep Sleep",
+        4096,
+        NULL,  // No parameter needed now
+        1,     // Lower priority
+        &deepSleepTaskHandle,
+        0      // Run on Core 0
+    ) != pdPASS) {
+        log("Failed to create deep sleep task!");
+        return false;
+    }
+    
+    log("Deep sleep task started");
+    return true;
+}
+
+bool Application::startStackMonitorTask() {
+    // Only start if enabled in config
+    if (ENABLE_STACK_MONITORING) {
+        if (xTaskCreatePinnedToCore(
+            stackMonitorTask,
+            "Stack Monitor",
+            4096,
+            NULL,
+            1,
+            &stackMonitorTaskHandle,
+            0 // Run on Core 0
+        ) != pdPASS) {
+            log("Failed to create stack monitor task!");
+            return false;
+        }
+        
+        log("Stack monitor task started");
+    } else {
+        log("Stack monitoring disabled in config");
+    }
+    
+    return true;
+}
+
+void Application::stackMonitorTask(void* parameter) {
+    // Get the singleton instance
+    Application* app = Application::getInstance();
+    
+    while (true) {
+        app->monitorStackUsage(app->getRecordAudioTaskHandle());
+        app->monitorStackUsage(app->getAudioFileTaskHandle());
+        app->monitorStackUsage(app->getWifiConnectionTaskHandle());
+        app->monitorStackUsage(app->getBatteryMonitorTaskHandle());
+        app->monitorStackUsage(app->getUploadTaskHandle());
+        app->monitorStackUsage(app->getReachabilityTaskHandle());
+        app->monitorStackUsage(app->getDeepSleepTaskHandle());
+        
+        vTaskDelay(pdMS_TO_TICKS(10000)); // Check every 10 seconds
+    }
+}
+
+void Application::monitorStackUsage(TaskHandle_t taskHandle) {
+    if (taskHandle == NULL) {
+        log("Task handle is null");
+        return;
+    }
+    UBaseType_t highWaterMark = uxTaskGetStackHighWaterMark(taskHandle);
+    log("Task " + String(pcTaskGetName(taskHandle)) + " high water mark: " + String(highWaterMark));
+}
+
+TaskHandle_t Application::getStackMonitorTaskHandle() const {
+    return stackMonitorTaskHandle;
+}
+
+void Application::setStackMonitorTaskHandle(TaskHandle_t handle) {
+    stackMonitorTaskHandle = handle;
+}
+
+TaskHandle_t Application::getDeepSleepTaskHandle() const {
+    return deepSleepTaskHandle;
+}
+
+void Application::setDeepSleepTaskHandle(TaskHandle_t handle) {
+    deepSleepTaskHandle = handle;
+}
+
+void Application::deepSleepTask(void* parameter) {
+    
+    // Record the task start time
+    TickType_t startTime = xTaskGetTickCount();
+    bool initialDelayPassed = false;
+    
+    // Get singleton instance
+    Application* app = Application::getInstance();
+    app->log("Deep sleep task starting with 3 second initialization delay");
+
+    while (true) {
+        // Check if initial delay has passed
+        if (!initialDelayPassed) {
+            TickType_t currentTime = xTaskGetTickCount();
+            if ((currentTime - startTime) >= pdMS_TO_TICKS(3000)) {
+                // Mark initial delay as passed
+                initialDelayPassed = true;
+                app->log("Deep sleep task initialization delay complete, monitoring can begin");
+            } else {
+                // Still in delay period, wait and continue
+                vTaskDelay(pdMS_TO_TICKS(100)); // Short sleep before checking again
+                continue;
+            }
+        }
+        
+        // Check if system is idle and can enter deep sleep
+        if (app->isSystemIdle() && initialDelayPassed) {
+            app->initDeepSleep();
+        }
+        
+        // Check periodically
+        vTaskDelay(pdMS_TO_TICKS(DEEP_SLEEP_CHECK_INTERVAL));
+    }
+}
+
+
+
+bool Application::isSystemIdle() const {
+    // System is idle when:
+    // 1. Can't record audio (no recording requested or battery too low)
+    // 2. Can't upload files (no wifi/backend connectivity or battery too low)
+    // 3. Not currently recording audio
+    // 4. No audio files in processing queue
+    
+    // Check if system can record or upload
+    bool canRecord = AudioManager::canRecord();
+    bool canUpload = BackendClient::canUploadFiles();
+    
+    // If system can either record or upload, it's not idle
+    if (canRecord || canUpload) {
+        return false;
+    }
+    
+    // Even if we can't record or upload, check if recording is active
+    if (AudioManager::isRecordingActive()) {
+        return false;
+    }
+    
+    // Check if there are audio data waiting in the queue
+    if (AudioManager::getAudioQueue() != NULL) {
+        if (uxQueueMessagesWaiting(AudioManager::getAudioQueue()) > 0) {
+            return false;
+        }
+    }
+    
+    // All checks passed, system is idle
+    return true;
 }
 
 //-------------------------------------------------------------------------
@@ -407,6 +568,10 @@ esp_sleep_wakeup_cause_t Application::getWakeupCause() {
     return PowerManager::getWakeupCause();
 }
 
+float Application::getBatteryVoltage() {
+    return PowerManager::getBatteryVoltage();
+}
+
 // LED Manager wrapper functions
 SemaphoreHandle_t Application::getLedMutex() {
     return LEDManager::getLEDMutex();
@@ -430,4 +595,8 @@ void Application::indicateBatteryLevel() {
 
 void Application::errorBlinkLED(int interval) {
     LEDManager::errorBlinkLED(interval);
+}
+
+bool Application::timedErrorBlinkLED(int interval, unsigned long duration) {
+    return LEDManager::timedErrorBlinkLED(interval, duration);
 }

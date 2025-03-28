@@ -50,16 +50,10 @@ public:
     static Application* getInstance();
     
     /**
-     * @brief Initializes the application
+     * @brief Initializes the application and all its subsystems
      * @return True if initialization succeeded, false otherwise
      */
     bool init();
-    
-    /**
-     * @brief Prepares the application for audio recording mode
-     * @return True if initialization succeeded, false otherwise
-     */
-    bool initRecordingMode();
     
     //-------------------------------------------------------------------------
     // State Management
@@ -77,17 +71,53 @@ public:
     void setRecordingRequested(bool val);
     
     /**
-     * @brief Checks if the system is ready to enter deep sleep
-     * @return True if ready for deep sleep, false otherwise
+     * @brief Starts the deep sleep task that monitors system for idle state
+     * @return True if task started successfully, false otherwise
      */
-    bool isReadyForDeepSleep() const;
+    bool startDeepSleepTask();
     
     /**
-     * @brief Sets the ready for deep sleep state
-     * @param val The new ready for deep sleep state
+     * @brief Gets the handle of the deep sleep task
+     * @return FreeRTOS task handle
      */
-    void setReadyForDeepSleep(bool val);
+    TaskHandle_t getDeepSleepTaskHandle() const;
     
+    /**
+     * @brief Sets the handle of the deep sleep task
+     * @param handle FreeRTOS task handle
+     */
+    void setDeepSleepTaskHandle(TaskHandle_t handle);
+    
+    /**
+     * @brief Deep sleep task that periodically checks if device can enter sleep
+     * @param parameter Task parameter (unused)
+     */
+    static void deepSleepTask(void* parameter);
+    
+    /**
+     * @brief Stack monitoring task that periodically checks stack usage
+     * @param parameter Task parameter (unused)
+     */
+    static void stackMonitorTask(void* parameter);
+    
+    /**
+     * @brief Starts the stack monitoring task if enabled in config
+     * @return True if task started or not needed, false on failure
+     */
+    bool startStackMonitorTask();
+    
+    /**
+     * @brief Monitor stack usage of a specific task
+     * @param taskHandle Handle of the task to monitor
+     */
+    void monitorStackUsage(TaskHandle_t taskHandle);
+    
+    /**
+     * @brief Checks if the system is in idle state (not recording or uploading)
+     * @return True if system is idle, false otherwise
+     */
+    bool isSystemIdle() const;
+
     /**
      * @brief Gets the current boot session counter
      * @return The boot session count
@@ -173,6 +203,18 @@ public:
      * @param handle FreeRTOS task handle
      */
     void setBatteryMonitorTaskHandle(TaskHandle_t handle);
+    
+    /**
+     * @brief Gets the handle of the stack monitor task
+     * @return FreeRTOS task handle
+     */
+    TaskHandle_t getStackMonitorTaskHandle() const;
+    
+    /**
+     * @brief Sets the handle of the stack monitor task
+     * @param handle FreeRTOS task handle
+     */
+    void setStackMonitorTaskHandle(TaskHandle_t handle);
     
     //-------------------------------------------------------------------------
     // Resource Management
@@ -402,12 +444,19 @@ public:
      */
     esp_sleep_wakeup_cause_t getWakeupCause();
     
+    /**
+     * @brief Gets the current battery voltage
+     * @return float Battery voltage in volts
+     */
+    float getBatteryVoltage();
+    
     // LED Manager wrappers
     SemaphoreHandle_t getLedMutex();
     void setLEDState(bool state);
     void setLEDBrightness(int brightness);
     void indicateBatteryLevel();
     void errorBlinkLED(int interval);
+    bool timedErrorBlinkLED(int interval, unsigned long duration);
     
 private:
     // Private constructor and deleted copy/assignment for singleton pattern
@@ -418,7 +467,6 @@ private:
     // Member variables for application state
     static Application* instance;
     bool recordingRequested;
-    bool readyForDeepSleep;
     bool externalWakeTriggered;
     int externalWakeValid; // -1: undetermined, 0: invalid, 1: valid
     bool wavFilesAvailable;
@@ -435,6 +483,8 @@ private:
     TaskHandle_t uploadTaskHandle;
     TaskHandle_t backendReachabilityTaskHandle;
     TaskHandle_t batteryMonitorTaskHandle;
+    TaskHandle_t deepSleepTaskHandle;
+    TaskHandle_t stackMonitorTaskHandle;
     
     // Mutex for LED access
     SemaphoreHandle_t ledMutex;

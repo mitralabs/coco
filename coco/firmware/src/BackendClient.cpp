@@ -142,10 +142,45 @@ void BackendClient::uploadFile(const String& filename) {
     app->addToUploadQueue(filename);
 }
 
+bool BackendClient::isBatteryOkForUpload() {
+    if (!app) return false;
+    
+    float batteryVoltage = app->getBatteryVoltage();
+    bool isOk = batteryVoltage >= BATTERY_UPLOAD_THRESHOLD;
+    
+    if (!isOk) {
+        app->log("Battery voltage too low for upload: " + String(batteryVoltage) + "V (threshold: " + 
+                String(BATTERY_UPLOAD_THRESHOLD) + "V)");
+    }
+    
+    return isOk;
+}
+
+bool BackendClient::canUploadFiles() {
+    if (!app) return false;
+    
+    // Check all conditions required for file upload
+    bool wifiConnected = app->isWifiConnected();
+    bool backendReachable = app->isBackendReachable();
+    bool filesInQueue = app->hasWavFilesAvailable();
+    bool batteryOk = isBatteryOkForUpload();
+    
+    bool canUpload = wifiConnected && backendReachable && filesInQueue && batteryOk;
+    
+    if (!canUpload) {
+        app->log("Upload conditions not met: WiFi=" + String(wifiConnected ? "yes" : "no") + 
+                ", Backend=" + String(backendReachable ? "yes" : "no") + 
+                ", Files=" + String(filesInQueue ? "yes" : "no") + 
+                ", Battery=" + String(batteryOk ? "ok" : "low"));
+    }
+    
+    return canUpload;
+}
+
 void BackendClient::fileUploadTaskFunction(void* parameter) {
     while (true) {
-        // Only proceed if WiFi is connected
-        if (app->isWifiConnected() && app->isBackendReachable()) {
+        // Check if all conditions for upload are met
+        if (canUploadFiles()) {
             // Check if we're already uploading
             if (xSemaphoreTake(uploadMutex, 0) == pdTRUE) {
                 app->setUploadInProgress(true);

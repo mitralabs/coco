@@ -98,6 +98,18 @@ public:
      * @param filename Path to the file to upload
      */
     static void uploadFile(const String& filename);
+    
+    /**
+     * @brief Checks if battery voltage is above threshold for uploading
+     * @return true if battery voltage is above threshold, false otherwise
+     */
+    static bool isBatteryOkForUpload();
+    
+    /**
+     * @brief Checks if all upload conditions are met
+     * @return true if WiFi is connected, backend is reachable, files are in queue, and battery is above threshold
+     */
+    static bool canUploadFiles();
 
 private:
     // Private constructor (singleton pattern enforcement)
@@ -117,6 +129,9 @@ private:
     static void backendReachabilityTaskFunction(void* parameter);
     static bool checkBackendReachability();
     static bool uploadFileFromBuffer(uint8_t* buffer, size_t size, const String& filename);
+    
+    // Upload conditions meta variable
+    static bool uploadConditionsMet();
 };
 
 #endif // BACKEND_CLIENT_H
