@@ -301,6 +301,56 @@ bool FileSystem::readFileToBuffer(const String& path, uint8_t** buffer, size_t& 
     return true;
 }
 
+bool FileSystem::readFileToFixedBuffer(const String& path, uint8_t* buffer, size_t bufferSize, size_t& readSize) {
+    if (!initialized && !init()) {
+        return false;
+    }
+    
+    if (!buffer || bufferSize == 0) {
+        app->log("ERROR: Invalid buffer provided for file read operation");
+        return false;
+    }
+
+    readSize = 0;
+
+    SDLockGuard lock(sdMutex);
+    if (!lock.isLocked()) {
+        app->log("ERROR: Failed to take SD card mutex for file read operation");
+        return false;
+    }
+
+    if (!SD.exists(path)) {
+        app->log("ERROR: File does not exist: " + path);
+        return false;
+    }
+
+    File file = SD.open(path, FILE_READ);
+    if (!file) {
+        app->log("ERROR: Failed to open file for reading: " + path);
+        return false;
+    }
+
+    size_t fileSize = file.size();
+    if (fileSize > bufferSize) {
+        app->log("ERROR: File size (" + String(fileSize) + " bytes) exceeds buffer size (" + 
+                String(bufferSize) + " bytes): " + path);
+        file.close();
+        return false;
+    }
+
+    readSize = file.read(buffer, fileSize);
+    file.close();
+
+    if (readSize != fileSize) {
+        app->log("ERROR: Failed to read entire file: " + path + 
+                " (read " + String(readSize) + " of " + String(fileSize) + " bytes)");
+        readSize = 0;
+        return false;
+    }
+
+    return true;
+}
+
 bool FileSystem::deleteFile(const String& path) {
     if (!initialized && !init()) {
         return false;

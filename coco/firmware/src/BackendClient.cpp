@@ -20,6 +20,7 @@ Application* BackendClient::app = nullptr;
 SemaphoreHandle_t BackendClient::uploadMutex = nullptr;
 unsigned long BackendClient::nextBackendCheckTime = 0;
 unsigned long BackendClient::currentBackendInterval = MIN_SCAN_INTERVAL;
+uint8_t* BackendClient::uploadBuffer = nullptr;
 
 bool BackendClient::init(Application* application) {
     // Check if already initialized
@@ -44,6 +45,14 @@ bool BackendClient::init(Application* application) {
         app->log("BackendClient: Failed to create upload mutex");
         return false;
     }
+    
+    // Allocate fixed buffer in PSRAM
+    uploadBuffer = (uint8_t*)heap_caps_malloc(UPLOAD_BUFFER_SIZE, MALLOC_CAP_SPIRAM);
+    if (!uploadBuffer) {
+        app->log("BackendClient: Failed to allocate PSRAM for upload buffer");
+        return false;
+    }
+    app->log("BackendClient: Allocated " + String(UPLOAD_BUFFER_SIZE / 1024) + "KB PSRAM buffer for uploads");
     
     nextBackendCheckTime = 0;
     currentBackendInterval = MIN_SCAN_INTERVAL;
@@ -178,6 +187,13 @@ bool BackendClient::canUploadFiles() {
 }
 
 void BackendClient::fileUploadTaskFunction(void* parameter) {
+    // Check if uploadBuffer was properly allocated in PSRAM
+    if (!uploadBuffer) {
+        app->log("ERROR: Upload buffer was not allocated in PSRAM. Terminating upload task.");
+        vTaskDelete(nullptr);
+        return;
+    }
+
     while (true) {
         // Check if all conditions for upload are met
         if (canUploadFiles()) {
@@ -191,17 +207,13 @@ void BackendClient::fileUploadTaskFunction(void* parameter) {
                 if (nextFile.length() > 0) {
                     app->log("Processing next file from queue: " + nextFile);
                     
-                    // Read file into buffer using Application wrapper
-                    uint8_t* fileBuffer = nullptr;
+                    // Read file into fixed PSRAM buffer
                     size_t fileSize = 0;
                     
-                    if (app->readFileToBuffer(nextFile, &fileBuffer, fileSize)) {
-                        // Upload the file from RAM
-                        app->log("Uploading file from buffer: " + nextFile);
-                        bool uploadSuccess = uploadFileFromBuffer(fileBuffer, fileSize, nextFile);
-                        
-                        // Free the buffer memory
-                        free(fileBuffer);
+                    if (app->readFileToFixedBuffer(nextFile, uploadBuffer, UPLOAD_BUFFER_SIZE, fileSize)) {
+                        // Upload the file from fixed buffer
+                        app->log("Uploading file from fixed buffer: " + nextFile + " (" + String(fileSize) + " bytes)");
+                        bool uploadSuccess = uploadFileFromBuffer(fileSize, nextFile);
                         
                         // If upload was successful, delete the file and remove from queue
                         if (uploadSuccess) {
@@ -236,8 +248,8 @@ void BackendClient::fileUploadTaskFunction(void* parameter) {
     }
 }
 
-bool BackendClient::uploadFileFromBuffer(uint8_t* buffer, size_t size, const String& filename) {
-    if (!buffer || size == 0) {
+bool BackendClient::uploadFileFromBuffer(size_t size, const String& filename) {
+    if (size == 0 || !uploadBuffer) {
         return false;
     }
     
@@ -269,7 +281,7 @@ bool BackendClient::uploadFileFromBuffer(uint8_t* buffer, size_t size, const Str
                         String(bareFilename) + "\"");
 
     // Send the request with the file data from buffer
-    int httpResponseCode = client.sendRequest("POST", buffer, size);
+    int httpResponseCode = client.sendRequest("POST", uploadBuffer, size);
     
     if (httpResponseCode > 0) {
         app->log("HTTP Response code: " + String(httpResponseCode));

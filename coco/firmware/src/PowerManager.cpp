@@ -14,10 +14,7 @@ TaskHandle_t PowerManager::batteryMonitorTaskHandle = NULL;
 Application* PowerManager::app = nullptr;
 
 // Constants definition
-const float PowerManager::BATTERY_MIN_VOLTAGE = 3.3f;   // Minimum battery voltage (empty)
-const float PowerManager::BATTERY_MAX_VOLTAGE = 4.2f;   // Maximum battery voltage (full)
 const int PowerManager::BATTERY_ADC_PIN = BATTERY_PIN;  // ADC pin used for battery voltage reading (from config.h)
-const float PowerManager::VOLTAGE_DIVIDER_RATIO = 2.0f; // Based on the voltage divider used in the hardware
 
 bool PowerManager::init(Application* appInstance) {
     if (initialized) {

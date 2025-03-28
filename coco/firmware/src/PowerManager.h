@@ -120,10 +120,7 @@ private:
     static Application* app;
     
     // Battery monitoring configuration
-    static const float BATTERY_MIN_VOLTAGE;
-    static const float BATTERY_MAX_VOLTAGE;
     static const int BATTERY_ADC_PIN;
-    static const float VOLTAGE_DIVIDER_RATIO;
     
     /**
      * @brief Update the battery voltage and percentage values

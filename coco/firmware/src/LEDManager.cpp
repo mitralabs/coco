@@ -68,7 +68,13 @@ void LEDManager::setLEDBrightness(int newBrightness) {
     }
     
     if (xSemaphoreTake(ledMutex, portMAX_DELAY) == pdPASS) {
-        brightness = newBrightness;  // Store the brightness value without changing LED state
+        brightness = newBrightness;  // Store the brightness value
+        
+        // If recording is active, update the LED with new brightness immediately
+        if (app->isRecordingRequested()) {
+            ledcWrite(ledPin, brightness);
+        }
+        
         xSemaphoreGive(ledMutex);
     }
 }

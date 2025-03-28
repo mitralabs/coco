@@ -15,10 +15,14 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <HTTPClient.h>
+#include <esp_heap_caps.h>
 
 #include "Application.h"
 #include "config.h"
 #include "secrets.h"
+
+// 512KB PSRAM buffer size
+#define UPLOAD_BUFFER_SIZE (512 * 1024)
 
 class BackendClient {
 public:
@@ -123,12 +127,13 @@ private:
     static SemaphoreHandle_t uploadMutex;
     static unsigned long nextBackendCheckTime;
     static unsigned long currentBackendInterval;
+    static uint8_t* uploadBuffer;  // Fixed-size PSRAM buffer
     
     // Internal helper functions
     static void fileUploadTaskFunction(void* parameter);
     static void backendReachabilityTaskFunction(void* parameter);
     static bool checkBackendReachability();
-    static bool uploadFileFromBuffer(uint8_t* buffer, size_t size, const String& filename);
+    static bool uploadFileFromBuffer(size_t size, const String& filename);
     
     // Upload conditions meta variable
     static bool uploadConditionsMet();

@@ -93,6 +93,9 @@ bool Application::init() {
         // Log startup information
         log("\n\n\n======= Boot session: " + String(bootSession) + "=======");
         
+        // Log initial free heap
+        log("Initial free heap: " + String(ESP.getFreeHeap()) + " bytes");
+
         // Reset audio file index on boot
         audioFileIndex = 0;
         
@@ -323,6 +326,7 @@ void Application::deepSleepTask(void* parameter) {
         
         // Check if system is idle and can enter deep sleep
         if (app->isSystemIdle() && initialDelayPassed) {
+            app->log("System is idle, preparing for deep sleep. Free heap: " + String(ESP.getFreeHeap()) + " bytes");
             app->initDeepSleep();
         }
         
@@ -545,6 +549,10 @@ bool Application::addToFile(const String& filename, const String& content) {
 
 bool Application::readFileToBuffer(const String& filename, uint8_t** buffer, size_t& size) {
     return FileSystem::readFileToBuffer(filename, buffer, size);
+}
+
+bool Application::readFileToFixedBuffer(const String& path, uint8_t* buffer, size_t bufferSize, size_t& readSize) {
+    return FileSystem::readFileToFixedBuffer(path, buffer, bufferSize, readSize);
 }
 
 String Application::getNextUploadFile() {

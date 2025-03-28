@@ -83,12 +83,23 @@ public:
     static String readFile(const String& path);
 
     /**
+     * @brief Read a file into a provided fixed buffer
+     * @param path File path
+     * @param buffer Pre-allocated buffer to read into
+     * @param bufferSize Size of the pre-allocated buffer
+     * @param readSize Reference to variable that will receive the actual number of bytes read
+     * @return true if file was read successfully, false otherwise
+     */
+    static bool readFileToFixedBuffer(const String& path, uint8_t* buffer, size_t bufferSize, size_t& readSize);
+
+    /**
      * @brief Read a file into a binary buffer
      * @param path File path
      * @param buffer Pointer to buffer pointer that will be allocated
      * @param size Reference to size variable that will be set
      * @return true if file was read successfully, false otherwise
      * @note Caller is responsible for freeing the allocated buffer
+     * @deprecated Use readFileToFixedBuffer instead
      */
     static bool readFileToBuffer(const String& path, uint8_t** buffer, size_t& size);
 

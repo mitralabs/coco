@@ -410,8 +410,19 @@ public:
      * @param buffer Pointer to the buffer pointer that will be allocated
      * @param size Size of the allocated buffer
      * @return True if successful, false otherwise
+     * @deprecated Use readFileToFixedBuffer instead
      */
     bool readFileToBuffer(const String& filename, uint8_t** buffer, size_t& size);
+    
+    /**
+     * @brief Reads a file into a pre-allocated fixed buffer
+     * @param path Path to the file
+     * @param buffer Pre-allocated buffer to read into
+     * @param bufferSize Size of the pre-allocated buffer
+     * @param readSize Reference to variable that will receive actual bytes read
+     * @return True if successful, false otherwise
+     */
+    bool readFileToFixedBuffer(const String& path, uint8_t* buffer, size_t bufferSize, size_t& readSize);
     
     /**
      * @brief Gets the next file from the upload queue

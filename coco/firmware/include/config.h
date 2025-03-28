@@ -72,7 +72,10 @@
 /**********************************
  *     BATTERY SETTINGS           *
  **********************************/
-#define BATTERY_UPLOAD_THRESHOLD 3.5  // Minimum battery voltage (V) required for file uploads
-#define BATTERY_RECORDING_THRESHOLD 3.3  // Minimum battery voltage (V) required for recording
+#define BATTERY_UPLOAD_THRESHOLD 3.7  // Minimum battery voltage (V) required for file uploads
+#define BATTERY_RECORDING_THRESHOLD 3.55  // Minimum battery voltage (V) required for recording
+#define BATTERY_MIN_VOLTAGE 3.5f   // Minimum battery voltage (empty)
+#define BATTERY_MAX_VOLTAGE 4.2f   // Maximum battery voltage (full)
+#define VOLTAGE_DIVIDER_RATIO 2.0f // Based on the voltage divider used in the hardware
 
 #endif // CONFIG_H
