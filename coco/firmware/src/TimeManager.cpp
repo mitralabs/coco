@@ -60,11 +60,11 @@ bool TimeManager::init(Application* application) {
         tv.tv_usec = 0;
         settimeofday(&tv, NULL);
     }
-    
+        
+    initialized = true;
+
     // Store time immediately to SD card to ensure consistency
     storeCurrentTime();
-    
-    initialized = true;
     return true;
 }
 

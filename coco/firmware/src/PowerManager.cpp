@@ -47,6 +47,8 @@ bool PowerManager::init(Application* appInstance) {
     if (app) {
         app->log("PowerManager initialized, battery: " + String(batteryVoltage, 2) + "V (" + 
                     String(batteryPercentage) + "%)");
+        // Log the wakeup cause
+        app->log("Woke up from: " + String(wakeupCause));
     }
     
     initialized = true;
