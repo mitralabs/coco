@@ -74,11 +74,8 @@ void buttonTimerCallback(TimerHandle_t xTimer) {
       app->log(app->isRecordingRequested() ? "Recording start requested" : "Recording stop requested");
     }
   }
-  // Update the LED state.
-  if (xSemaphoreTake(app->getLedMutex(), portMAX_DELAY) == pdPASS) {
-    ledcWrite(LED_PIN, app->isRecordingRequested() ? 255 : 0);  // 255 is full brightness, 0 is off
-    xSemaphoreGive(app->getLedMutex());
-  }
+  // Update the LED state using the LED manager
+  app->setLEDState(app->isRecordingRequested());
 }
 
 /**********************************
@@ -91,9 +88,6 @@ void setup() {
   // Initialize the application
   app = Application::getInstance();
   
-  ledcAttach(LED_PIN, LED_FREQUENCY, LED_RESOLUTION);
-  ledcWrite(LED_PIN, 0);  // LED off initially
-
   // Set up the button pin
   pinMode(BUTTON_PIN, INPUT_PULLUP);
 
@@ -177,20 +171,13 @@ void loop() {
  *       UTILITY FUNCTIONS        *
  **********************************/
 
- void ErrorBlinkLED(int interval) {
+void ErrorBlinkLED(int interval) {
   // stop recording as well
   app->setRecordingRequested(false);
-
-  bool led_state = HIGH;
-  while (true) {
-    SemaphoreHandle_t ledMutex = app->getLedMutex();
-    if (xSemaphoreTake(ledMutex, portMAX_DELAY) == pdPASS) {
-      led_state = !led_state;
-      ledcWrite(LED_PIN, led_state ? 255 : 20);
-      xSemaphoreGive(ledMutex);
-    }
-    vTaskDelay(pdMS_TO_TICKS(interval));
-  }
+  
+  // Use LED manager for error blinking
+  app->errorBlinkLED(interval);
+  // This function does not return
 }
 
 void stackMonitorTask(void *parameter) {

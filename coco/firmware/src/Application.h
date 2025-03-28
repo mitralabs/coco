@@ -16,9 +16,11 @@
 #include <Arduino.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
+#include <esp_sleep.h>
 
 // Project includes
 #include "config.h"
+#include "LEDManager.h"
 
 // Forward declarations for required classes
 class FileSystem;
@@ -400,6 +402,12 @@ public:
      */
     esp_sleep_wakeup_cause_t getWakeupCause();
     
+    // LED Manager wrappers
+    SemaphoreHandle_t getLedMutex();
+    void setLEDState(bool state);
+    void setLEDBrightness(int brightness);
+    void errorBlinkLED(int interval);
+    
 private:
     // Private constructor and deleted copy/assignment for singleton pattern
     Application();
@@ -431,6 +439,9 @@ private:
     SemaphoreHandle_t ledMutex;
     // Mutex for HTTP operations
     SemaphoreHandle_t httpMutex;
+    
+    // LED Manager
+    LEDManager* ledManager;
 };
 
 #endif // APPLICATION_H

@@ -57,6 +57,7 @@ float PowerManager::getBatteryVoltage() {
     if (!initialized) {
         init();
     }
+    // Only update battery status when needed
     updateBatteryStatus();
     return batteryVoltage;
 }
@@ -65,6 +66,7 @@ int PowerManager::getBatteryPercentage() {
     if (!initialized) {
         init();
     }
+    // Only update battery status when needed
     updateBatteryStatus();
     return batteryPercentage;
 }

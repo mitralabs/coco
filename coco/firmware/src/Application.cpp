@@ -94,6 +94,13 @@ bool Application::init() {
             return false;
         }
         
+        // Initialize LED Manager
+        ledManager = LEDManager::getInstance();
+        if (!ledManager->init(this)) {
+            log("Failed to initialize LED Manager!");
+            return false;
+        }
+        
         return true;
     } else {
         return false;
@@ -399,4 +406,21 @@ void Application::initDeepSleep() {
 
 esp_sleep_wakeup_cause_t Application::getWakeupCause() {
     return PowerManager::getWakeupCause();
+}
+
+// LED Manager wrapper functions
+SemaphoreHandle_t Application::getLedMutex() {
+    return ledManager->getLEDMutex();
+}
+
+void Application::setLEDState(bool state) {
+    ledManager->setLEDState(state);
+}
+
+void Application::setLEDBrightness(int brightness) {
+    ledManager->setLEDBrightness(brightness);
+}
+
+void Application::errorBlinkLED(int interval) {
+    ledManager->errorBlinkLED(interval);
 }
