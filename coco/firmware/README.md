@@ -41,6 +41,8 @@ Never use priority 25 (reserved for system tasks)
 - [ ] Add timeout mechanisms to avoid deadlocks if operations fail while holding the SD mutex.
 - [ ] Adjust battery percentage to realistic voltage curve (remove linear dependency)
 - [ ] static method refactor in application class
+- [ ] only enter ip adress once
+- [ ] fix buffer for file upload operations
 
 ---
 
