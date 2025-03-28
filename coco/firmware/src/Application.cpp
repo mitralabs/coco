@@ -95,8 +95,7 @@ bool Application::init() {
         }
         
         // Initialize LED Manager
-        ledManager = LEDManager::getInstance();
-        if (!ledManager->init(this)) {
+        if (!LEDManager::init(this)) {
             log("Failed to initialize LED Manager!");
             return false;
         }
@@ -410,17 +409,25 @@ esp_sleep_wakeup_cause_t Application::getWakeupCause() {
 
 // LED Manager wrapper functions
 SemaphoreHandle_t Application::getLedMutex() {
-    return ledManager->getLEDMutex();
+    return LEDManager::getLEDMutex();
 }
 
 void Application::setLEDState(bool state) {
-    ledManager->setLEDState(state);
+    LEDManager::setLEDState(state);
 }
 
 void Application::setLEDBrightness(int brightness) {
-    ledManager->setLEDBrightness(brightness);
+    LEDManager::setLEDBrightness(brightness);
+}
+
+void Application::indicateBatteryLevel() {
+    // Get the battery level category from PowerManager
+    int batteryLevel = PowerManager::getBatteryLevelCategory();
+    
+    // Indicate the battery level through LED blinks
+    LEDManager::indicateBatteryLevel(batteryLevel);
 }
 
 void Application::errorBlinkLED(int interval) {
-    ledManager->errorBlinkLED(interval);
+    LEDManager::errorBlinkLED(interval);
 }

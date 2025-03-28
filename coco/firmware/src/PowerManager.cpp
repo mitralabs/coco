@@ -179,6 +179,12 @@ void PowerManager::batteryMonitorTask(void* parameter) {
         
         if (app) {
             app->log("Battery: " + String(voltage, 2) + "V (" + String(percentage) + "%)");
+            
+            // Set LED brightness based on battery percentage
+            // Map 0-100% to a brightness range (we'll use 5-255)
+            // Using a minimum of 5 to ensure LED is still visible even at very low battery
+            int brightness = map(percentage, 0, 100, 5, 255);
+            app->setLEDBrightness(brightness);
         }
         
         // Wait before next measurement
@@ -188,6 +194,20 @@ void PowerManager::batteryMonitorTask(void* parameter) {
 
 TaskHandle_t PowerManager::getBatteryMonitorTaskHandle() {
     return batteryMonitorTaskHandle;
+}
+
+int PowerManager::getBatteryLevelCategory() {
+    int percentage = getBatteryPercentage();
+    
+    if (percentage >= 75) {
+        return 4;       // 75-100%: 4 blinks
+    } else if (percentage >= 50) {
+        return 3;       // 50-75%: 3 blinks
+    } else if (percentage >= 25) {
+        return 2;       // 25-50%: 2 blinks
+    } else {
+        return 1;       // 0-25%: 1 blink
+    }
 }
 
 void PowerManager::initDeepSleep() {

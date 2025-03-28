@@ -406,6 +406,7 @@ public:
     SemaphoreHandle_t getLedMutex();
     void setLEDState(bool state);
     void setLEDBrightness(int brightness);
+    void indicateBatteryLevel();
     void errorBlinkLED(int interval);
     
 private:
@@ -439,9 +440,6 @@ private:
     SemaphoreHandle_t ledMutex;
     // Mutex for HTTP operations
     SemaphoreHandle_t httpMutex;
-    
-    // LED Manager
-    LEDManager* ledManager;
 };
 
 #endif // APPLICATION_H

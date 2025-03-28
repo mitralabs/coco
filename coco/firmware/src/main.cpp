@@ -56,6 +56,9 @@ void buttonTimerCallback(TimerHandle_t xTimer) {
       app->setExternalWakeValid(1);
       app->setRecordingRequested(true);
       app->log("Sustained button press confirmed; proceeding with boot.");
+      
+      // Indicate battery level when recording starts after external wake
+      app->indicateBatteryLevel();
     } else {
       // Invalid wake: button released too soon.
       app->setExternalWakeValid(0);
@@ -71,7 +74,14 @@ void buttonTimerCallback(TimerHandle_t xTimer) {
         app->log("Recording stop requested; will enter deep sleep when safe");
       }
       app->setRecordingRequested(!app->isRecordingRequested());
-      app->log(app->isRecordingRequested() ? "Recording start requested" : "Recording stop requested");
+      
+      // Indicate battery level only when starting recording (not when stopping)
+      if (app->isRecordingRequested()) {
+        app->log("Recording start requested");
+        app->indicateBatteryLevel();
+      } else {
+        app->log("Recording stop requested");
+      }
     }
   }
   // Update the LED state using the LED manager

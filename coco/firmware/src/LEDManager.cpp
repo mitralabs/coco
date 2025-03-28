@@ -9,26 +9,21 @@
 
 // Initialize static member variables
 bool LEDManager::initialized = false;
-LEDManager* LEDManager::instance = nullptr;
 Application* LEDManager::app = nullptr;
-
-LEDManager::LEDManager() {
-    ledMutex = xSemaphoreCreateMutex();
-    ledPin = LED_PIN;
-    ledFrequency = LED_FREQUENCY;
-    ledResolution = LED_RESOLUTION;
-}
-
-LEDManager* LEDManager::getInstance() {
-    if (instance == nullptr) {
-        instance = new LEDManager();
-    }
-    return instance;
-}
+SemaphoreHandle_t LEDManager::ledMutex = nullptr;
+int LEDManager::ledPin = LED_PIN;
+int LEDManager::ledFrequency = LED_FREQUENCY;
+int LEDManager::ledResolution = LED_RESOLUTION;
+int LEDManager::brightness = 255;  // Default to full brightness
 
 bool LEDManager::init(Application* appInstance, int pin, int frequency, int resolution) {
     if (initialized) {
         return true;
+    }
+    
+    // Create mutex if not already created
+    if (ledMutex == nullptr) {
+        ledMutex = xSemaphoreCreateMutex();
     }
     
     // Store Application instance if provided
@@ -62,18 +57,18 @@ void LEDManager::setLEDState(bool state) {
     }
     
     if (xSemaphoreTake(ledMutex, portMAX_DELAY) == pdPASS) {
-        ledcWrite(ledPin, state ? 255 : 0);  // 255 is full brightness, 0 is off
+        ledcWrite(ledPin, state ? brightness : 0);  // Use stored brightness when turning on
         xSemaphoreGive(ledMutex);
     }
 }
 
-void LEDManager::setLEDBrightness(int brightness) {
+void LEDManager::setLEDBrightness(int newBrightness) {
     if (!initialized) {
         init();
     }
     
     if (xSemaphoreTake(ledMutex, portMAX_DELAY) == pdPASS) {
-        ledcWrite(ledPin, brightness);
+        brightness = newBrightness;  // Store the brightness value without changing LED state
         xSemaphoreGive(ledMutex);
     }
 }
@@ -87,10 +82,45 @@ void LEDManager::errorBlinkLED(int interval) {
     while (true) {
         if (xSemaphoreTake(ledMutex, portMAX_DELAY) == pdPASS) {
             led_state = !led_state;
-            ledcWrite(ledPin, led_state ? 255 : 20);
+            ledcWrite(ledPin, led_state ? brightness : 20);  // Use stored brightness for ON state
             xSemaphoreGive(ledMutex);
         }
         vTaskDelay(pdMS_TO_TICKS(interval));
+    }
+}
+
+void LEDManager::indicateBatteryLevel(int batteryLevel, int blinkDuration, int pauseDuration) {
+    if (!initialized) {
+        init();
+    }
+    
+    // Constrain battery level to 1-4 for safety
+    batteryLevel = constrain(batteryLevel, 1, 4);
+    
+    if (xSemaphoreTake(ledMutex, portMAX_DELAY) == pdPASS) {
+        // Store the current LED state
+        bool originalState = ledcRead(ledPin) > 0;
+        
+        // Blink the LED the specified number of times
+        for (int i = 0; i < batteryLevel; i++) {
+            // Turn on LED
+            ledcWrite(ledPin, brightness);
+            delay(blinkDuration);
+            
+            // Turn off LED
+            ledcWrite(ledPin, 0);
+            
+            // Only pause between blinks, not after the last one
+            if (i < batteryLevel - 1) {
+                delay(pauseDuration);
+            }
+        }
+        
+        // Restore original LED state after a pause
+        delay(pauseDuration * 2);
+        ledcWrite(ledPin, originalState ? brightness : 0);
+        
+        xSemaphoreGive(ledMutex);
     }
 }
 

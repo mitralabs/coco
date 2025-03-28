@@ -163,6 +163,8 @@ void AudioManager::recordAudioTask(void* parameter) {
                 wasRecording = true;
                 audio.type = AudioBuffer::START;
                 app->log("Started audio recording");
+                
+                // Removed battery level indication - now handled in buttonTimerCallback
             } else {
                 audio.type = AudioBuffer::MIDDLE;
             }

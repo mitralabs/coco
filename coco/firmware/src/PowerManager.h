@@ -94,6 +94,16 @@ public:
     static TaskHandle_t getBatteryMonitorTaskHandle();
     
     /**
+     * @brief Get the battery level category (1-4)
+     * @return int Battery level category where:
+     *         4: 75-100%
+     *         3: 50-75%
+     *         2: 25-50%
+     *         1: 0-25%
+     */
+    static int getBatteryLevelCategory();
+    
+    /**
      * @brief Initialize and enter deep sleep mode
      */
     static void initDeepSleep();

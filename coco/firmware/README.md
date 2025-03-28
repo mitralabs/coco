@@ -38,7 +38,8 @@ Never use priority 25 (reserved for system tasks)
 - [ ] Include WiFiMulti, so that multiple Networks are known.
 - [ ] Rewrite logging. It's currently pretty wild.
 - [ ] Look into File Compression like LZ77H (common in HTTP headers)
-
+- [ ] Add timeout mechanisms to avoid deadlocks if operations fail while holding the SD mutex.
+- [ ] Adjust battery percentage to realistic voltage curve (remove linear dependency)
 
 ---
 
