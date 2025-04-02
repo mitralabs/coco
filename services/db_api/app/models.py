@@ -12,6 +12,7 @@ class Document(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     text = Column(String, nullable=False, unique=True)
     embedding = Column(Vector(EMBEDDING_DIM), nullable=False)
+    emotion_embedding = Column(Vector(EMBEDDING_DIM), nullable=True)
     language = Column(String, nullable=False)
     filename = Column(String, nullable=False)
     chunk_index = Column(Integer, nullable=False)
