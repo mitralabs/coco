@@ -1,7 +1,7 @@
 import json
 import logging
-import asyncio
 from typing import List, Dict, Any, Optional
+from tqdm import tqdm
 
 from .tools import ToolsClient
 from .lm import LanguageModelClient
@@ -360,7 +360,7 @@ class AgentClient:
                 logger.info(f"Pulled model {model}")
 
         results = []
-        for query in queries:
+        for query in tqdm(queries, desc="Generating answers with agent"):
             messages = [
                 {"role": "system", "content": system_prompt or self.system_prompt},
                 {"role": "user", "content": query},

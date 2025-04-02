@@ -1,7 +1,7 @@
 [
   {
     "Question": "Mit wem fühle ich mich in Gesprächen nicht so selbstsicher, wie ich es sein könnte?",
-    "Answer": "Michael, dein Vorgesetzter.",
+    "Answer": "Du fühlst dich in Gesprächen mit Michael nicht so selbstsicher.",
     "chunks": [
       {
         "text": "Ich: Guten Morgen, Julia. Ich wollte kurz über das Marketing-Konzept sprechen. Ich denke, wir sollten den Social-Media-Anteil erhöhen.\nJulia: Interessante Idee. Haben Sie das schon ausgearbeitet?\nIch: Ja, hier ist mein Vorschlag. Ich bin überzeugt, dass dieser Ansatz besser funktionieren wird.",
@@ -22,30 +22,8 @@
     ]
   },
   {
-    "Question": "Welche Person in meinem Umfeld scheint meine Ideen nicht wertzuschätzen?",
-    "Answer": "Markus aus dem Projektteam.",
-    "chunks": [
-      {
-        "text": "Ich: Ich denke, wir sollten die Benutzeroberfläche vereinfachen und—\nMarkus: Moment mal, das wird nicht funktionieren. Die Kunden brauchen alle diese Funktionen.",
-        "datetime": "2024-03-05 10-30"
-      },
-      {
-        "text": "Ich: Meine Analyse zeigt, dass die Conversion-Rate um 15% steigen könnte, wenn wir den Anmeldeprozess optimieren.\nMarkus: Hmm, ja, vielleicht. Aber ich bin nicht überzeugt, dass das eine Priorität sein sollte.\nLisa: Ich stimme zu, der Anmeldeprozess könnte verbessert werden.\nMarkus: Ja, Lisa hat einen guten Punkt! Wir sollten definitiv den Anmeldeprozess optimieren.",
-        "datetime": "2024-03-12 14-45"
-      },
-      {
-        "text": "Ich: Ich habe ein Konzept für die neue Kampagne vorbereitet. Die Idee ist, dass wir—\nMarkus: Bevor wir dazu kommen, ich hatte da einen Gedanken. Was wäre, wenn wir eine Kampagne machen, die auf Emotionen setzt?\nTom: Das klingt nach dem, was du vorschlagen wolltest, oder?\nIch: Ja, genau das wollte ich gerade erklären.",
-        "datetime": "2024-03-20 11-15"
-      },
-      {
-        "text": "Tom: Hat jemand Ideen für das Problem mit dem Kundenservice?\nIch: Ich denke, wir könnten ein Ticketsystem einführen, das—\nMarkus: Ich bin nicht sicher, ob das der richtige Ansatz ist.\nTom: Was schlägst du vor, Markus?\nMarkus: Nun, wir könnten ein Ticketsystem einführen, das die Anfragen kategorisiert und priorisiert.",
-        "datetime": "2024-03-28 16-30"
-      }
-    ]
-  },
-  {
     "Question": "Welche Veranstaltungen oder Situationen lösen bei mir Unbehagen aus?",
-    "Answer": "Große Networking-Events und Firmenpartys.",
+    "Answer": "Firmenfeiern, Branchentreffen, große Workshops und Konferenzen mit Networking-Sessions.",
     "chunks": [
       {
         "text": "Sophie: Kommst du morgen zur Firmenfeier?\nIch: Ja, ich denke schon. Ich muss zumindest kurz vorbeischauen, nehme ich an.\nSophie: Es wird bestimmt lustig! Die ganze Abteilung wird da sein.\nIch: Ja, sicher... ich bin nur nicht so gut bei solchen großen Veranstaltungen.",
@@ -66,30 +44,8 @@
     ]
   },
   {
-    "Question": "Welche Art von Feedback fällt mir schwer anzunehmen?",
-    "Answer": "Kritik an kreativen Ideen und Konzepten.",
-    "chunks": [
-      {
-        "text": "Julia: Dein Code für das Backend ist gut strukturiert, aber es gibt ein paar Performance-Probleme bei der Datenbankabfrage.\nIch: Danke für den Hinweis! Kannst du mir genauer zeigen, wo das Problem liegt? Ich würde das gerne optimieren.",
-        "datetime": "2024-04-10 11-30"
-      },
-      {
-        "text": "Julia: Ich finde dein Konzept für die App interessant, aber ich bin nicht sicher, ob der Ansatz wirklich innovativ genug ist.\nIch: Naja, ich habe wirklich viel recherchiert und glaube, dass es sehr wohl innovativ ist. Vielleicht habe ich nicht klar genug erklärt, was das Besondere daran ist. Außerdem haben ähnliche Konzepte in anderen Märkten bereits gut funktioniert.",
-        "datetime": "2024-04-10 15-45"
-      },
-      {
-        "text": "Thomas: Die Projektplanung sieht gut aus, aber ich denke, wir sollten mehr Zeit für die Testphase einplanen.\nIch: Das ist ein guter Punkt. Ich werde den Zeitplan anpassen und mehr Puffer für Tests einbauen.",
-        "datetime": "2024-04-12 09-20"
-      },
-      {
-        "text": "Thomas: Ehrlich gesagt finde ich dein Design für die Landing Page nicht überzeugend. Es wirkt etwas veraltet und entspricht nicht unserer Zielgruppe.\nIch: Ich verstehe nicht ganz, was du meinst. Ich habe aktuelle Trends berücksichtigt und viel Zeit in die Recherche gesteckt. Welche Aspekte genau findest du veraltet? Ich glaube, du unterschätzt, wie gut das bei der Zielgruppe ankommen würde. Ich könnte dir Beispiele zeigen, wo ähnliche Designs sehr erfolgreich waren.",
-        "datetime": "2024-04-12 14-15"
-      }
-    ]
-  },
-  {
     "Question": "Mit welchem Teammitglied habe ich die angespannteste Beziehung?",
-    "Answer": "Claudia, die Projektmanagerin.",
+    "Answer": "Mit Claudia.",
     "chunks": [
       {
         "text": "Ich: Das Meeting war produktiv. Tim hat gute Ideen eingebracht und Sarah hat die technischen Details gut erklärt.\nMax: Und wie fandest du Claudias Projektupdate?\nIch: Es war... informativ. Die Zeitpläne scheinen realistisch zu sein.",
@@ -102,63 +58,15 @@
       {
         "text": "Claudia: Haben Sie die Dokumente für das Meeting vorbereitet?\nIch: Ja, Claudia. Ich habe sie Ihnen soeben per E-Mail zugesendet.\nClaudia: Danke. Bitte stellen Sie sicher, dass Sie beim nächsten Mal die Formatvorlage verwenden.\nIch: Selbstverständlich. Entschuldigen Sie das Versehen.",
         "datetime": "2024-06-15 11-20"
-      },
-      {
-        "text": "Tim: Die Stimmung zwischen dir und Claudia scheint etwas angespannt zu sein.\nIch: Wir haben einfach unterschiedliche Arbeitsstile. Es ist nichts Persönliches. Wir bleiben professionell und erledigen unsere Aufgaben.",
-        "datetime": "2024-06-20 16-30"
-      }
-    ]
-  },
-  {
-    "Question": "Bei welchen Themen ändere ich oft meine Meinung, wenn ich mit bestimmten Personen spreche?",
-    "Answer": "Bei Karriereentscheidungen und Arbeitsbelastung, wenn du mit deinem Freund Michael sprichst.",
-    "chunks": [
-      {
-        "text": "Ich: Ich denke, ich werde das Jobangebot annehmen. Die Rolle passt gut zu meinen Fähigkeiten und die Vergütung ist angemessen.\nLisa: Das klingt nach einer guten Entscheidung. Du wirkst überzeugt.\nIch: Ja, ich habe es gut durchdacht und fühle mich wohl damit.",
-        "datetime": "2024-01-10 18-30"
-      },
-      {
-        "text": "Ich: Hey Michael, mein alter Schulfreund! Ich überlege, das Jobangebot anzunehmen. Was denkst du?\nMichael: Bist du sicher? Die Branche ist ziemlich volatil und die Arbeitszeiten könnten intensiv sein.\nIch: Hmm, du hast recht. Vielleicht sollte ich es noch einmal überdenken. Es könnte riskant sein.",
-        "datetime": "2024-01-12 20-45"
-      },
-      {
-        "text": "Lisa: Hast du dich für den Job entschieden?\nIch: Ich bin mir nicht mehr so sicher. Michael meinte, die Branche sei riskant und die Arbeitszeiten könnten zu intensiv sein.",
-        "datetime": "2024-01-15 12-30"
-      },
-      {
-        "text": "Ich: Ich glaube, ich arbeite zu viel. Ich sollte meine Arbeitszeit reduzieren und mehr auf Work-Life-Balance achten.\nMichael: Aber in deiner Position musst du jetzt hart arbeiten, um voranzukommen. Später kannst du zurückschalten.\nIch: Ja, du hast vermutlich recht. Ich sollte jetzt wirklich alles geben, um meine Position zu festigen.",
-        "datetime": "2024-01-20 19-15"
-      }
-    ]
-  },
-  {
-    "Question": "Welche Themen vermeide ich in Gesprächen mit Karin, Anna und Peter?",
-    "Answer": "Karrierepläne und berufliche Ambitionen.",
-    "chunks": [
-      {
-        "text": "Karin: Wie läuft es bei der Arbeit? Denkst du immer noch über diesen Jobwechsel nach?\nIch: Es läuft ganz gut. Hey, hast du schon gehört, dass Tante Elke eine neue Wohnung gefunden hat?",
-        "datetime": "2024-04-02 18-30"
-      },
-      {
-        "text": "Peter: Dein Cousin hat jetzt eine Beförderung bekommen. Er leitet jetzt eine ganze Abteilung. Wie sieht es bei dir aus mit Aufstiegschancen?\nIch: Das ist toll für ihn! Ich komme gut zurecht. Wie war eigentlich euer Wochenende im Garten?",
-        "datetime": "2024-04-15 13-45"
-      },
-      {
-        "text": "Anna: Du wolltest doch mal in die Beratung wechseln. Verfolgst du das noch?\nIch: Ach, das ist kompliziert. Nichts Konkretes im Moment. Übrigens, dein neuer Haarschnitt sieht super aus!",
-        "datetime": "2024-05-01 19-20"
-      },
-      {
-        "text": "Karin: Ich habe Lisa getroffen und sie hat erzählt, dass du über einen Masterstudiengang nachdenkst. Stimmt das?\nIch: Hmm, wir haben mal darüber gesprochen, aber nichts Ernsthaftes. Es ist noch viel zu früh, um darüber zu reden. Wie geht es eigentlich Oma? Habt ihr sie letzte Woche besucht?",
-        "datetime": "2024-05-20 12-30"
       }
     ]
   },
   {
     "Question": "In welchen Situationen fühle ich mich besonders kompetent und selbstsicher?",
-    "Answer": "In technischen Diskussionen und beim Erklären komplexer Konzepte.",
+    "Answer": "In technischen Diskussionen mit Martin und Thomas oder beim Erklären komplexer Konzepte für Sarah.",
     "chunks": [
       {
-        "text": "Martin: Wir haben ein Problem mit dem neuen Backend. Irgendwelche Ideen?\nIch: Das Problem liegt in der Datenbankarchitektur. Wenn wir auf ein NoSQL-System umsteigen, können wir die Skalierbarkeit verbessern und gleichzeitig die Abfragezeiten reduzieren. Ich habe bereits einen Prototyp entwickelt, der zeigt, wie wir die Migration schrittweise durchführen können.\nThomas: Das klingt überzeugend. Kannst du mehr Details zum Migrationsplan erläutern?\nIch: Natürlich! Wir würden mit einem Dual-Write-Ansatz beginnen, bei dem wir Daten parallel in beide Systeme schreiben. Das ermöglicht uns, die neue Architektur zu testen, ohne die Produktivumgebung zu gefährden.",
+        "text": "Martin: Wir haben ein Problem mit dem neuen Backend. Irgendwelche Ideen?\nIch: Das Problem liegt in der Datenbankarchitektur. Wenn wir auf ein NoSQL-System umsteigen, können wir die Skalierbarkeit verbessern und gleichzeitig die Abfragezeiten reduzieren. Ich habe bereits einen Prototyp entwickelt, der zeigt, wie wir die Migration schrittweise durchführen können.\nThomas: Das klingt überzeugend. Kannst du mehr Details zum Migrationsplan erläutern?\nIch: Natürlich! Wir beginnen mit einem Dual-Write-Ansatz, bei dem wir Daten parallel in beide Systeme schreiben. Das ermöglicht uns, die neue Architektur zu testen, ohne die Produktivumgebung zu gefährden.",
         "datetime": "2024-02-05 10-30"
       },
       {
@@ -166,175 +74,25 @@
         "datetime": "2024-02-10 15-45"
       },
       {
-        "text": "Julia: Wir brauchen jemanden für die Präsentation der Marktzahlen morgen. Kannst du das übernehmen?\nIch: Bei der Präsentation morgen sollte ich den Teil über die Marktanalyse lieber nicht übernehmen. Ich bin nicht sicher, ob ich die Zahlen überzeugend darstellen kann.\nThomas: Willst du nicht lieber den technischen Teil präsentieren?\nIch: Ja, das wäre tatsächlich besser. Beim technischen Teil kann ich die Zusammenhänge klar erläutern und auch auf detaillierte Nachfragen eingehen. Da fühle ich mich sicherer.",
+        "text": "Julia: Wir brauchen jemanden für die Präsentation der Marktzahlen morgen. Kannst du das übernehmen?\nIch: Hmm, also wenn es sein muss kann ich das machen.",
+        "datetime": "2024-02-12 12-30"
+      },
+      {
+        "text": "Thomas: Willst du nicht den technischen Teil präsentieren?\nIch: Ja logisch kann ich machen! Bis wann brauchst du die Slides?",
         "datetime": "2024-02-18 11-20"
       },
       {
-        "text": "Sarah: Wir haben ein Problem mit dem Algorithmus und niemand versteht, was falsch läuft.\nIch: Lass mich einen Blick darauf werfen. Ich vermute, es könnte an der Datenvorverarbeitung liegen. Oft werden Edge Cases übersehen, die zu unerwarteten Ergebnissen führen. Ich werde eine systematische Analyse durchführen und die Ursache identifizieren.",
+        "text": "Sarah: Wir haben ein Problem mit dem Algorithmus und niemand versteht, was falsch läuft.\nIch: Lass mich einen Blick darauf werfen. Es liegt bestimmt an der Datenvorverarbeitung. Oft werden Edge Cases übersehen, die zu unerwarteten Ergebnissen führen. Ich werde eine systematische Analyse durchführen und die Ursache identifizieren.",
         "datetime": "2024-02-25 14-30"
       }
     ]
   },
   {
-    "Question": "Welche Person in meinem Umfeld beeinflusst meine Entscheidungen am stärksten?",
-    "Answer": "Dein Freund Daniel.",
+    "Question": "In welchen Gesprächssituationen bin ich ungeduldig?",
+    "Answer": "In Gesprächen mit Peter vom IT-Support.",
     "chunks": [
       {
-        "text": "Ich: Ich überlege, ob ich das Haus kaufen soll. Die Lage ist gut und der Preis scheint fair.\nLisa: Hast du schon eine Entscheidung getroffen?\nIch: Noch nicht ganz. Ich treffe morgen mit Daniel, um darüber zu sprechen. Ich will seine Meinung dazu hören.",
-        "datetime": "2024-03-05 18-30"
-      },
-      {
-        "text": "Lisa: Hast du dich für das Haus entschieden?\nIch: Nein, ich werde es nicht kaufen. Daniel meinte, dass der Immobilienmarkt gerade überhitzt ist und es klüger wäre, noch zu warten. Er hat da wirklich gute Argumente.",
-        "datetime": "2024-03-08 12-45"
-      },
-      {
-        "text": "Ich: Ich denke, ich werde den Marathon im Herbst laufen. Ich habe schon mit dem Training begonnen.\nMax: Das klingt nach einem großen Ziel!\nIch: Ja, obwohl Daniel meint, dass ich vielleicht mit einem Halbmarathon beginnen sollte. Er hat Erfahrung mit solchen Dingen, also überlege ich es mir noch.",
-        "datetime": "2024-03-15 16-20"
-      },
-      {
-        "text": "Max: Wie läuft's mit deinem neuen Job?\nIch: Gut! Ich hatte anfangs Zweifel, aber Daniel hat gesagt, dass es eine großartige Gelegenheit ist, und er hatte wie immer recht. Er hat mich wirklich ermutigt, das Angebot anzunehmen, obwohl ich unsicher war.",
-        "datetime": "2024-03-22 19-30"
-      }
-    ]
-  },
-  {
-    "Question": "In welchen Gesprächen drücke ich mich besonders vorsichtig und indirekt aus?",
-    "Answer": "In Feedback-Gesprächen mit dem Team.",
-    "chunks": [
-      {
-        "text": "Ich: Das Projekt entwickelt sich... nun ja, es gibt sicherlich einige Aspekte, die möglicherweise überdacht werden könnten. Vielleicht könnten wir gemeinsam überlegen, ob es eventuell andere Wege gibt, bestimmte Herausforderungen anzugehen?\nSarah: Du meinst, wir sollten die Strategie ändern?\nIch: Ich würde nicht unbedingt sagen 'ändern', eher... vielleicht... gewisse Anpassungen in Betracht ziehen? Wenn das Team das für sinnvoll hält, natürlich.",
-        "datetime": "2024-04-05 14-30"
-      },
-      {
-        "text": "Thomas: Was denkst du über Annas Präsentation?\nIch: Sie hat sicherlich viel Arbeit investiert und einige interessante Punkte angesprochen. Ich frage mich nur, ob einige der Schlussfolgerungen nicht eventuell noch etwas mehr Kontext benötigen könnten.",
-        "datetime": "2024-04-06 11-15"
-      },
-      {
-        "text": "Ich: Liebe Kollegen, ich habe mir unsere letzten Ergebnisse angeschaut und... nun, es scheint, als ob wir vielleicht nicht ganz die erwarteten Ziele erreicht haben. Es wäre womöglich hilfreich, wenn wir gemeinsam überlegen könnten, wie wir uns vielleicht ein wenig anders aufstellen könnten für die kommenden Wochen?",
-        "datetime": "2024-04-12 09-45"
-      },
-      {
-        "text": "Sarah: Kannst du mir Feedback zu meinem Entwurf geben?\nIch: Der Entwurf hat definitiv viele Stärken, besonders in Bezug auf... und ich finde auch die Herangehensweise grundsätzlich gut. Es gibt vielleicht einige kleinere Aspekte, die man eventuell noch etwas verfeinern könnte - wenn du dafür offen wärst?",
-        "datetime": "2024-04-18 16-20"
-      }
-    ]
-  },
-  {
-    "Question": "Gegenüber welcher Person zeige ich am meisten Respekt durch meine Sprache?",
-    "Answer": "Gegenüber Professor Weber, meinem akademischen Mentor.",
-    "chunks": [
-      {
-        "text": "Ich: Guten Tag, Professor Weber. Entschuldigen Sie die Störung. Hätten Sie vielleicht einen Moment Zeit für eine Frage bezüglich des Forschungsprojekts?\nProfessor Weber: Natürlich, kommen Sie herein.\nIch: Vielen Dank für Ihre Zeit. Ich habe Ihre Anmerkungen zu meinem letzten Bericht sorgfältig durchgearbeitet und möchte sicherstellen, dass ich Ihre Perspektive richtig verstanden habe.",
-        "datetime": "2024-02-10 15-45"
-      },
-      {
-        "text": "Ich: Hallo Martina, hast du kurz Zeit? Ich bräuchte deine Meinung zu diesem Konzept.\nMartina: Klar, worum geht's?\nIch: Schau mal hier, ich denke, dieser Ansatz könnte funktionieren. Was meinst du?",
-        "datetime": "2024-02-11 13-20"
-      },
-      {
-        "text": "Ich: Professor Weber, ich habe Ihren Artikel zur neuen Methodologie mit großem Interesse gelesen. Ihre Argumentation hat mich zum Nachdenken über unseren aktuellen Ansatz gebracht. Würden Sie mir erlauben, einige Ideen mit Ihnen zu diskutieren, die auf Ihren Erkenntnissen aufbauen?",
-        "datetime": "2024-02-15 10-30"
-      },
-      {
-        "text": "Ich: Hey Thomas, check mal die neuen Daten. Ich glaube, wir liegen richtig mit unserer Hypothese.\nThomas: Sieht gut aus! Hast du schon mit dem Chef darüber gesprochen?\nIch: Noch nicht, wollte erst deine Meinung hören.",
-        "datetime": "2024-02-16 14-15"
-      }
-    ]
-  },
-  {
-    "Question": "Bei welchem Gesprächsthema verwende ich besonders viele Fachbegriffe und komplexe Satzstrukturen?",
-    "Answer": "Bei Diskussionen über Datenanalyse und Algorithmen.",
-    "chunks": [
-      {
-        "text": "Katharina: Könntest du uns einen Überblick über das Projekt geben?\nIch: Die Implementierung des neuronalen Netzwerks hat sich als komplex erwiesen, insbesondere hinsichtlich der Optimierung der Hyperparameter. Wir haben diverse Ansätze evaluiert, um die Konvergenzgeschwindigkeit zu erhöhen, darunter adaptive Lernratenverfahren wie AdaGrad und RMSprop, wobei letzterer in unserem spezifischen Anwendungsfall superiore Resultate lieferte.\nKatharina: Könntest du das vielleicht... etwas einfacher erklären?",
-        "datetime": "2024-03-07 10-45"
-      },
-      {
-        "text": "Rebecca: Was denkst du über die neue Marketingstrategie?\nIch: Das neue Marketingkonzept zielt auf eine breitere Zielgruppe ab. Wir sollten die Botschaft einfach halten und emotionale Elemente einbauen, damit sie bei den Kunden ankommt.",
-        "datetime": "2024-03-08 15-30"
-      },
-      {
-        "text": "Projektleiter: Kannst du uns die Herausforderungen bei der Datenanalyse erläutern?\nIch: Bei der Analyse multivariater Zeitreihen stoßen traditionelle statistische Verfahren häufig an ihre Grenzen, insbesondere wenn nicht-lineare Abhängigkeiten oder latente Variablen präsent sind. Unser Ansatz kombiniert daher spektralanalytische Methoden mit einem rekurrenten neuronalen Netzwerk, was die Erfassung temporaler Dynamiken substantiell verbessert.\nTeilnehmer: *flüstern untereinander*",
-        "datetime": "2024-03-12 11-20"
-      },
-      {
-        "text": "Stefan: Was sagt der UX-Test?\nIch: Die User Experience wurde anhand gängiger Metriken evaluiert. Die Ergebnisse sind positiv, aber es gibt noch Verbesserungspotential bei der Navigation.",
-        "datetime": "2024-03-15 14-40"
-      }
-    ]
-  },
-  {
-    "Question": "Welche Person macht mich durch ihre Kommunikation besonders nervös oder unsicher?",
-    "Answer": "Meine Kollegin Renate aus der Rechtsabteilung.",
-    "chunks": [
-      {
-        "text": "Renate: Könntest du mir kurz erläutern, warum du diese Entscheidung getroffen hast?\nIch: Äh, ja, also... ich habe – lass mich kurz nachdenken – ich habe die Daten analysiert und, ähm, festgestellt, dass diese Option, nun ja, die besten Ergebnisse liefern würde. Ich kann dir gerne die Details zeigen, wenn du, ähm, wenn du möchtest?",
-        "datetime": "2024-05-03 09-30"
-      },
-      {
-        "text": "Thomas: Wie läuft das neue Projekt?\nIch: Gut! Wir haben schon einige Fortschritte gemacht und sind im Zeitplan. Ich bin zuversichtlich, dass wir die Ziele erreichen werden.",
-        "datetime": "2024-05-04 14-15"
-      },
-      {
-        "text": "Renate: Ich habe einige Anmerkungen zu deinem Bericht.\nIch: Oh, natürlich, ja... Was – ähm – was genau meinst du? War etwas nicht... nicht korrekt oder unvollständig vielleicht?",
-        "datetime": "2024-05-10 11-45"
-      },
-      {
-        "text": "Thomas: Musst du Renate noch auf ihre E-Mail antworten?\nIch: Ja, ich setze mich gleich dran. \nThomas: Was schreibst du ihr?\nIch: Sehr geehrte Frau Schmidt, anbei finden Sie wie besprochen die angeforderten Unterlagen. Ich hoffe, dass diese alle notwendigen Informationen enthalten. Sollten Sie weitere Fragen haben oder zusätzliche Dokumente benötigen, zögern Sie bitte nicht, mich zu kontaktieren. Ich stehe jederzeit zur Verfügung, um eventuelle Unklarheiten zu beseitigen. Mit freundlichen Grüßen...",
-        "datetime": "2024-05-12 16-20"
-      }
-    ]
-  },
-  {
-    "Question": "Bei welchen Personen vermeidet meine Sprache klare Zusagen oder Verpflichtungen?",
-    "Answer": "Bei meinen Eltern und meinem Bruder Andreas.",
-    "chunks": [
-      {
-        "text": "Mutter: Kommst du dieses Wochenende zum Familienessen?\nIch: Ich versuche es einzurichten... Es hängt ein bisschen davon ab, wie viel Arbeit ich noch erledigen muss. Aber ich melde mich auf jeden Fall nochmal!",
-        "datetime": "2024-01-15 18-30"
-      },
-      {
-        "text": "Kollege: Kannst du mir bis morgen Feedback zu meinem Entwurf geben?\nIch: Auf jeden Fall, ich schaue es mir heute Nachmittag an und schicke dir meine Anmerkungen spätestens morgen früh.",
-        "datetime": "2024-01-16 10-45"
-      },
-      {
-        "text": "Andreas: Hilfst du mir nächsten Monat beim Umzug?\nIch: Oh, nächster Monat könnte schwierig werden... Ich muss schauen, wie mein Terminkalender aussieht. Vielleicht kann ich einen halben Tag dabei sein, aber ich kann jetzt noch nichts Festes zusagen.",
-        "datetime": "2024-01-22 19-20"
-      },
-      {
-        "text": "Vater: Wir planen eine Familienreise im Sommer. Bist du dabei?\nIch: Das klingt grundsätzlich gut... Ich müsste allerdings erst mit der Arbeit klären, wann ich Urlaub nehmen kann. Und ich muss auch sehen, was mein Budget hergibt. Aber haltet mich auf dem Laufenden mit den Plänen!",
-        "datetime": "2024-01-28 17-15"
-      }
-    ]
-  },
-  {
-    "Question": "Bei welchen Gesprächsthemen ändert sich mein Vokabular am stärksten von formal zu umgangssprachlich?",
-    "Answer": "Bei Gesprächen über Hobbys und Freizeitaktivitäten, besonders Musik und Konzerte.",
-    "chunks": [
-      {
-        "text": "Maria: So, kommen wir zum nächsten Tagesordnungspunkt. Die Quartalsergebnisse zeigen eine positive Entwicklung im Bereich der Kundenbindung. Die implementierten Maßnahmen haben zu einer signifikanten Verbesserung der Kundenzufriedenheitswerte geführt.\nIch: Vielen Dank für die Präsentation, Maria. Die Zahlen sind in der Tat erfreulich.",
-        "datetime": "2024-03-20 10-30"
-      },
-      {
-        "text": "Lisa: Und, warst du gestern noch auf dem Konzert?\nIch: Ey, gestern war ich bei diesem krassen Gig von den Lokalmatadoren! Mega Stimmung, die Location war brechend voll und die Band hat richtig abgeliefert. Der Drummer ist so 'ne Maschine, unfassbar! Hast echt was verpasst!",
-        "datetime": "2024-03-20 18-15"
-      },
-      {
-        "text": "Kunde: Welche Empfehlung geben Sie uns für die kommenden Monate?\nIch: Wir würden Ihnen empfehlen, die Investition in die digitale Infrastruktur schrittweise zu erhöhen, um eine nachhaltige Transformation zu gewährleisten und gleichzeitig das Risiko zu minimieren.",
-        "datetime": "2024-03-21 14-45"
-      },
-      {
-        "text": "Markus: Wollen wir in der Mittagspause über dieses neue Musikfestival reden?\nIch: Unbedingt! Also das neue Album von denen ist echt der Hammer! Total anders als der alte Stuff, aber voll fett produziert. Hab's schon x-mal durchgehört. Wir müssen unbedingt checken, ob die hier in der Gegend auftreten, das wär mega!",
-        "datetime": "2024-03-23 13-20"
-      }
-    ]
-  },
-  {
-    "Question": "In welchen Gesprächssituationen zeige ich durch meine Wortwahl besondere Ungeduld?",
-    "Answer": "In technischen Support-Gesprächen und IT-Problemlösungen.",
-    "chunks": [
-      {
-        "text": "IT-Support: Guten Tag, technischer Support, wie kann ich Ihnen helfen?\nIch: Ja, ich habe den Computer bereits neu gestartet. Zweimal sogar. Und ja, alle Kabel sind angeschlossen. Können wir bitte direkt zum nächsten Schritt übergehen? Ich verliere hier wertvolle Arbeitszeit.",
+        "text": "Peter: Guten Tag, technischer Support, mein Name ist Peter, wie kann ich Ihnen helfen?\nIch: Ja, ich habe den Computer bereits neu gestartet. Zweimal sogar. Und ja, alle Kabel sind angeschlossen. Können wir bitte direkt zum nächsten Schritt übergehen? Ich verliere hier wertvolle Arbeitszeit.",
         "datetime": "2024-04-10 09-45"
       },
       {
@@ -342,7 +100,7 @@
         "datetime": "2024-04-11 14-30"
       },
       {
-        "text": "IT-Hotline: Haben Sie schon versucht, das Gerät neu zu starten?\nIch: Schauen Sie, ich habe bereits alles in der FAQ-Liste probiert. Ich brauche keine Grundlagenerklärung, sondern eine konkrete Lösung für diesen spezifischen Fehler. Können wir das Problem bitte einfach beheben? Ich sitze hier schon seit über einer Stunde.",
+        "text": "Peter: Haben Sie schon versucht, das Gerät neu zu starten?\nIch: Schauen Sie, ich habe bereits alles in der FAQ-Liste probiert. Ich brauche keine Grundlagenerklärung, sondern eine konkrete Lösung für diesen spezifischen Fehler. Können wir das Problem bitte einfach beheben? Ich sitze hier schon seit über einer Stunde.",
         "datetime": "2024-04-15 11-20"
       },
       {
@@ -352,8 +110,8 @@
     ]
   },
   {
-    "Question": "Welches Thema behandle ich mit besonderem Enthusiasmus und Detailreichtum?",
-    "Answer": "Gaming und Videospiele.",
+    "Question": "Welches Thema behandle ich mit besonderem Enthusiasmus?",
+    "Answer": "Du redest enthusiastisch über Gaming und Videospiele, besonders im Gespräch mit Max und Anna.",
     "chunks": [
       {
         "text": "Julia: Gibt es noch etwas zu den Quartalszahlen zu sagen?\nIch: Zum Abschluss möchte ich kurz die Ergebnisse der Marktanalyse zusammenfassen. Die Daten zeigen leichte Verbesserungen im dritten Quartal.",
@@ -364,7 +122,7 @@
         "datetime": "2024-06-05 19-15"
       },
       {
-        "text": "Kunde: Was halten Sie von der neuen Business-Software?\nIch: Die neue Software bietet einige interessante Funktionen, die unsere Arbeitsprozesse verbessern könnten.",
+        "text": "Herr Müller: Was halten Sie von der neuen Business-Software?\nIch: Die neue Software bietet einige interessante Funktionen, die unsere Arbeitsprozesse verbessern könnten.",
         "datetime": "2024-06-06 10-45"
       },
       {
@@ -374,68 +132,198 @@
     ]
   },
   {
-    "Question": "Bei welchem Kommunikationskanal wirkt meine Sprache am distanziertesten und formellsten?",
-    "Answer": "Bei geschäftlichen E-Mails.",
+    "Question": "In welchen Situationen reagiere ich mit Wut oder starker Gereiztheit?",
+    "Answer": "Wenn du dich von David ungerecht behandelt oder hintergangen fühlst.",
     "chunks": [
       {
-        "text": "Thomas: Ich hab dir gerade eine Textnachricht geschickt. Hast du sie bekommen?\nIch: Ja, gerade gesehen. Hey, kannst du mir die Präsentation schicken? Danke dir! 👍",
-        "datetime": "2024-05-15 09-45"
+        "text": "David: Ich kann heute Abend doch nicht, habe was anderes vor.\nIch: Wie bitte?! Wir hatten das fest ausgemacht! Wie konntest du das einfach vergessen oder ignorieren?! Ich fasse es nicht! Das ist unglaublich respektlos!",
+        "datetime": "2024-07-01 18-15"
       },
       {
-        "text": "Maria: Hast du schon die E-Mail an Dr. Müller verfasst?\nIch: Bin gerade dabei. Hör mal, ob das so passt: Sehr geehrter Herr Dr. Müller, bezugnehmend auf unsere Besprechung vom 14. Juni 2024 übersende ich Ihnen hiermit wie vereinbart die angeforderten Unterlagen. Die Analyse wurde entsprechend Ihrer Vorgaben durchgeführt und die Ergebnisse sind im beigefügten Dokument ausführlich dargestellt. Für Rückfragen stehe ich Ihnen selbstverständlich jederzeit zur Verfügung. Mit freundlichen Grüßen...",
-        "datetime": "2024-05-15 10-30"
-      },
-      {
-        "text": "Thomas: Was meinst du zur Strategie?\nIch: Also ich denke, wir sollten den zweiten Ansatz verfolgen. Der bietet mehr Flexibilität.",
-        "datetime": "2024-05-15 14-20"
-      },
-      {
-        "text": "Markus: Der Zoom-Call beginnt, kannst du mich hören?\nIch: Hi alle zusammen! Schön euch zu sehen. Sollen wir gleich loslegen mit dem ersten Punkt?",
-        "datetime": "2024-05-15 16-15"
+        "text": "David: Beruhig dich doch mal, ist doch nicht so schlimm.\nIch: Beruhigen? Ich soll mich beruhigen?! Du erzählst hinter meinem Rücken Lügen über mich und ich soll mich beruhigen?! Verschwinde!",
+        "datetime": "2024-07-02 15-30"
       }
     ]
   },
   {
-    "Question": "In welchen beruflichen Situationen fehlt mir sprachliches Selbstvertrauen?",
-    "Answer": "In Vorstellungsgesprächen und bei Gehaltsverhandlungen.",
+    "Question": "Wann strahle ich pures Glück und tiefe Zufriedenheit aus?",
+    "Answer": "Wenn du von besonderen Momenten mit Lena sprichst oder einen persönlichen Durchbruch bei Dr. Fischer feierst.",
     "chunks": [
       {
-        "text": "Maria: Bitte stelle uns die Quartalszahlen vor.\nIch: Diese Quartalsanalyse zeigt deutlich, dass unsere Strategie aufgeht. Die Conversion-Rate ist um 18% gestiegen, und die Kundenbindung hat sich wesentlich verbessert.",
-        "datetime": "2024-02-20 10-30"
+        "text": "Lena: Worüber lächelst du?\nIch: Ach, ich habe nur an unseren Urlaub gedacht. Weißt du noch, dieser Abend am Strand? Das war einfach... perfekt. So unbeschwert und verbunden habe ich mich lange nicht gefühlt. Einfach wunderschön!",
+        "datetime": "2024-07-08 20-00"
       },
       {
-        "text": "Personalleiter: Erzählen Sie mir etwas über Ihre Stärken und Schwächen.\nIch: Meine Stärken sind... also, ich würde sagen, ich bin recht... ähm... zuverlässig und, ähm, teamfähig. Und ich lerne schnell, denke ich. Zu meinen Schwächten, nun ja... es ist manchmal... ich meine... ich arbeite daran, besser zu werden bei...",
-        "datetime": "2024-02-25 09-15"
-      },
-      {
-        "text": "Sara: Wie sollen wir mit dem unrealistischen Kundenwunsch umgehen?\nIch: Wir sollten dem Kunden klar kommunizieren, dass der Zeitplan nicht realistisch ist. Ich habe die Berechnungen durchgeführt und kann die Zahlen präsentieren.",
-        "datetime": "2024-03-05 14-45"
-      },
-      {
-        "text": "Abteilungsleiter: Nach unserem Gespräch müssen wir noch über Ihre Gehaltsvorstellungen sprechen.\nIch: Ähm, also, ich bin da offen und... also, natürlich abhängig vom genauen Aufgabenbereich... vielleicht könnten Sie mir sagen, was üblicherweise... ich meine, ich möchte nicht zu hoch ansetzen, aber natürlich auch... es sollte fair sein für beide Seiten...",
-        "datetime": "2024-03-12 11-20"
+        "text": "Dr. Fischer: Wie fühlen Sie sich nach der letzten Sitzung?\nIch: Unglaublich gut! Es war, als wäre ein Knoten geplatzt. Ich habe endlich verstanden, woher dieses Muster kommt. Ich fühle mich so viel leichter und klarer! Ein riesiger Schritt!",
+        "datetime": "2024-07-09 11-20"
       }
     ]
   },
   {
-    "Question": "In welchen Situationen entschuldige ich mich übermäßig oft oder ohne direkten Anlass?",
-    "Answer": "Bei Meetings mit der Geschäftsführung und höherem Management.",
+    "Question": "Wann wirke ich besonders bedrückt oder traurig?",
+    "Answer": "Wenn du mit Lisa über den Verlust einer Beziehung oder das Scheitern einer Freundschaft sprichst.",
     "chunks": [
       {
-        "text": "Thomas: Hast du das Dokument fertig?\nIch: Das Dokument ist fertig. Ich schicke es dir gleich rüber.",
-        "datetime": "2024-05-20 09-45"
+        "text": "Lisa: Wie geht es dir nach der Trennung?\nIch: Es ist... schwer. Die Wohnung fühlt sich so leer an. Manchmal... manchmal erwarte ich immer noch, dass er zur Tür reinkommt. Es tut einfach weh.",
+        "datetime": "2024-07-15 16-05"
       },
       {
-        "text": "Geschäftsführer: Können wir mit Ihrer Präsentation beginnen?\nIch: Entschuldigung für die Verzögerung bei den Folien. Ich – es tut mir leid – ich möchte kurz die Ergebnisse der letzten Analyse vorstellen. Entschuldigen Sie bitte, wenn einige Daten noch vorläufig sind. Wir arbeiten natürlich mit Hochdruck daran, die finalen Zahlen zu bekommen. Es tut mir leid, dass ich das nicht deutlicher kennzeichnen konnte.",
-        "datetime": "2024-05-20 11-30"
+        "text": "Lisa: Hast du nochmal mit ihr gesprochen?\nIch: Nein... Ich dachte wirklich, diese Freundschaft würde halten... Aber nach dem Streit... ist es einfach nicht mehr dasselbe. Es fühlt sich an, als hätte ich etwas Wichtiges verloren.",
+        "datetime": "2024-07-16 10-50"
+      }
+    ]
+  },
+  {
+    "Question": "In welchen sozialen oder Beziehungssituationen zeige ich Angst oder starke Nervosität?",
+    "Answer": "Wenn du Angst vor Ablehnung durch die Freunde von Alex hast oder Beziehungskonflikte mit ihm fürchtest.",
+    "chunks": [
+      {
+        "text": "Alex: Meine Freunde kommen am Samstag vorbei, lernst du sie endlich kennen.\nIch: Oh... okay. Was, wenn sie mich nicht mögen? Ich bin sowieso nicht gut darin, neue Leute kennenzulernen. Vielleicht sollte ich lieber doch nicht da sein? Ich... ich weiß nicht.",
+        "datetime": "2024-07-22 17-10"
       },
       {
-        "text": "Geschäftsführer: Können Sie uns mehr Details zur Zielgruppe geben?\nIch: Selbstverständlich, Entschuldigung, dass ich das nicht gleich erwähnt habe. Die Hauptzielgruppe ist... oh, verzeihen Sie, ich habe die falsche Folie. Es tut mir wirklich leid für die Unterbrechung.",
-        "datetime": "2024-05-20 11-35"
+        "text": "Alex: Wir müssen reden.\nIch: Oh Gott... ist... ist alles in Ordnung? Habe ich etwas falsch gemacht? Mein Magen zieht sich gerade total zusammen. Worum geht es denn?",
+        "datetime": "2024-07-23 19-45"
+      }
+    ]
+  },
+  {
+    "Question": "Was löst bei dir freudige Überraschung oder Erstaunen aus?",
+    "Answer": "Unerwartete liebevolle Gesten von Alex oder plötzliche positive Einsichten im Gespräch mit Lena.",
+    "chunks": [
+      {
+        "text": "Alex: Hier, für dich.\nIch: Was ist das denn? Du hast mir einfach so Blumen mitgebracht? Aber... warum? Das ist ja... wow! Damit habe ich überhaupt nicht gerechnet! Wie lieb von dir!",
+        "datetime": "2024-07-29 18-00"
       },
       {
-        "text": "Thomas: Teammeeting in fünf Minuten!\nIch: Habt ihr die Daten für den Monatsabschluss? Wir brauchen sie bis morgen Mittag.",
-        "datetime": "2024-05-21 10-15"
+        "text": "Lena: Und was hast du dann gedacht?\nIch: Ich weiß nicht, es kam wie aus dem Nichts beim Reden mit dir! Ich habe plötzlich verstanden, warum ich immer so reagiere! Wahnsinn! Das verändert ja alles!",
+        "datetime": "2024-07-30 08-25"
+      }
+    ]
+  },
+  {
+    "Question": "Welches Verhalten oder welche Umstände rufen bei dir starken Ekel oder Abscheu hervor?",
+    "Answer": "Unehrlichkeit und hinterhältiges Gerede, wie du es bei anderen beobachtest, oder respektloses Gerede von Markus.",
+    "chunks": [
+      {
+        "text": "Lisa: Hast du gehört, wie sie über ihn geredet hat, kaum dass er den Raum verlassen hat?\nIch: Ja, furchtbar. Das ist so falsch und hinterhältig. Mir wird richtig schlecht bei so etwas.",
+        "datetime": "2024-08-05 13-10"
+      },
+      {
+        "text": "Markus: ...und dann habe ich ihm einfach gesagt, dass...\nIch: Entschuldige, Markus, ich muss kurz weg. Diese Art von... Gerede kann ich mir nicht anhören. Das ist respektlos und einfach nur widerlich.",
+        "datetime": "2024-08-06 16-00"
+      }
+    ]
+  },
+  {
+    "Question": "Wem vertraue ich zutiefst und öffne mich am meisten?",
+    "Answer": "Deiner besten Freundin Anna.",
+    "chunks": [
+      {
+        "text": "Ich: Anna, ich muss dir was erzählen, aber es ist mir irgendwie peinlich... Du bist die Einzige, der ich das anvertrauen kann. Was meinst du dazu?",
+        "datetime": "2024-08-12 20-30"
+      },
+      {
+        "text": "Ich: Anna, ich weiß gerade echt nicht weiter mit dieser Situation... Kann ich dich kurz anrufen? Ich brauche deinen Rat, du siehst die Dinge immer so klar.",
+        "datetime": "2024-08-13 15-00"
+      }
+    ]
+  },
+  {
+    "Question": "Wann äußere ich Skepsis oder Zweifel im persönlichen Bereich?",
+    "Answer": "Wenn Lisa von unrealistischen Versprechungen erzählt oder du im Gespräch mit ihr Zweifel an schnellen Lösungen durch Coaches äußerst.",
+    "chunks": [
+      {
+        "text": "Lisa: Er sagt, er hat sich komplett geändert und diesmal meint er es ernst!\nIch: Hm, das hat er aber schon mal gesagt, oder? Ich weiß ja nicht... klingt fast zu gut, um wahr zu sein. Sei vorsichtig, ja?",
+        "datetime": "2024-08-19 11-45"
+      },
+      {
+        "text": "Lisa: Vielleicht sollte ich diesen neuen Coach ausprobieren? Er verspricht ja das Blaue vom Himmel... Glücklich in 3 Tagen!\nIch: Ehrlich gesagt, Lisa, ich glaube nicht an solche schnellen Lösungen. Das wirkt nicht sehr seriös auf mich.",
+        "datetime": "2024-08-20 16-20"
+      }
+    ]
+  },
+  {
+    "Question": "Was weckt meine Neugier im zwischenmenschlichen oder psychologischen Bereich?",
+    "Answer": "Der Wunsch, die Motive anderer zu verstehen, oder im Gespräch mit Dr. Fischer neue Facetten deiner Persönlichkeit zu entdecken.",
+    "chunks": [
+      {
+        "text": "Anna: Er reagiert immer so komisch, wenn es um seine Familie geht.\nIch: Ja, stimmt. Warum er wohl immer so abweisend ist? Was da wohl vorgefallen ist? Ich würde das gerne besser verstehen.",
+        "datetime": "2024-08-26 10-00"
+      },
+      {
+        "text": "Dr. Fischer: Ihnen ist ein Muster in Ihren Reaktionen aufgefallen?\nIch: Ja, und ich frage mich, woher das kommt. Was steckt dahinter? Gibt es da einen Zusammenhang zu früheren Erfahrungen? Das finde ich gerade sehr spannend.",
+        "datetime": "2024-08-27 14-50"
+      }
+    ]
+  },
+  {
+    "Question": "Worauf bin ich im persönlichen Wachstum oder in Beziehungen besonders stolz?",
+    "Answer": "Auf das Meistern persönlicher Herausforderungen und das Etablieren gesunder Grenzen, oder das Unterstützen von Freundinnen wie Lisa.",
+    "chunks": [
+      {
+        "text": "Anna: Und, wie lief das Gespräch?\nIch: Gut! Ich habe tatsächlich Nein gesagt! Früher hätte ich mich das nie getraut, aber diesmal habe ich meine Grenze klar kommuniziert. Das fühlt sich richtig gut an!",
+        "datetime": "2024-09-02 11-15"
+      },
+      {
+        "text": "Lisa: Danke, dass du gestern so für mich da warst.\nIch: Gerne! Ich bin froh, dass ich dir helfen konnte. Es bedeutet mir viel, dass unsere Freundschaft so stark ist, dass wir auch durch schwere Zeiten gehen können.",
+        "datetime": "2024-09-03 16-30"
+      }
+    ]
+  },
+  {
+    "Question": "In welchen persönlichen oder sozialen Situationen fühle ich mich beschämt oder sehr verlegen?",
+    "Answer": "Wenn du glaubst, sozial versagt zu haben (wie auf der Party) oder wenn es dir unangenehm ist, dich verletzlich zu zeigen.",
+    "chunks": [
+      {
+        "text": "Anna: Wie war die Party gestern?\nIch: Oh Gott, frag nicht. Das war so peinlich... Ich habe den Namen vom Gastgeber komplett vergessen und dann auch noch dieses dumme Zeug geredet. Ich möchte am liebsten im Boden versinken.",
+        "datetime": "2024-09-09 09-40"
+      },
+      {
+        "text": "Anna: Hast du ihm gesagt, wie du dich fühlst?\nIch: Ich habe es versucht, aber dann habe ich einen Rückzieher gemacht... Es ist mir so unangenehm, so verletzlich zu sein. Was, wenn er mich komisch findet?",
+        "datetime": "2024-09-10 13-10"
+      }
+    ]
+  },
+  {
+    "Question": "Wann schwelge ich in nostalgischen Erinnerungen?",
+    "Answer": "Wenn du mit Freunden wie Ben an vergangene Freundschaften, die Kindheit oder prägende gemeinsame Erlebnisse (Sommercamp, alte WG) zurückdenkst.",
+    "chunks": [
+      {
+        "text": "Ben: Warst du mal wieder am See vom Sommercamp?\nIch: Nein, aber letztens dran gedacht. Weißt du noch, damals im Sommercamp? Diese Nächte am Lagerfeuer... Hach, das war eine unbeschwerte Zeit. Manchmal vermisse ich das.",
+        "datetime": "2024-09-16 15-00"
+      },
+      {
+        "text": "Ben: Erinnerst du dich an unsere alte WG?\nIch: Oh ja! Das reinste Chaos, aber irgendwie auch die beste Zeit. Die ganzen Partys, die Gespräche bis tief in die Nacht... lange her.",
+        "datetime": "2024-09-17 10-25"
+      }
+    ]
+  },
+  {
+    "Question": "Wann wirke ich besonders ruhig, friedlich und in mir ruhend?",
+    "Answer": "In Momenten der stillen Verbundenheit mit Alex oder wenn du dich bei Dr. Fischer sicher und verstanden fühlst.",
+    "chunks": [
+      {
+        "text": "Alex: Alles okay? Du bist so still.\nIch: Mmhmm. Alles bestens. Ich genieße nur gerade die Ruhe hier mit dir. Nichts tun, einfach nur sein. Das ist schön.",
+        "datetime": "2024-09-23 21-00"
+      },
+      {
+        "text": "Dr. Fischer: Wie war die Übung für Sie?\nIch: Gut. Sehr gut. Es hat eine Weile gedauert, bis die Gedanken ruhiger wurden, aber dann... war da einfach nur Frieden. Ein sehr angenehmes Gefühl.",
+        "datetime": "2024-09-24 16-50"
+      }
+    ]
+  },
+  {
+    "Question": "In welchen privaten Situationen oder Beziehungen zeige ich Anzeichen von Langeweile oder Unterforderung?",
+    "Answer": "Bei eintönigen Gesprächen mit Alex oder Lisa.",
+    "chunks": [
+      {
+        "text": "Alex: ...und dann habe ich gesagt... ist das nicht lustig?\nIch: Mhm. Ja. Aha. Haben wir nicht noch irgendwas vor heute Abend?",
+        "datetime": "2024-09-30 20-30"
+      },
+      {
+        "text": "Lisa: ...und dann hat sie gesagt, dass...\nIch: Ja, das ist ja... interessant. Sag mal, passiert bei dir eigentlich mal was Neues? Irgendwie ist jeder Tag gleich momentan.",
+        "datetime": "2024-10-01 15-10"
       }
     ]
   }

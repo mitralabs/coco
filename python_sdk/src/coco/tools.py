@@ -117,7 +117,11 @@ class ToolsClient:
     Methods of this client can be automatically converted to tool descriptions for Ollama and OpenAI.
     """
 
-    def __init__(self, lm: LanguageModelClient, db_api: DbApiClient):
+    def __init__(
+        self,
+        lm: LanguageModelClient,
+        db_api: DbApiClient,
+    ):
         """
         Initialize the ToolsClient.
 
@@ -235,7 +239,7 @@ class ToolsClient:
         return tool.method(**converted_kwargs)
 
     @tool(
-        description="Search for relevant information in the knowledge database by embedding similarity to the query_text. Searched chunks can be restricted using a couple of filters before the similarity search: only consider chunks from a specific time range, only consider chunks that contain a specific substring."
+        description="Search for relevant information in the knowledge database by embedding similarity to the semantic query_text. Searched chunks can be restricted using a couple of filters before the similarity search: only consider chunks from a specific time range, only consider chunks that contain a specific substring."
     )
     def semantic_query(
         self,
@@ -245,7 +249,7 @@ class ToolsClient:
         end_date_time_iso: Optional[str] = None,
         contains_substring: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        """Search for relevant information in the database based on a query.
+        """Search for relevant information in the database based on a semantic query.
 
         Args:
             query_text (str): The query text to search for. This will be compared to the database chunks by embedding similarity.
@@ -298,11 +302,11 @@ class ToolsClient:
         }
 
     @tool(
-        description="Search for relevant information in the knowledge database by a specific emotion reflected in the chunk text. Searched chunks can be restricted using a couple of filters before the similarity search: only consider chunks from a specific time range, only consider chunks that contain a specific substring."
+        description="Search for relevant information in the knowledge database by embedding similarity to the emotion_text. The emotion_text's embedding is compared to embeddings of descriptions of emotions inferred from the chunks' language. Searched chunks can be restricted using a couple of filters before the similarity search: only consider chunks from a specific time range, only consider chunks that contain a specific substring."
     )
     def emotion_query(
         self,
-        emotion: str,
+        emotion_text: str,
         num_results: int = 25,
         start_date_time_iso: Optional[str] = None,
         end_date_time_iso: Optional[str] = None,
@@ -311,7 +315,7 @@ class ToolsClient:
         """Search for relevant information in the database based on a query.
 
         Args:
-            emotion (str): The emotion to search for. This will be compared to the database chunks by embedding similarity.
+            emotion_text (str): The comma separated list of emotions to search for. This will be compared to the database's language emotion descriptions by embedding similarity. IMPORTANT: The emotion_text must be in ENGLISH irrespective of the language of the chunks or the language of the user query!
             num_results (int, optional): The number of chunks to return for the query. If not set, defaults to 25.
             start_date_time_iso (Optional[str], optional): The start date in ISO format. If provided, only chunks dated after this date will be considered. If not set, all knowledge chunks will be considered.
             end_date_time_iso (Optional[str], optional): The end date in ISO format. If provided, only chunks dated before this date will be considered. If not set, all knowledge chunks will be considered.
@@ -335,50 +339,13 @@ class ToolsClient:
                     "message": f"Invalid end date time: {end_date_time_iso}. Please provide a valid ISO 8601 formatted date time or don't set the parameter. Call the tool again without asking the user for confirmation.",
                 }
 
-        gen_prompt = f"""
-            ## Task:
-            - Generate a query text that encodes an emotion for embedding cosine similarity search
-            - The query can should NOT filter based on semantic content, just on emotion!
-            - Do NOT just use the emotion word, but speech patterns like positive or negative formulations, fill words, adjectives / no adjectives, conjunctions / no conjunctions, etc.
-            - IF you think using fillers like 'ahem', 'hmm', 'eeeh', etc. is appropriate for the given emotion, use them and spell them out! Your query will be compared to transcribed speech.
-
-            ### Examples:
-            - if the emotion is anxious, the query should contain a lot of fill words and conjunctions.
-            - if the emotion is happy, the query should contain a lot of strong adjectives and adverbs.
-            - if the emotion is sad, the query should contain a lot of negative formulations, adjectives and adverbs.
-
-            ## Answer format:
-            - in GERMAN
-            - JUST the query text, nothing else!
-
-            ## Emotion:
-            {emotion}
-            """
-        query_text = self.lm.generate_multiple(
-            prompts=[gen_prompt], model="meta-llama/Llama-3.3-70B-Instruct"
-        )[0][0]
-        embedding = self.lm.embed(query_text)
-
-        ids, documents, metadatas, distances = self.db_api.get_closest(
-            embedding=embedding,
+        embedding = self.lm.embed(emotion_text)
+        ids, documents, metadatas, distances = self.db_api.get_closest_emotion(
+            emotion_embedding=embedding,
             n_results=num_results,
             start_date_time=start,
             end_date_time=end,
             contains_substring=contains_substring,
-        )
-        print(
-            f"""
-            =====
-            == Emotion filter:
-            {emotion}
-
-            == Query text:
-            {query_text}
-
-            == First two chunks:
-            {documents[:2]}
-            =====
-            """
         )
         knowledge = [
             {
@@ -392,7 +359,7 @@ class ToolsClient:
             )
         ]
         return {
-            "message": f"Here is the list of chunks / knowledge for your query '{query_text}'.",
+            "message": f"Here is the list of chunks / knowledge for your emotion query '{emotion_text}'.",
             "knowledge": knowledge,
             "tool_timestamp": datetime.datetime.now().isoformat(),
         }

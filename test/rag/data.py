@@ -93,6 +93,8 @@ def fill_database(cc: CocoClient, cfg: DictConfig, dataset: RAGDataset):
         batch_size=cfg.data.fill_db.embed_and_store_batch_size,
         limit_parallel=cfg.data.fill_db.embed_and_store_limit_parallel,
         show_progress=True,
+        add_emotion_embedding=cfg.data.fill_db.add_emotion_embedding,
+        emotion_embedding_prompt=cfg.data.fill_db.emotion_embedding_prompt,
     )
     logger.info(f"Added {cfg.data.name} to db: {added} added, {skipped} skipped")
 

@@ -5,11 +5,57 @@ language: de
 limit_samples: null
 random_datetimes_if_missing: false
 backup_db: false
-clear_db: true
+clear_db: false
 fill_db:
-  skip: false
-  embed_and_store_batch_size: 25
-  embed_and_store_limit_parallel: 10
+  skip: true
+  embed_and_store_batch_size: 5
+  embed_and_store_limit_parallel: 3
+  add_emotion_embedding: true
+  emotion_embedding_prompt: |
+    ## Your Task
+    - You are given extracts from a transcription of a conversation.
+    - Your task is to infer all emotions of the participants
+    - The conversation's topic will likely not directly be about emotions, so you infer it from the language used
+    - You make sure to capture all aspects of the emotion, rather returning too many emotions than too few
+
+
+    ## Answer Format
+    - You always answer in English, even though the input text might be in German
+    - You only answer with some words describing the emotion of the speaker separated by commas
+    - You answer ONLY with the list of emotions, NOTHING ELSE!
+
+    ## Examples
+
+    ### Example 1
+    #### Input Text:
+    Ben: Hast du auch noch Anmerkungen zur Präsentation?
+    Ich: Hmm, also eventuell könnte man noch etwas mehr über die Zielgruppe sagen. Oder?
+    #### Your Answer:
+    anxious, insecure, nervous, self-doubting
+
+    ### Example 2
+    #### Input Text:
+    Lisa: Hast du auch eine Meinung zu dem neuen Roman von J.K. Rowling?
+    Ich: Na klar! Die Geschichte an sich fande ich sehr interessant, aber die Charaktere waren etwas eindimensional. Das fande ich schade.
+    #### Your Answer:
+    disappointed, confident, interested, opinionated
+
+    ### Example 3
+    #### Input Text:
+    Tom: Du warst am Wochenende das erste mal Surfen oder?
+    Ich: Ja, ich war ganz verwundert, dass ich direkt auf dem Brett aufstehen konnte. Der Wellengang war auch sehr stark. Es mach wirklich extrem Spaß, du musst das unbedingt auch probieren!
+    #### Your Answer:
+    excited, energetic, happy, enthusiastic, joyful, thrilled
+
+    ### Example 4
+    #### Input Text:
+    Anna: Wie war das Fußballspiel eigentlich?
+    Ich: Joa ganz gut.
+    #### Your Answer:
+    bored, uninterested, indifferent, unimpressed
+
+    ## Input Text
+    {text}
 
 # hf_dpr settings
 hf_name: null

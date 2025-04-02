@@ -28,6 +28,7 @@ class CocoClient:
         embedding_api: Literal["ollama", "openai"] = "ollama",
         llm_api: Literal["ollama", "openai"] = "ollama",
         api_key: str = None,
+        tools_coco_client: "CocoClient" = None,
     ):
         self.chunking_base = chunking_base
         self.db_api_base = db_api_base
@@ -69,7 +70,14 @@ class CocoClient:
         )
         self.rag = RagClient(db_api=self.db_api, lm=self.lm)
 
-        self._tools_client = ToolsClient(lm=self.lm, db_api=self.db_api)
+        self._tools_client = ToolsClient(
+            lm=tools_coco_client.lm if tools_coco_client is not None else self.lm,
+            db_api=(
+                tools_coco_client.db_api
+                if tools_coco_client is not None
+                else self.db_api
+            ),
+        )
         self.agent = AgentClient(
             lm=self.lm, tools_client=self._tools_client, llm_api=self.llm_api
         )
@@ -134,8 +142,22 @@ class CocoClient:
         date_times: List[Optional[datetime.datetime]] = None,
         model: str = "nomic-embed-text",
         chunk_indices: List[int] = None,
+        add_emotion_embedding: bool = False,
+        emotion_embedding_prompt: str = None,
     ):
         embeddings = await self.lm._embed_multiple(chunks, model)
+        emotion_embeddings = None
+        if add_emotion_embedding:
+            prompts = [emotion_embedding_prompt.format(text=c) for c in chunks]
+            emotion_descriptions, _ = await self.lm._generate_multiple(
+                prompts=prompts,
+                model="meta-llama/Llama-3.3-70B-Instruct",
+                temperature=0.0,
+            )  # TODO parameterize model at some point
+            emotion_embeddings = await self.lm._embed_multiple(
+                emotion_descriptions,
+                model,
+            )
         ns_added, ns_skipped = await self.db_api._store_multiple(
             chunks,
             embeddings,
@@ -144,6 +166,7 @@ class CocoClient:
             session_id,
             date_times,
             chunk_indices,
+            emotion_embeddings,
         )
         return ns_added, ns_skipped
 
@@ -159,6 +182,8 @@ class CocoClient:
         limit_parallel: int = 10,
         show_progress: bool = True,
         chunk_indices: List[int] = None,
+        add_emotion_embedding: bool = False,
+        emotion_embedding_prompt: str = None,
     ):
         """Util function to embed and store chunks in the database.
         Just a wrapper around the `embedding.create_embeddings` and `db_api._store_in_database` functions.
@@ -174,7 +199,8 @@ class CocoClient:
             show_progress (bool, optional): Whether to show a progress bar on stdout. Defaults to True.
             session_id (int): The session ID to associate with the chunks.
             chunk_indices (List[int], optional): The indices of the chunks. Defaults to None (will use array indices).
-
+            add_emotion_embedding (bool, optional): Whether to add an emotion embedding to the chunks. Defaults to False.
+            emotion_embedding_prompt (str, optional): The prompt to use for the emotion embedding. Must include {text} as placeholder for the text to embed. Defaults to None.
         Returns:
             Tuple[int, int]: The number of documents added and skipped.
         """
@@ -186,7 +212,15 @@ class CocoClient:
             description="Embedding and storing",
         )
         n_added, n_skipped = batched_embed_and_store(
-            chunks, language, filename, session_id, date_times, model, chunk_indices
+            chunks,
+            language,
+            filename,
+            session_id,
+            date_times,
+            model,
+            chunk_indices,
+            add_emotion_embedding,
+            emotion_embedding_prompt,
         )
         return sum(n_added), sum(n_skipped)
 

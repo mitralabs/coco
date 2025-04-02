@@ -41,9 +41,19 @@ def main(cfg: DictConfig) -> None:
     )
     cc.health_check()
 
+    coco_conf_oai = cfg.coco.copy()
+    coco_conf_oai["openai_base"] = "https://api.openai.com/v1"
+    cc_oai = CocoClient(
+        **coco_conf_oai,
+        embedding_api=cfg.retrieval.embedding_model[1],
+        llm_api=cfg.generation.llm_model[1],
+        tools_coco_client=cc,
+    )
+    cc_oai.health_check()
+
     ds = data_stage(cc, cfg)
     top_chunks = retrieval_stage(cc, cfg, ds)
-    generation_stage(cc, cfg, ds, top_chunks)
+    generation_stage(cc, cc_oai, cfg, ds, top_chunks)
 
     wandb.finish()
 

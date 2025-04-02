@@ -1,5 +1,7 @@
 skip: false
-llm_model: ["meta-llama/Llama-3.3-70B-Instruct", "openai"] # (model name, coco llm_api)
+# llm_model: ["meta-llama/Llama-3.3-70B-Instruct", "openai"] # (model name, coco llm_api)
+llm_model: ["gpt-4o-2024-11-20", "openai"] # (model name, coco llm_api)
+use_oai_coco_client: true
 get_answers:
   mode: rag # agent or rag
 
@@ -13,7 +15,7 @@ get_answers:
 
   # rag options
   rag_generate_answers_batch_size: 5
-  rag_generate_answers_limit_parallel: 10
+  rag_generate_answers_limit_parallel: 3
   rag_top_k: 25
   rag_prompt_template: |
     You are Coco, a helpful assistant who provides the best possible help to users. You speak German, unless the user explicitly starts talking in another language.

@@ -26,8 +26,20 @@ def main():
         embedding_api="openai",
         llm_api="openai",
     )
-    model = "meta-llama/Llama-3.3-70B-Instruct"
+    cc_oai = CocoClient(
+        chunking_base="http://127.0.0.1:8001",
+        db_api_base="http://127.0.0.1:8003",
+        transcription_base="http://127.0.0.1:8000",
+        ollama_base="http://127.0.0.1:11434",
+        openai_base="https://api.openai.com/v1",
+        api_key="test",
+        embedding_api="openai",
+        llm_api="openai",
+        tools_coco_client=cc,
+    )
+    # model = "meta-llama/Llama-3.3-70B-Instruct"
     # model = "mistral-nemo"
+    model = "gpt-4o-2024-11-20"
 
     # Perform a health check to ensure all services are running
     logger.info("Performing health check...")
@@ -45,22 +57,11 @@ def main():
     messages = [
         {
             "role": "user",
-            "content": "Hallo.",
+            "content": "call the semantic_query tool with the query 'What is the capital of France?'",
         }
     ]
 
-    agent_result = cc.agent.chat(
-        messages=messages,
-        model=model,
-        max_iterations=3,
-    )
-    messages = agent_result["conversation_history"] + [
-        {
-            "role": "user",
-            "content": "Sage mir einen beliebigen Fakt den du weißt.",
-        }
-    ]
-    agent_result = cc.agent.chat(
+    agent_result = cc_oai.agent.chat(
         messages=messages,
         model=model,
         max_iterations=3,

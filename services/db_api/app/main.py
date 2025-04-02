@@ -41,6 +41,7 @@ class DocumentMetadata(BaseModel):
 class Document(BaseModel):
     text: str
     embedding: List[float]
+    emotion_embedding: List[float] = None
     metadata: DocumentMetadata
 
     @field_validator("embedding", mode="before")
@@ -99,6 +100,46 @@ class GetMultipleClosestRequest(BaseModel):
         return v
 
 
+class GetClosestEmotionRequest(BaseModel):
+    emotion_embedding: List[float]
+    n_results: int = 5
+    start_date_time: datetime.datetime = None
+    end_date_time: datetime.datetime = None
+    session_id: Optional[int] = None
+    contains_substring: str = None
+
+    @field_validator("emotion_embedding", mode="before")
+    @classmethod
+    def pad_emotion_embedding(cls, v: List[float]) -> List[float]:
+        if len(v) > EMBEDDING_DIM:
+            raise ValueError(
+                f"Embedding dimension cannot be larger than {EMBEDDING_DIM}"
+            )
+        if len(v) < EMBEDDING_DIM:
+            v += [0.0] * (EMBEDDING_DIM - len(v))
+        return v
+
+
+class GetMultipleClosestEmotionRequest(BaseModel):
+    emotion_embeddings: List[List[float]]
+    n_results: int = 5
+    start_date_time: datetime.datetime = None
+    end_date_time: datetime.datetime = None
+    session_id: Optional[int] = None
+
+    @field_validator("emotion_embeddings", mode="before")
+    @classmethod
+    def pad_emotion_embeddings(cls, v: List[List[float]]) -> List[List[float]]:
+        for i, embedding in enumerate(v):
+            if len(embedding) > EMBEDDING_DIM:
+                raise ValueError(
+                    f"Embedding dimension cannot be larger than {EMBEDDING_DIM}"
+                )
+            if len(embedding) < EMBEDDING_DIM:
+                v[i] += [0.0] * (EMBEDDING_DIM - len(embedding))
+        return v
+
+
 def nearest_neighbor_query(db: Session, query_embedding: List[float], n_results: int):
     query = (
         select(
@@ -120,14 +161,23 @@ def get_closest_from_embeddings(
     end_date_time: Optional[datetime.datetime] = None,
     session_id: Optional[int] = None,
     contains_substring: Optional[str] = None,
+    compare_with_emotion_embedding: bool = False,
 ):
     all_formatted_results = []
     for embedding in embeddings:
         formatted_results = []
-        query = select(
-            DbDocument,
-            DbDocument.embedding.cosine_distance(embedding).label("distance"),
-        )
+        if compare_with_emotion_embedding:
+            query = select(
+                DbDocument,
+                DbDocument.emotion_embedding.cosine_distance(embedding).label(
+                    "distance"
+                ),
+            )
+        else:
+            query = select(
+                DbDocument,
+                DbDocument.embedding.cosine_distance(embedding).label("distance"),
+            )
 
         if start_date_time:
             query = query.where(
@@ -148,9 +198,7 @@ def get_closest_from_embeddings(
         if contains_substring:
             query = query.where(DbDocument.text.ilike(f"%{contains_substring}%"))
 
-        query = query.order_by(DbDocument.embedding.cosine_distance(embedding)).limit(
-            n_results
-        )
+        query = query.order_by("distance").limit(n_results)
 
         results = db.execute(query)
         formatted_results = []
@@ -195,6 +243,7 @@ async def add(
         db_doc = DbDocument(
             text=doc.text,
             embedding=doc.embedding,
+            emotion_embedding=doc.emotion_embedding,
             language=doc.metadata.language,
             filename=doc.metadata.filename,
             chunk_index=doc.metadata.chunk_index,
@@ -243,6 +292,53 @@ async def get_multiple_closest(
         start_date_time=request.start_date_time,
         end_date_time=request.end_date_time,
         session_id=request.session_id,
+    )
+    assert len(all_formatted_results) > 0
+    return {
+        "status": "success",
+        "embedding_count": len(all_formatted_results),
+        "docs_per_embedding_count": len(all_formatted_results[0]),
+        "results": all_formatted_results,
+    }
+
+
+@app.post("/get_closest_emotion")
+async def get_closest_emotion(
+    request: GetClosestEmotionRequest,
+    db: Session = Depends(get_db),
+    api_key: str = Depends(get_api_key),
+):
+    all_formatted_results = get_closest_from_embeddings(
+        db=db,
+        embeddings=[request.emotion_embedding],
+        n_results=request.n_results,
+        start_date_time=request.start_date_time,
+        end_date_time=request.end_date_time,
+        session_id=request.session_id,
+        contains_substring=request.contains_substring,
+        compare_with_emotion_embedding=True,
+    )[0]
+    return {
+        "status": "success",
+        "count": len(all_formatted_results),
+        "results": all_formatted_results,
+    }
+
+
+@app.post("/get_multiple_closest_emotion")
+async def get_multiple_closest_emotion(
+    request: GetMultipleClosestEmotionRequest,
+    db: Session = Depends(get_db),
+    api_key: str = Depends(get_api_key),
+):
+    all_formatted_results = get_closest_from_embeddings(
+        db=db,
+        embeddings=request.emotion_embeddings,
+        n_results=request.n_results,
+        start_date_time=request.start_date_time,
+        end_date_time=request.end_date_time,
+        session_id=request.session_id,
+        compare_with_emotion_embedding=True,
     )
     assert len(all_formatted_results) > 0
     return {

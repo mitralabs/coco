@@ -37,12 +37,15 @@ class LanguageModelClient:
             self.async_ollama = ollama.AsyncClient(host=ollama_base_url)
             self.ollama = ollama.Client(host=ollama_base_url)
         if self.embedding_api == "openai" or self.llm_api == "openai":
+            oai_key = (
+                os.environ.get("COCO_OPENAI_API_KEY")
+                if "ionos" in openai_base_url
+                else os.environ.get("OPENAI_API_KEY")
+            )
             self.async_openai = openai.AsyncOpenAI(
-                base_url=openai_base_url, api_key=os.environ.get("OPENAI_API_KEY")
+                base_url=openai_base_url, api_key=oai_key
             )
-            self.openai = openai.OpenAI(
-                base_url=openai_base_url, api_key=os.environ.get("OPENAI_API_KEY")
-            )
+            self.openai = openai.OpenAI(base_url=openai_base_url, api_key=oai_key)
 
     def get_embedding_dim(self, model: str) -> int:
         """Get the dimension of the embedding for a given model.

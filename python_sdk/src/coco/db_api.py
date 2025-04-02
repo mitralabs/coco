@@ -94,6 +94,67 @@ class DbApiClient:
 
         return ids, documents, metadatas, distances
 
+    def get_closest_emotion(
+        self,
+        emotion_embedding: List[float],
+        n_results: int = 5,
+        start_date_time: Optional[datetime.datetime] = None,
+        end_date_time: Optional[datetime.datetime] = None,
+        session_id: Optional[int] = None,
+        contains_substring: Optional[str] = None,
+    ):
+        """Retrieve the closest results from the database service.
+
+        Args:
+            emotion_embedding (List[float]): The embedding to search for.
+            n_results (int, optional): The number of results to return. Defaults to 5.
+            start_date_time (datetime.datetime, optional): Only return documents with a date greater than or equal to this. Defaults to None.
+            end_date_time (datetime.datetime, optional): Only return documents with a date less than or equal to this. Defaults to None.
+            session_id (int, optional): Only return documents with this session ID. Defaults to None.
+            contains_substring (str, optional): Only return documents that contain this substring. Defaults to None.
+        Returns:
+            Tuple[List[str], List[str], List[Dict], List[float]]: (ids, documents, metadatas, distances)
+            metadata dict:
+                - language: str (the chunk's language)
+                - filename: str (the audio filename the chunk was extracted from)
+                - chunk_index: int (the index of the chunk in the audio file)
+                - session_id: int (the session ID)
+                - date_time: str (ISO format date string, or None if no date is present)
+        """
+        with httpx.Client() as client:
+            request_data = {
+                "emotion_embedding": emotion_embedding,
+                "n_results": n_results,
+            }
+            if start_date_time:
+                request_data["start_date_time"] = start_date_time.isoformat()
+            if end_date_time:
+                request_data["end_date_time"] = end_date_time.isoformat()
+            if session_id is not None:
+                request_data["session_id"] = session_id
+            if contains_substring:
+                request_data["contains_substring"] = contains_substring
+            response = client.post(
+                f"{self.base_url}/get_closest_emotion",
+                json=request_data,
+                headers={"X-API-Key": self.api_key, "Content-Type": "application/json"},
+            )
+            response.raise_for_status()
+            closest_response = response.json()
+
+        if not closest_response.get("status") == "success":
+            logger.error(
+                f"Database get closest emotion failed: {closest_response['error']}"
+            )
+
+        results = closest_response["results"]
+        ids = [result["id"] for result in results]
+        documents = [result["document"] for result in results]
+        metadatas = [result["metadata"] for result in results]
+        distances = [result["distance"] for result in results]
+
+        return ids, documents, metadatas, distances
+
     async def _get_closest_multiple(
         self,
         embeddings: List[List[float]],
@@ -374,6 +435,7 @@ class DbApiClient:
         session_id: int,
         date_times: List[Optional[datetime.datetime]] = None,
         chunk_indices: List[int] = None,
+        emotion_embeddings: List[List[float]] = None,
     ) -> Tuple[List[int], List[int]]:
         documents = []
 
@@ -381,13 +443,26 @@ class DbApiClient:
         if chunk_indices is None:
             chunk_indices = list(range(len(chunks)))
 
-        for i, (chunk, embedding, chunk_index, doc_date_time) in enumerate(
-            zip(chunks, embeddings, chunk_indices, date_times or [None] * len(chunks))
+        for i, (
+            chunk,
+            embedding,
+            chunk_index,
+            doc_date_time,
+            emotion_embedding,
+        ) in enumerate(
+            zip(
+                chunks,
+                embeddings,
+                chunk_indices,
+                date_times or [None] * len(chunks),
+                emotion_embeddings or [None] * len(chunks),
+            )
         ):
             documents.append(
                 {
                     "text": chunk,
                     "embedding": embedding,
+                    "emotion_embedding": emotion_embedding,
                     "metadata": {
                         "language": language,
                         "filename": filename,

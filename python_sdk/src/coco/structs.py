@@ -64,7 +64,7 @@ class ToolCall:
         return {
             "id": self.id,
             "type": "function",
-            "function": {"name": self.name, "arguments": self.arguments},
+            "function": {"name": self.name, "arguments": json.dumps(self.arguments)},
         }
 
 

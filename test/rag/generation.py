@@ -68,6 +68,7 @@ def mock_top_chunks(ds: RAGDataset, cfg: DictConfig) -> Dict[str, Dict[str, List
 def get_answers(
     top_chunks: Dict[str, Dict[str, List]],
     cc: CocoClient,
+    cc_oai: CocoClient,
     cfg: DictConfig,
     wandb_prefix: str,
     load_from_file: bool,
@@ -82,6 +83,7 @@ def get_answers(
             answers = json.load(f)
         logger.info(f"Loaded answers from {answers_file}")
     else:
+        coco = cc_oai if cfg.generation.use_oai_coco_client else cc
         # generate using lm
         if cfg.generation.get_answers.mode == "rag":
             queries, context_chunks = [], []
@@ -91,7 +93,7 @@ def get_answers(
                     chunks["documents"][: cfg.generation.get_answers.rag_top_k]
                 )
 
-            generated_answers, tok_ss = cc.rag.answer_multiple(
+            generated_answers, tok_ss = coco.rag.answer_multiple(
                 queries=queries,
                 context_chunks=context_chunks,
                 prompt_template=cfg.generation.get_answers.rag_prompt_template,
@@ -108,7 +110,7 @@ def get_answers(
             logger.info(f"Generated answers with mean tok_s {m_tok_s}")
         else:
             queries = list(top_chunks.keys())
-            results = cc.agent.chat_multiple(
+            results = coco.agent.chat_multiple_sequential(
                 queries=queries,
                 system_prompt=cfg.generation.get_answers.agent_system_prompt,
                 model=cfg.generation.llm_model[0],
@@ -525,6 +527,7 @@ def correctness(
 
 def generation_stage(
     cc: CocoClient,
+    cc_oai: CocoClient,
     cfg: DictConfig,
     ds: RAGDataset,
     top_chunks: Optional[Dict[str, Dict[str, List]]] = None,
@@ -543,6 +546,7 @@ def generation_stage(
     answers_ret = get_answers(
         top_chunks=top_chunks,
         cc=cc,
+        cc_oai=cc_oai,
         cfg=cfg,
         wandb_prefix="generation",
         load_from_file=cfg.generation.get_answers.load_from_file,
@@ -582,6 +586,7 @@ def generation_stage(
         answers_gt = get_answers(
             top_chunks=mocked_top_chunks,
             cc=cc,
+            cc_oai=cc_oai,
             cfg=cfg,
             wandb_prefix="generation_gt",
             load_from_file=cfg.generation.get_answers.load_from_file,
