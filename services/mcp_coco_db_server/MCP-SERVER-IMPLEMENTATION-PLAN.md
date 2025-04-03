@@ -292,8 +292,8 @@ Based on the requirements, reference implementations, Coco SDK structure, and MC
     * Use a Python base image (e.g., `python:3.13-slim`).
     * Use a multi-stage build.
     * **Builder Stage:** Install `uv`, copy `pyproject.toml` and `uv.lock`, run `uv sync` to install dependencies into a virtual environment (`.venv`).
-    * **Runtime Stage:** Install `uv`, copy the `.venv` from the builder, copy the Python files directly to `/app/`, set `ENV PATH="/app/.venv/bin:${PATH}"` and `ENV PYTHONPATH="/app:/python_sdk/src"` (assuming server script is at `/app/coco_db_mcp_server.py` and SDK at `/python_sdk`).
-    * Set the `CMD` to `["uv", "run", "mcp", "run", "coco_db_mcp_server.py"]`.
+    * **Runtime Stage:** Install `uv`, copy the `.venv` from the builder, copy the `coco_db_mcp_server.py` script (from `app/`), set `ENV PATH="/app/.venv/bin:${PATH}"` and `ENV PYTHONPATH="/app:/python_sdk/src"` (assuming server script is at `/app/coco_db_mcp_server.py` and SDK at `/python_sdk`).
+    * Set the `CMD` to `["uv", "run", "mcp", "run", "app/coco_db_mcp_server.py"]`.
     
     **Why:** Creates a container image based on the test server example, ensuring `uv` is used for dependencies and the server is started using `mcp run` for stdio communication. Setting `PYTHONPATH` ensures imports from the base app directory and the mounted SDK work.
     
@@ -301,10 +301,10 @@ Based on the requirements, reference implementations, Coco SDK structure, and MC
     *   [x] Use `python:3.13-slim` (or chosen version) base image.
     *   [x] Implement multi-stage build.
     *   [x] **Builder Stage:** Install `uv`, copy `pyproject.toml`/`uv.lock`, run `uv sync` into `.venv`.
-    *   [x] **Runtime Stage:** Install `uv`, copy `.venv`, copy Python files directly to `/app/`.
+    *   [x] **Runtime Stage:** Install `uv`, copy `.venv`, copy `app/coco_db_mcp_server.py` to `/app/`.
     *   [x] Set `ENV PATH="/app/.venv/bin:${PATH}"`.
     *   [x] Set `ENV PYTHONPATH="/app:/python_sdk/src"`.
-    *   [x] Set `CMD ["uv", "run", "mcp", "run", "coco_db_mcp_server.py"]`.
+    *   [x] Set `CMD ["uv", "run", "mcp", "run", "app/coco_db_mcp_server.py"]`.
 
 2.  **Create `.dockerignore`:**
     
@@ -354,8 +354,8 @@ Based on the requirements, reference implementations, Coco SDK structure, and MC
     
     **Why:** Creates the container image.
     
-    *   [ ] Run `docker build -t coco/mcp-coco-db-server:latest -f Dockerfile .` from `services/mcp_coco_db_server`.
-    *   [ ] Verify the build completes successfully.
+    *   [x] Run `docker build -t coco/mcp-coco-db-server:latest -f Dockerfile .` from `services/mcp_coco_db_server`.
+    *   [x] Verify the build completes successfully.
 
 2.  **Docker Run & Claude Desktop Integration:**
     
@@ -382,13 +382,51 @@ Based on the requirements, reference implementations, Coco SDK structure, and MC
     
     **Why:** This defines how Claude Desktop will launch and interact with the containerized MCP server, providing all necessary configuration and code via environment variables and volume mounts.
     
-    *   [ ] Create/update the `coco-db-mcp-server` entry in `claude_desktop_config.json`.
+    *   [x] Create/update the `coco-db-mcp-server` entry in `claude_desktop_config.json`.
         *   Use `command: "docker"`.
         *   Include `run`, `-i`, `--rm`.
         *   Add all required `-e VAR=value` flags for environment variables.
         *   Add the `-v /path/to/host/python_sdk:/python_sdk` volume mount.
         *   Specify the image `coco/mcp-coco-db-server:latest`.
-    *   [ ] Restart Claude Desktop.
-    *   [ ] Check Claude Desktop MCP logs for errors.
-    *   [ ] Verify the server connects and the `execute_pgvector_query` tool appears.
-    *   [ ] Test executing both standard SQL and semantic vector queries via Claude chat.
+    *   [x] Restart Claude Desktop.
+    *   [x] Check Claude Desktop MCP logs for errors.
+    *   [x] Verify the server connects and the `execute_pgvector_query` tool appears.
+    *   [x] Test executing both standard SQL and semantic vector queries via Claude chat.
+
+## Implementation Findings and Challenges
+
+During the implementation of the Coco MCP Database Server, we encountered several challenges and made important discoveries that might be useful for future MCP server implementations:
+
+1. **Dependency Management Challenges**:
+   - **Missing Dependencies**: The initial dependency list was incomplete - we needed to add `tqdm`, `ollama`, and `numpy`, which are used by the Coco SDK for embedding generation and vector handling.
+   - **Build Process Issues**: We encountered problems with the Docker build process when it tried to build our package. This was resolved by adding the `--no-install-project` flag to the `uv sync` command, which installs dependencies without trying to build the package itself (avoiding the need for a README.md file).
+
+2. **MCP Resource Implementation**:
+   - **URI Parameter Matching**: We discovered that MCP resource handlers are very strict about parameter matching - the function parameters must exactly match the URI parameters. This means we couldn't directly access the context in resource handlers.
+   - **Context Access Patterns**: For tools, we must use `ctx.request_context.lifespan_context` pattern to access resources from the lifespan, not simply `ctx.lifespan_context`.
+   - **Different Patterns for Resources vs Tools**: Due to these limitations, we implemented different access patterns:
+     - For tools: Use context-based access to shared resources (connection pool, embedding client)
+     - For resources: Create direct database connections for each request
+
+3. **Vector Database Integration**:
+   - **pgvector Syntax**: The specific database implementation required PostgreSQL's type-casting syntax (`$1::vector`) rather than a function-call syntax (`vector($1)`).
+   - **Database-Specific Vector Operations**: Vector operations can vary significantly between different PostgreSQL deployments with pgvector. We needed to adapt our implementation to use the specific syntax supported by our database.
+   - **Type Handling**: We implemented a custom vector type codec to properly handle vector data between Python and PostgreSQL.
+
+4. **LLM-Database Interaction Design**:
+   - **Error Messaging**: We significantly improved error handling to provide Claude with detailed, educational error messages that help it learn the correct syntax.
+   - **Tool Description**: We found that providing detailed examples in the tool description is much more effective than trying to parse and modify SQL on the backend. This leverages Claude's natural language understanding.
+   - **Parameter Passing**: The most reliable way to pass vector embeddings to the database was to let asyncpg handle the conversion with proper type hints.
+
+5. **Process Lifecycle Management**:
+   - **Process Monitoring**: We implemented a watchdog process that detects when Claude Desktop quits and initiates proper server shutdown.
+   - **Signal Handling**: We added proper signal handlers for SIGTERM and SIGINT to ensure the server shuts down gracefully.
+   - **Cleanup Logic**: We enhanced the cleanup logic to ensure all resources are properly released on shutdown.
+
+6. **Debugging and Logging**:
+   - **MCP Protocol Constraints**: We learned that all logging must be done to stderr (not stdout) as stdout is reserved for MCP protocol messages.
+   - **Enhanced Logging**: Detailed structured logging was essential for debugging interactions between Claude, the MCP server, and the database.
+
+These findings highlight that implementing MCP servers requires careful attention to the interaction between LLMs, the protocol specifications, and the underlying systems being integrated. The most successful approach focused on making the tool intuitive for Claude to use, with robust error handling that facilitates learning, rather than trying to anticipate and handle all possible query variations in the backend code.
+
+By providing Claude with clear guidance on correct syntax and detailed error messages when mistakes occur, we created a learning feedback loop that improves the quality of queries over time. This approach leverages Claude's natural language understanding capabilities while working within the technical constraints of the underlying systems.
