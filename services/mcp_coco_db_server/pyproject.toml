@@ -1,0 +1,19 @@
+[project]
+name = "mcp-coco-db-server"
+version = "0.1.0"
+description = "MCP server for Coco database with vector search capabilities"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "mcp[cli]>=1.6.0",   # MCP server and CLI tools
+    "asyncpg>=0.30.0",   # Async PostgreSQL driver
+    "python-dotenv>=1.0.1",  # For loading environment variables in development
+    "tqdm>=4.67.1",      # Progress bars for Coco SDK
+    "ollama>=0.4.7",     # Ollama client for Coco SDK
+    "openai>=1.70.0",    # OpenAI client for Coco SDK
+    "numpy>=1.26.4",     # For handling embedding vectors
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

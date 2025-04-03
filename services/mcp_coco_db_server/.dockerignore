@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Development
+.git
+.github
+.gitignore
+.idea
+.vscode
+*.swp
+*.swo
+
+# Testing and documentation
+tests/
+docs/
+*.md
+!README.md
+
+# Build artifacts
+*.log
+.DS_Store 
