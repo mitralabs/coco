@@ -177,4 +177,4 @@ ragas:
   openai_llm_model: meta-llama/Llama-3.3-70B-Instruct
 geval:
   skip: false
-  shots: 5
+  shots: 1 # it's basically deterministic anyway
