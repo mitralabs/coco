@@ -1,7 +1,7 @@
 skip: false
-# llm_model: ["meta-llama/Llama-3.3-70B-Instruct", "openai"] # (model name, coco llm_api)
-llm_model: ["gpt-4o-2024-11-20", "openai"] # (model name, coco llm_api)
-use_oai_coco_client: true
+llm_model: ["meta-llama/Llama-3.3-70B-Instruct", "openai"] # (model name, coco llm_api)
+# llm_model: ["gpt-4o-2024-11-20", "openai"] # (model name, coco llm_api)
+use_oai_coco_client: false
 get_answers:
   mode: rag # agent or rag
 
@@ -48,3 +48,4 @@ ragas:
   openai_llm_model: meta-llama/Llama-3.3-70B-Instruct
 geval:
   skip: false
+  shots: 5

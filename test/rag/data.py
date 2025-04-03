@@ -109,6 +109,10 @@ def data_stage(cc: CocoClient, cfg: DictConfig) -> Dataset:
         ds = RAGDataset.from_custom_datasets(
             custom_datasets, split=cfg.data.custom_split
         )
+    elif cfg.data.type == "custom_new":
+        ds = RAGDataset.from_new_json_format(
+            cfg.data.ds_file_path, split=cfg.data.custom_split
+        )
     else:
         logger.error(f"Invalid dataset type: {cfg.data.type}")
         wandb.finish()

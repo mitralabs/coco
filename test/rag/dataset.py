@@ -1,7 +1,9 @@
 import datetime
+import json
 import logging
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional, Tuple, Literal
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -167,4 +169,51 @@ class RAGDataset:
             supports_retrieval=False,
             additional_chunks=all_chunks,
             additional_chunk_datetimes=all_chunk_datetimes,
+        )
+
+    @classmethod
+    def from_new_json_format(
+        cls, path: str, split: Literal["train", "test", "full"]
+    ) -> "RAGDataset":
+        """Create a Dataset from the new JSON format (list of dicts with query, gt_answer, chunk_ids)."""
+        with Path(path).open("r") as f:
+            data = json.load(f)
+
+        # chunks
+        chunks, chunk_datetimes = [], []
+        for c in data["chunks"]:
+            chunks.append(c["text"])
+            chunk_datetimes.append(
+                datetime.datetime.strptime(c["datetime"], "%Y-%m-%d %H:%M")
+            )
+        assert len(chunks) == len(chunk_datetimes) == 500, "chunkbase size not 500"
+
+        # samples
+        samples = []
+        for sample_cat in data["samples"]:
+            assert len(sample_cat["samples"]) == 20, "sample_cat size not 20"
+            split_idx = int(len(sample_cat["samples"]) * 0.8)
+            if split == "full":
+                split_slice = slice(0, len(sample_cat["samples"]))
+            elif split == "train":
+                split_slice = slice(0, split_idx)
+            else:
+                split_slice = slice(split_idx, len(sample_cat["samples"]))
+            for sample in sample_cat["samples"][split_slice]:
+                samples.append(
+                    Sample(
+                        category=sample_cat["category"],
+                        query=sample["query"],
+                        gt_answers=[sample["gt_answer"]],
+                        pos_chunks=[],
+                        neg_chunks=[],
+                        hn_chunks=[],
+                    )
+                )
+
+        return cls(
+            samples,
+            supports_retrieval=False,
+            additional_chunks=chunks,
+            additional_chunk_datetimes=chunk_datetimes,
         )

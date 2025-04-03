@@ -21,6 +21,21 @@ logger = logging.getLogger(__name__)
 
 @hydra.main(config_path="conf", config_name="config", version_base="1.3")
 def main(cfg: DictConfig) -> None:
+    # # temporarily just print relevant values to ensure correct overriding in script
+    # print("wandb name:", cfg.wandb.name)
+    # print()
+    # print("skip retrieval:", cfg.retrieval.skip)
+    # print("skip generation:", cfg.generation.skip)
+    # print("split:", cfg.data.custom_split)
+    # print("clear db:", cfg.data.clear_db)
+    # print("fill db:", not cfg.data.fill_db.skip)
+    # print()
+    # print("use oai coco client:", cfg.generation.use_oai_coco_client)
+    # print("llm model:", cfg.generation.llm_model)
+    # print("mode", cfg.generation.get_answers.mode)
+    # print("------------")
+    # exit(0)
+
     logger.info(f"Config:\n{OmegaConf.to_yaml(cfg)}")
 
     random.seed(cfg.general.random_seed)

@@ -1,5 +1,5 @@
 name: mitra
-type: custom # hf_dpr / custom
+type: custom_new # hf_dpr / custom / custom_new
 language: de
 
 limit_samples: null
@@ -63,5 +63,6 @@ use_train: true
 use_test: false
 
 # custom settings
-custom_samples_root: ../dataset/datasets_json
+custom_samples_root: ../dataset/datasets_json # this is used when format is custom
+ds_file_path: ../dataset/new.json # this is used when format is custom_new
 custom_split: train # train / test / full

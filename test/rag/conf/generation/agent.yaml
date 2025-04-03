@@ -1,7 +1,7 @@
 skip: false
-# llm_model: ["meta-llama/Llama-3.3-70B-Instruct", "openai"] # (model name, coco llm_api)
-llm_model: ["gpt-4o-2024-11-20", "openai"] # (model name, coco llm_api)
-use_oai_coco_client: true
+llm_model: ["meta-llama/Llama-3.3-70B-Instruct", "openai"] # (model name, coco llm_api)
+# llm_model: ["gpt-4o-2024-11-20", "openai"] # (model name, coco llm_api)
+use_oai_coco_client: false
 get_answers:
   mode: agent # agent or rag
 
@@ -122,7 +122,7 @@ get_answers:
 
     ## emotion_query tool
     - When you need to fetch chunks by their emotion, you use the emotion_query tool to query the database based on chunks' language emotion.
-    - You set the "emotion_text" parameter to an ENGLISH string containing the emotions you want to search for in a comma separated list.
+    - You set the "query_text" parameter to an ENGLISH string containing the emotions you want to search for in a comma separated list.
     - If you identify temporal constraints in the user query, you use the tool's start and end datetime parameters to filter the considered chunks.
     - The emotion search is not perfect, so you stay on the safe side by always retrieving more chunks than strictly necessary.
     - IMPORTANT: Be very careful with the contains_substring parameter. ONLY use it for PROPER NAMES (e.g. person's names, organizations, locations, etc.)! NEVER use it for other queries!
@@ -133,7 +133,7 @@ get_answers:
 
     #### Your tool calls:
     {
-      "name": "emotion_query",
+      "name": "query_text",
       "parameters": {
         "emotion_text": "happy, joyful, thrilled, excited, energetic, enthusiastic, satisfied",
         "num_results": 25,
@@ -147,7 +147,7 @@ get_answers:
 
     #### Your tool calls:
     {
-      "name": "emotion_query",
+      "name": "query_text",
       "parameters": {
         "emotion_text": "anxious, insecure, nervous, self-doubting",
         "num_results": 25,
@@ -177,3 +177,4 @@ ragas:
   openai_llm_model: meta-llama/Llama-3.3-70B-Instruct
 geval:
   skip: false
+  shots: 5

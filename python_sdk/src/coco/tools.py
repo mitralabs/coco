@@ -302,11 +302,11 @@ class ToolsClient:
         }
 
     @tool(
-        description="Search for relevant information in the knowledge database by embedding similarity to the emotion_text. The emotion_text's embedding is compared to embeddings of descriptions of emotions inferred from the chunks' language. Searched chunks can be restricted using a couple of filters before the similarity search: only consider chunks from a specific time range, only consider chunks that contain a specific substring."
+        description="Search for relevant information in the knowledge database by embedding similarity to the query_text. The query_text's embedding is compared to embeddings of descriptions of emotions inferred from the chunks' language. Searched chunks can be restricted using a couple of filters before the similarity search: only consider chunks from a specific time range, only consider chunks that contain a specific substring."
     )
     def emotion_query(
         self,
-        emotion_text: str,
+        query_text: str,
         num_results: int = 25,
         start_date_time_iso: Optional[str] = None,
         end_date_time_iso: Optional[str] = None,
@@ -315,7 +315,7 @@ class ToolsClient:
         """Search for relevant information in the database based on a query.
 
         Args:
-            emotion_text (str): The comma separated list of emotions to search for. This will be compared to the database's language emotion descriptions by embedding similarity. IMPORTANT: The emotion_text must be in ENGLISH irrespective of the language of the chunks or the language of the user query!
+            query_text (str): The comma separated list of emotions to search for. This will be compared to the database's language emotion descriptions by embedding similarity. IMPORTANT: The query_text must be in ENGLISH irrespective of the language of the chunks or the language of the user query!
             num_results (int, optional): The number of chunks to return for the query. If not set, defaults to 25.
             start_date_time_iso (Optional[str], optional): The start date in ISO format. If provided, only chunks dated after this date will be considered. If not set, all knowledge chunks will be considered.
             end_date_time_iso (Optional[str], optional): The end date in ISO format. If provided, only chunks dated before this date will be considered. If not set, all knowledge chunks will be considered.
@@ -339,7 +339,7 @@ class ToolsClient:
                     "message": f"Invalid end date time: {end_date_time_iso}. Please provide a valid ISO 8601 formatted date time or don't set the parameter. Call the tool again without asking the user for confirmation.",
                 }
 
-        embedding = self.lm.embed(emotion_text)
+        embedding = self.lm.embed(query_text)
         ids, documents, metadatas, distances = self.db_api.get_closest_emotion(
             emotion_embedding=embedding,
             n_results=num_results,
@@ -359,7 +359,7 @@ class ToolsClient:
             )
         ]
         return {
-            "message": f"Here is the list of chunks / knowledge for your emotion query '{emotion_text}'.",
+            "message": f"Here is the list of chunks / knowledge for your emotion query '{query_text}'.",
             "knowledge": knowledge,
             "tool_timestamp": datetime.datetime.now().isoformat(),
         }
@@ -371,65 +371,3 @@ class ToolsClient:
             "date_time": datetime.datetime.now().isoformat(),
             "message": f"Das ist die aktuelle Uhrzeit und der aktuelle Tag.",
         }
-
-    # @tool(
-    #     description="Retrieve all chunks that belong to the same session as the first result from a semantic search."
-    # )
-    # def get_session_chunks(
-    #     self,
-    #     query_text: str,
-    #     sort_by_date: bool = True,
-    # ) -> Dict[str, Any]:
-    #     """
-    #     Find the first relevant chunk using semantic search and then retrieve all chunks
-    #     that share the same session_id.
-
-    #     Args:
-    #         query_text: The natural language query to find the initial chunk
-    #         sort_by_date: Whether to sort the results by date (default: True)
-
-    #     Returns:
-    #         A dictionary containing the session chunks and metadata
-    #     """
-    #     # First get the most relevant chunk to find the session_id
-    #     embedding = self.lm.embed(query_text)
-    #     ids, documents, metadatas, distances = self.db_api.get_closest(
-    #         embedding=embedding,
-    #         n_results=1,
-    #     )
-
-    #     if not metadatas or "session_id" not in metadatas[0]:
-    #         return {
-    #             "knowledge": [],
-    #             "tool_timestamp": datetime.datetime.now().isoformat(),
-    #             "message": "No matching session found.",
-    #         }
-
-    #     # Get all chunks with the same session_id
-    #     session_id = str(metadatas[0]["session_id"])  # Convert to string for API call
-    #     response = self.db_api.get_by_session_id(session_id)
-
-    #     if not response or not response.get("results"):
-    #         return {
-    #             "knowledge": [],
-    #             "tool_timestamp": datetime.datetime.now().isoformat(),
-    #             "message": "No chunks found for the session.",
-    #         }
-
-    #     results = response["results"]
-    #     if sort_by_date:
-    #         results.sort(key=lambda x: x["metadata"]["date"] if x["metadata"]["date"] else "")
-
-    #     knowledge = [
-    #         {
-    #             "content": result["document"],
-    #             "metadata": result["metadata"],
-    #         }
-    #         for result in results
-    #     ]
-
-    #     return {
-    #         "knowledge": knowledge,
-    #         "tool_timestamp": datetime.datetime.now().isoformat(),
-    #         "message": f"Found {len(knowledge)} chunks from the requested session.",
-    #     }

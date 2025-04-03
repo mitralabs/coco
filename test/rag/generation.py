@@ -396,15 +396,18 @@ def correctness(
             semscore_scores["multilingual"]
         )
         if not cfg.generation.geval.skip:
-            geval_correctness_metric.measure(
-                LLMTestCase(
-                    input=sample.query,
-                    actual_output=generated_answer,
-                    expected_output=gt_answer,
+            scores = []
+            for _ in range(cfg.generation.geval.shots):
+                geval_correctness_metric.measure(
+                    LLMTestCase(
+                        input=sample.query,
+                        actual_output=generated_answer,
+                        expected_output=gt_answer,
+                    )
                 )
-            )
+                scores.append(geval_correctness_metric.score)
             category_sample_metrics[sample.category]["geval_correctness"].append(
-                geval_correctness_metric.score
+                np.mean(scores)
             )
 
         if agent_conversations is not None:

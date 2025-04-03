@@ -80,6 +80,12 @@ def load_dataset(cfg: DictConfig):
     elif cfg.data.type == "custom":
         custom_datasets = parse.get_datasets(samples_path=cfg.data.custom_samples_root)
         return RAGDataset.from_custom_datasets(custom_datasets)
+    elif cfg.data.type == "custom_new":
+        # Assume the path is in custom_samples_root for now
+        # Load the 'full' split for the viewer
+        return RAGDataset.from_new_json_format(
+            path=cfg.data.custom_samples_root, split="full"
+        )
     else:
         st.error(f"Invalid dataset type: {cfg.data.type}")
         return None
