@@ -306,7 +306,21 @@ Based on the requirements, reference implementations, Coco SDK structure, and MC
     *   [x] Set `ENV PYTHONPATH="/app:/python_sdk/src"`.
     *   [x] Set `CMD ["uv", "run", "mcp", "run", "app/coco_db_mcp_server.py"]`.
 
-2.  **Create `.dockerignore`:**
+2.  **Implement Lifecycle Management:**
+    
+    **What:** Add proper process lifecycle management to ensure the container properly terminates when the client (e.g., Claude Desktop) exits.
+    * Implement signal handlers for SIGTERM and SIGINT.
+    * Add a watchdog process that detects when the parent process (stdin) closes.
+    * Ensure all database connections and resources are properly closed on shutdown.
+    
+    **Why:** Currently, containers remain running when Claude Desktop quits, which should not be the case. Proper lifecycle management ensures resources are cleaned up properly.
+    
+    *   [ ] Add signal handlers for SIGTERM and SIGINT in the server script.
+    *   [ ] Implement a watchdog process or mechanism to detect when the parent process terminates.
+    *   [ ] Add proper shutdown sequence to close all connections and resources.
+    *   [ ] Test that containers terminate when Claude Desktop exits.
+
+3.  **Create `.dockerignore`:**
     
     **What:** Create `services/mcp_coco_db_server/.dockerignore`. Add entries like `.venv`, `__pycache__`, `.git`, etc.
     
@@ -315,7 +329,7 @@ Based on the requirements, reference implementations, Coco SDK structure, and MC
     *   [x] Create `services/mcp_coco_db_server/.dockerignore`.
     *   [x] Add `.venv`, `__pycache__`, `.git`, etc.
 
-3.  **Define Environment Variables:**
+4.  **Define Environment Variables:**
     
     **What:** Document the list of *all* environment variables needed by the container at runtime:
     * `DATABASE_URL`
@@ -337,7 +351,7 @@ Based on the requirements, reference implementations, Coco SDK structure, and MC
     *   [x] List all required `COCO_*` variables.
     *   [x] Add this list to a README or documentation file.
 
-4.  **Define Volume Mount:**
+5.  **Define Volume Mount:**
     
     **What:** Document that the `python_sdk` directory from the host must be mounted to `/python_sdk` inside the container.
     
@@ -357,7 +371,56 @@ Based on the requirements, reference implementations, Coco SDK structure, and MC
     *   [x] Run `docker build -t coco/mcp-coco-db-server:latest -f Dockerfile .` from `services/mcp_coco_db_server`.
     *   [x] Verify the build completes successfully.
 
-2.  **Docker Run & Claude Desktop Integration:**
+2.  **Connection Stability Investigation and Improvement:**
+    
+    **What:** Investigate and fix the intermittent connection issues occurring with the database.
+    * Implement proper connection pooling with optimal settings.
+    * Add robust error handling and retry mechanisms for failed connections.
+    * Implement proper connection recovery after network interruptions.
+    * Add detailed logging for connection-related events to help diagnose issues.
+    
+    **Why:** The server connection currently is not stable and sometimes returns connection errors during queries. We need to find the root cause and make the connection to the Coco database more robust.
+    
+    *   [ ] Implement comprehensive connection error logging.
+    *   [ ] Optimize connection pool settings (max connections, timeouts, etc.).
+    *   [ ] Add connection health checks and automatic recovery.
+    *   [ ] Implement exponential backoff retry mechanisms for failed queries.
+    *   [ ] Test connection stability under various network conditions.
+
+3.  **Enhance Tool Documentation:**
+    
+    **What:** Improve the documentation of the tools to help LLMs like Claude better understand when to use different query types.
+    * Expand the tool description to clearly explain when to use:
+        * Standard SQL queries only
+        * Semantic queries only
+        * Combined SQL and semantic queries
+    * Include examples for each use case in the tool description.
+    * Add detailed parameter descriptions with examples.
+    
+    **Why:** Better documentation helps Claude make more intelligent decisions about when to use each type of query, resulting in more efficient and accurate database interactions.
+    
+    *   [ ] Rewrite the tool description with clearer explanations of query types.
+    *   [ ] Add specific examples for each query type in the tool description.
+    *   [ ] Include detailed parameter descriptions with examples.
+    *   [ ] Test the improved descriptions with Claude to verify understanding.
+
+4.  **Add MCP Schema Resources:**
+    
+    **What:** Implement additional MCP resources to provide easy access to database schema information.
+    * Implement `coco_db://tables` resource to list all tables.
+    * Enhance the existing `coco_db://schema/{table_name}` resource.
+    * Add a `coco_db://search/schema/{search_term}` resource to find tables/columns matching a search term.
+    * Add a `coco_db://table/{table_name}/sample` resource to get sample data.
+    
+    **Why:** These resources will allow Claude to easily retrieve schema information without having to write SQL statements, making database exploration more efficient.
+    
+    *   [ ] Implement `coco_db://tables` resource.
+    *   [ ] Enhance `coco_db://schema/{table_name}` resource.
+    *   [ ] Add `coco_db://search/schema/{search_term}` resource.
+    *   [ ] Add `coco_db://table/{table_name}/sample` resource.
+    *   [ ] Test all resources with Claude to verify they provide useful information.
+
+5.  **Docker Run & Claude Desktop Integration:**
     
     **What:** Configure `claude_desktop_config.json` similar to the example provided:
     ```json
@@ -392,6 +455,72 @@ Based on the requirements, reference implementations, Coco SDK structure, and MC
     *   [x] Check Claude Desktop MCP logs for errors.
     *   [x] Verify the server connects and the `execute_pgvector_query` tool appears.
     *   [x] Test executing both standard SQL and semantic vector queries via Claude chat.
+
+## Phase 5: Integration with Coco Agents and Production Deployment
+
+1.  **Implement MCP Client for Coco Agents:**
+    
+    **What:** Develop a client that allows Coco agents to access the MCP server's database query capabilities.
+    * Create a new client module in the Coco SDK that can connect to the MCP server.
+    * Implement methods to discover and use the tools exposed by the MCP server.
+    * Add functionality to translate between the agent's requests and the MCP protocol.
+    * Integrate with the existing agent framework to provide these tools via an OpenAI-compatible endpoint.
+    
+    **Why:** This will enable Coco agents to efficiently query the database using the same tools that are available to Claude Desktop, providing consistent capabilities across different interfaces.
+    
+    *   [ ] Create a new MCP client module in the Coco SDK.
+    *   [ ] Implement tool discovery and invocation mechanisms.
+    *   [ ] Add translation layer between agent requests and MCP protocol.
+    *   [ ] Integrate with the existing agent framework.
+    *   [ ] Test that agents can successfully query the database via the MCP server.
+
+2.  **Add MCP Server to Docker Compose:**
+    
+    **What:** Integrate the MCP server container into the Coco services docker-compose setup.
+    * Add a new service definition to the `docker-compose.yml` file.
+    * Configure appropriate environment variables, dependencies, and volume mounts.
+    * Ensure the MCP server starts automatically with other Coco services.
+    * Add health checks and appropriate restart policies.
+    
+    **Why:** This ensures the MCP server is always available when the Coco services are running, providing consistent access to database query capabilities for both human users and automated agents.
+    
+    *   [ ] Add MCP server service to `docker-compose.yml`.
+    *   [ ] Configure environment variables and dependencies.
+    *   [ ] Set up volume mounts for the Python SDK.
+    *   [ ] Add health checks and restart policies.
+    *   [ ] Test that the MCP server starts correctly with other Coco services.
+
+3.  **Implement Service Discovery for MCP Tools:**
+    
+    **What:** Create a mechanism for Coco agents to automatically discover and use the tools provided by the MCP server.
+    * Add service discovery logic to the agent initialization process.
+    * Implement tool registration with the agent's tool registry.
+    * Ensure proper authorization and access control for tool usage.
+    * Add configuration options to enable/disable specific tools.
+    
+    **Why:** Automatic discovery ensures that tools are made available to agents without manual configuration, simplifying deployment and ensuring consistent capabilities.
+    
+    *   [ ] Implement service discovery logic for MCP tools.
+    *   [ ] Add tool registration with the agent's tool registry.
+    *   [ ] Implement authorization and access control.
+    *   [ ] Add configuration options for tool availability.
+    *   [ ] Test automatic discovery and registration of tools.
+
+4.  **Production Deployment and Documentation:**
+    
+    **What:** Prepare the MCP server for production deployment and document its usage.
+    * Create comprehensive documentation for server configuration and deployment.
+    * Add monitoring and observability features (metrics, logging, etc.).
+    * Implement security best practices (minimal permissions, secure connections, etc.).
+    * Create user and developer guides for working with the MCP server.
+    
+    **Why:** Proper documentation and production-ready features ensure the MCP server can be reliably deployed and maintained in a production environment.
+    
+    *   [ ] Write comprehensive deployment documentation.
+    *   [ ] Implement monitoring and observability features.
+    *   [ ] Add security hardening measures.
+    *   [ ] Create user and developer guides.
+    *   [ ] Perform security review of the implementation.
 
 ## Implementation Findings and Challenges
 
