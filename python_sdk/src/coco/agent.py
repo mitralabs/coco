@@ -1,5 +1,6 @@
 import json
 import logging
+import time
 from typing import List, Dict, Any, Optional
 from tqdm import tqdm
 
@@ -49,6 +50,7 @@ class AgentClient:
         max_iterations: int = 5,
         temperature: float = 0.0,
         stream: bool = False,
+        try_number: int = 0,
     ) -> Dict[str, Any]:
         """Handle a chat session with tool calling support.
 
@@ -89,12 +91,30 @@ class AgentClient:
 
             tool_calls = result.get("tool_calls", [])
 
+            # no more tool calls
             if not tool_calls or len(ans["tool_calls"]) >= max_tool_calls:
                 ans["content"] = result.get("content", "")
                 conversation_history.append(
                     {"role": "assistant", "content": result.get("content", "")}
                 )
                 ans["conversation_history"] = conversation_history
+
+                # retry in 60 seconds if rate limit error
+                if "rate_limit_exceeded" in ans["content"].lower() and try_number < 3:
+                    logger.warning(
+                        f"Chat: openai rate limit reached, retrying in 60 seconds ({try_number + 1}/3)"
+                    )
+                    time.sleep(60)
+                    return self.chat(
+                        messages,
+                        model,
+                        max_tool_calls,
+                        max_iterations,
+                        temperature,
+                        stream,
+                        try_number + 1,
+                    )
+
                 return ans
 
             for tool_call in tool_calls:

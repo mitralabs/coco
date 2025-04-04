@@ -583,7 +583,7 @@ def generation_stage(
     )
     wandb.log({"optimization_target": optimization_target})
 
-    if not cfg.data.type == "custom":  # our dataset does not have gt chunks
+    if not "custom" in cfg.data.type:  # our dataset does not have gt chunks
         logger.info("Starting generation stage for ground truth chunks")
         mocked_top_chunks = mock_top_chunks(ds=ds, cfg=cfg)
         answers_gt = get_answers(

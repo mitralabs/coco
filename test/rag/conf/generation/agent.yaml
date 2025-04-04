@@ -45,6 +45,8 @@ get_answers:
       }
     }
 
+    ATTENTION: Make sure you only pass the arguments the tool expects! You can find those in the 'properties' section of the tool description.
+
     ## get_current_date_time tool
     - If the user's question contains any temporal constraints relative to the current date and time, you use the get_current_date_time tool to get the current date and time before using any other tool.
 
