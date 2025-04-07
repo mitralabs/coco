@@ -10,41 +10,14 @@
     - Click on `Upload and Monitor`. <br>-> Make sure to not open the Arduino IDE in parallel, since it might result in VS Code not being able to connect to the device. <br>(You can also manually `Build`, `Upload` and `Monitor` the ESP output.)
 
 
-## Some Notes on the current blinking pattern (regarding v1.0)
-- If coco blinks rapidly, this indicates an error.
-	- If occurs directly after turning on, the most probable cause is a missing SD card, or one that is badly plugged in.
-- During recording, the LED will be solid on.
+## Some Notes on the Firmware and the LED
+When Coco is not running, it is in Deepsleep. The button can be used to wake the device from deepsleep. It needs to be pressed and hold until the LED either goes on, or goes off. When the device was off (LED is off) it starts with a short blinking pattern, which either indicates the Battery Status, or an Error state. The latter is indicated through a rapid blinking pattern which runs for ~30s, afterwards the device goes back to deepsleep. If there is no error, the device will blink 1 to 4 times, and then stay on. The blinks indicate the battery level. 1 blink is equivalent to 25% charge. The device will record and upload data on it's own. While on, the LED will slowly fade, according to the battery state.
 
-### Task Priority Guidelines
-IDLE Task: Priority 0
-Your Background Tasks: 1-3
-Your Time-Critical Tasks: 4-5
-System Critical Tasks: 18-24
-Never use priority 25 (reserved for system tasks)
+*Note: The batterylifetime is bad at the moment. It's a serious area for improvement. I'd guess that task management is the place to start.*
+*Note 2: The knowledge of embedded systems design + c++ are sub optimal within our team. So don't panic when you see the code.*
 
 ## ToDo
-- [ ] Find a handle for SD Card Error to reset device utilizing the button. Factory Reset Button will mostlikely not be reachable, since inside of case.
+- [ ] Reintegrate learnings from testing.
 
-- [ ] Understand Setup and Init functions.
-
-- [ ] Thoroughly test firmware, if unexpected shutdowns occur.
-
-
-- [ ] Integrate Routine which brings device to deepsleep, when Voltage below a certain threshold.
-- [ ] Find routine for time triggered wake up to initiate file transfer etc.
-
-
-- [ ] Integrate WiFi, and Timezone on SD Card (although this poses security risks, if device is lost, and card inspected.)
-- [ ] Include WiFiMulti, so that multiple Networks are known.
-- [ ] Rewrite logging. It's currently pretty wild.
-- [ ] Look into File Compression like LZ77H (common in HTTP headers)
-- [ ] Add timeout mechanisms to avoid deadlocks if operations fail while holding the SD mutex.
-- [ ] Adjust battery percentage to realistic voltage curve (remove linear dependency)
-- [ ] static method refactor in application class
-- [ ] only enter ip adress once
-- [ ] fix buffer for file upload operations
-
----
-
-### Misc
-- [Further Information](https://wiki.seeedstudio.com/xiao_esp32s3_getting_started/)
+### Links
+- [Further Information on the ESP32S3](https://wiki.seeedstudio.com/xiao_esp32s3_getting_started/)

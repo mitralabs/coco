@@ -469,6 +469,33 @@ public:
     void errorBlinkLED(int interval);
     bool timedErrorBlinkLED(int interval, unsigned long duration);
     
+    //-------------------------------------------------------------------------
+    // BackendClient Wrappers
+    //-------------------------------------------------------------------------
+    /**
+     * @brief Starts the file upload background task
+     * @return true if task creation succeeds, false otherwise
+     */
+    bool startFileUploadTask();
+    
+    /**
+     * @brief Stops the file upload background task
+     * @return true if task was successfully stopped, false otherwise
+     */
+    bool stopFileUploadTask();
+    
+    /**
+     * @brief Starts the backend reachability check background task
+     * @return true if task creation succeeds, false otherwise
+     */
+    bool startBackendReachabilityTask();
+    
+    /**
+     * @brief Stops the backend reachability check background task
+     * @return true if task was successfully stopped, false otherwise
+     */
+    bool stopBackendReachabilityTask();
+    
 private:
     // Private constructor and deleted copy/assignment for singleton pattern
     Application();

@@ -216,6 +216,15 @@ void WifiManager::wifiConnectionTask(void *parameter) {
     }
 }
 
+void WifiManager::deleteConnectionTask() {
+    if (wifiConnectionTaskHandle != nullptr) {
+        TaskHandle_t tempHandle = wifiConnectionTaskHandle;
+        wifiConnectionTaskHandle = nullptr;
+        vTaskDelete(tempHandle);
+        if (app) app->log("WiFi connection task deleted");
+    }
+}
+
 void WifiManager::WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info) {
     if (app) app->log("Connected to WiFi access point");
 }
@@ -226,6 +235,9 @@ void WifiManager::WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info) {
     app->log("WiFi connected with IP: " + WiFi.localIP().toString());
     setCurrentScanInterval(MIN_SCAN_INTERVAL);
     app->setWifiConnected(true);
+    
+    // Delete the WiFi connection task since we're now connected
+    deleteConnectionTask();
     
     // Update time as soon as we get an IP address using Application wrapper
     if (app->updateFromNTP()) {
@@ -243,6 +255,13 @@ void WifiManager::WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info) {
             app->log("Failed to create NTP retry task");
         }
     }
+    
+    // Start backend reachability task now that we have a connection
+    if (app->startBackendReachabilityTask()) {
+        app->log("Backend reachability task started after WiFi connection");
+    } else {
+        app->log("Failed to start backend reachability task after WiFi connection");
+    }
 }
 
 void WifiManager::WiFiDisconnected(WiFiEvent_t event, WiFiEventInfo_t info) {
@@ -251,7 +270,23 @@ void WifiManager::WiFiDisconnected(WiFiEvent_t event, WiFiEventInfo_t info) {
     app->log("Disconnected from WiFi access point");
     app->setWifiConnected(false);
     
+    // Stop the backend reachability task since we lost WiFi
+    if (app->stopBackendReachabilityTask()) {
+        app->log("Backend reachability task stopped due to WiFi disconnection");
+    }
+    
+    // Stop the file upload task if it's running
+    if (app->stopFileUploadTask()) {
+        app->log("File upload task stopped due to WiFi disconnection");
+    }
+    
     // Reset scan interval to minimum when disconnected to attempt reconnection faster
     setCurrentScanInterval(MIN_SCAN_INTERVAL);
     setNextWifiScanTime(millis() + MIN_SCAN_INTERVAL);
+    
+    // Restart the WiFi connection task to handle reconnection
+    if (wifiConnectionTaskHandle == nullptr) {
+        app->log("Restarting WiFi connection task");
+        startConnectionTask();
+    }
 }

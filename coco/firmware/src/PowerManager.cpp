@@ -85,7 +85,7 @@ void PowerManager::updateBatteryStatus() {
     // Convert ADC value to voltage
     // For a 12-bit ADC with a 3.3V reference and voltage divider
     batteryVoltage = ((float)averagedRawValue / 4095.0) * 3.3 * VOLTAGE_DIVIDER_RATIO;
-    
+
     // Calculate battery percentage
     float percentage = ((batteryVoltage - BATTERY_MIN_VOLTAGE) / 
                        (BATTERY_MAX_VOLTAGE - BATTERY_MIN_VOLTAGE)) * 100.0f;

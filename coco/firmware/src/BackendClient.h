@@ -44,10 +44,22 @@ public:
     static bool startUploadTask();
     
     /**
+     * @brief Stops the file upload background task
+     * @return true if task was successfully stopped, false otherwise
+     */
+    static bool stopUploadTask();
+    
+    /**
      * @brief Starts the backend reachability check background task
      * @return true if task creation succeeds, false otherwise
      */
     static bool startReachabilityTask();
+    
+    /**
+     * @brief Stops the backend reachability check background task
+     * @return true if task was successfully stopped, false otherwise
+     */
+    static bool stopReachabilityTask();
     
     /**
      * @brief Gets the handle to the upload task
@@ -114,6 +126,27 @@ public:
      * @return true if WiFi is connected, backend is reachable, files are in queue, and battery is above threshold
      */
     static bool canUploadFiles();
+    
+    /**
+     * @brief Gets the number of consecutive upload failures
+     * @return Number of consecutive upload failures
+     */
+    static int getConsecutiveUploadFailures();
+    
+    /**
+     * @brief Resets the consecutive upload failures counter
+     */
+    static void resetConsecutiveUploadFailures();
+    
+    /**
+     * @brief Increments the consecutive upload failures counter
+     */
+    static void incrementConsecutiveUploadFailures();
+    
+    /**
+     * @brief Maximum allowed consecutive upload failures before restarting reachability task
+     */
+    static const int MAX_CONSECUTIVE_UPLOAD_FAILURES = 2;
 
 private:
     // Private constructor (singleton pattern enforcement)
@@ -128,6 +161,8 @@ private:
     static unsigned long nextBackendCheckTime;
     static unsigned long currentBackendInterval;
     static uint8_t* uploadBuffer;  // Fixed-size PSRAM buffer
+    static int consecutiveUploadFailures;
+    static bool shouldRestartReachabilityTask;
     
     // Internal helper functions
     static void fileUploadTaskFunction(void* parameter);
@@ -137,6 +172,12 @@ private:
     
     // Upload conditions meta variable
     static bool uploadConditionsMet();
+    
+    /**
+     * @brief Checks if conditions are right to start the upload task
+     * @return true if upload task should be started
+     */
+    static bool shouldStartUploadTask();
 };
 
 #endif // BACKEND_CLIENT_H

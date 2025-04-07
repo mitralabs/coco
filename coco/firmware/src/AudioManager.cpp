@@ -147,12 +147,7 @@ bool AudioManager::isBatteryOkForRecording() {
     
     float batteryVoltage = app->getBatteryVoltage();
     bool isOk = batteryVoltage >= BATTERY_RECORDING_THRESHOLD;
-    
-    if (!isOk) {
-        app->log("Battery voltage too low for recording: " + String(batteryVoltage) + "V (threshold: " + 
-                String(BATTERY_RECORDING_THRESHOLD) + "V)");
-    }
-    
+
     return isOk;
 }
 
@@ -274,15 +269,13 @@ void AudioManager::audioFileTask(void* parameter) {
             
             // Write the binary data to file using Application wrapper
             if (app->overwriteFile(fileName, binaryData)) {
-                app->log("Audio recorded and saved: " + fileName);
-                app->setWavFilesAvailable(true);
-
                 // Add to upload queue
                 if (app->addToUploadQueue(fileName)) {
-                    app->log("Added to upload queue: " + fileName);
+                    app->log("Audio recorded, saved and added to Uploadqueue: " + fileName);
                 } else {
-                    app->log("Failed to add to upload queue: " + fileName);
+                    app->log("Audio recorded, and saved. FAILED to add to Uploadqueue: " + fileName);
                 }
+                app->setWavFilesAvailable(true);
             } else {
                 app->log("Failed to write audio data to file: " + fileName);
             }

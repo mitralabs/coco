@@ -82,6 +82,11 @@ public:
     static bool startConnectionTask();
     
     /**
+     * @brief Delete the WiFi connection task if it exists
+     */
+    static void deleteConnectionTask();
+    
+    /**
      * @brief Get the task handle for the WiFi connection task
      * @return FreeRTOS task handle
      */

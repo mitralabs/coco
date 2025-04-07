@@ -82,13 +82,21 @@ void buttonTimerCallback(TimerHandle_t xTimer) {
  **********************************/
 void setup() {
   Serial.begin(115200);
-  setCpuFrequencyMhz(240); // Max frequency for setup phase
-
+  setCpuFrequencyMhz(CPU_FREQ_MHZ); 
+  
   // Initialize the application
   app = Application::getInstance();
   
   // Set up the button pin
   pinMode(BUTTON_PIN, INPUT_PULLUP);
+  // Attach interrupt to the button pin
+  attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), handleButtonPress, FALLING);
+
+  // Create and set timer
+  buttonTimer = xTimerCreate("ButtonTimer", pdMS_TO_TICKS(BUTTON_PRESS_TIME), pdFALSE, NULL, buttonTimerCallback);
+
+  // Handle different wake-up scenarios
+  handleWakeup();
 
   // Initialize the application with all subsystems
   if (!app->init()) {
@@ -97,15 +105,6 @@ void setup() {
     // This function won't return
   }
 
-  // Create and set timer
-  buttonTimer = xTimerCreate("ButtonTimer", pdMS_TO_TICKS(BUTTON_PRESS_TIME), pdFALSE, NULL, buttonTimerCallback);
-  
-  // Handle different wake-up scenarios
-  handleWakeup();
-  
-  setCpuFrequencyMhz(CPU_FREQ_MHZ); 
-  // Attach interrupt to the button pin
-  attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), handleButtonPress, FALLING);
 }
 
 void loop() {

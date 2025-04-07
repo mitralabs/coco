@@ -159,17 +159,7 @@ bool Application::init() {
             return false;
         }
         setBatteryMonitorTaskHandle(PowerManager::getBatteryMonitorTaskHandle());
-        
-        if (!BackendClient::startUploadTask()) {
-            log("Failed to start file upload task");
-            return false;
-        }
-        
-        if (!BackendClient::startReachabilityTask()) {
-            log("Failed to start backend reachability task");
-            return false;
-        }
-        
+
         // After starting all other tasks, start the deep sleep task
         if (!startDeepSleepTask()) {
             log("Failed to start deep sleep task");
@@ -307,13 +297,26 @@ void Application::deepSleepTask(void* parameter) {
     
     // Get singleton instance
     Application* app = Application::getInstance();
-    app->log("Deep sleep task starting with 3 second initialization delay");
+    
+    // Determine wake-up reason and set appropriate delay
+    esp_sleep_wakeup_cause_t wakeup_reason = app->getWakeupCause();
+    int delayMs;
+    
+    if (wakeup_reason == ESP_SLEEP_WAKEUP_TIMER) {
+        // Device woke up due to timer
+        delayMs = DEEP_SLEEP_DELAY_TIMER;
+        app->log("Deep sleep task starting with timer wake delay of " + String(delayMs) + "ms");
+    } else {
+        // Device woke up due to any other reason (button press, reset, etc.)
+        delayMs = DEEP_SLEEP_DELAY;
+        app->log("Deep sleep task starting with short delay of " + String(delayMs) + "ms");
+    }
 
     while (true) {
         // Check if initial delay has passed
         if (!initialDelayPassed) {
             TickType_t currentTime = xTaskGetTickCount();
-            if ((currentTime - startTime) >= pdMS_TO_TICKS(3000)) {
+            if ((currentTime - startTime) >= pdMS_TO_TICKS(delayMs)) {
                 // Mark initial delay as passed
                 initialDelayPassed = true;
                 app->log("Deep sleep task initialization delay complete, monitoring can begin");
@@ -334,8 +337,6 @@ void Application::deepSleepTask(void* parameter) {
         vTaskDelay(pdMS_TO_TICKS(DEEP_SLEEP_CHECK_INTERVAL));
     }
 }
-
-
 
 bool Application::isSystemIdle() const {
     // System is idle when:
@@ -607,4 +608,41 @@ void Application::errorBlinkLED(int interval) {
 
 bool Application::timedErrorBlinkLED(int interval, unsigned long duration) {
     return LEDManager::timedErrorBlinkLED(interval, duration);
+}
+
+//-------------------------------------------------------------------------
+// BackendClient Wrappers
+//-------------------------------------------------------------------------
+bool Application::startFileUploadTask() {
+    // This function is still needed for the interface
+    bool result = BackendClient::startUploadTask();
+    if (result) {
+        setUploadTaskHandle(BackendClient::getUploadTaskHandle());
+    }
+    return result;
+}
+
+bool Application::stopFileUploadTask() {
+    // This function is still needed for the interface
+    bool result = BackendClient::stopUploadTask();
+    if (result) {
+        setUploadTaskHandle(NULL);
+    }
+    return result;
+}
+
+bool Application::startBackendReachabilityTask() {
+    bool result = BackendClient::startReachabilityTask();
+    if (result) {
+        setReachabilityTaskHandle(BackendClient::getReachabilityTaskHandle());
+    }
+    return result;
+}
+
+bool Application::stopBackendReachabilityTask() {
+    bool result = BackendClient::stopReachabilityTask();
+    if (result) {
+        setReachabilityTaskHandle(NULL);
+    }
+    return result;
 }

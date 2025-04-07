@@ -21,6 +21,8 @@ SemaphoreHandle_t BackendClient::uploadMutex = nullptr;
 unsigned long BackendClient::nextBackendCheckTime = 0;
 unsigned long BackendClient::currentBackendInterval = MIN_SCAN_INTERVAL;
 uint8_t* BackendClient::uploadBuffer = nullptr;
+int BackendClient::consecutiveUploadFailures = 0;
+bool BackendClient::shouldRestartReachabilityTask = false;
 
 bool BackendClient::init(Application* application) {
     // Check if already initialized
@@ -57,6 +59,10 @@ bool BackendClient::init(Application* application) {
     nextBackendCheckTime = 0;
     currentBackendInterval = MIN_SCAN_INTERVAL;
     
+    // Initialize failure counter
+    consecutiveUploadFailures = 0;
+    shouldRestartReachabilityTask = false;
+    
     app->log("BackendClient: Initialized");
     initialized = true;
     return true;
@@ -66,6 +72,12 @@ bool BackendClient::startUploadTask() {
     if (!initialized) {
         app->log("BackendClient: Not initialized, can't start upload task");
         return false;
+    }
+    
+    // Don't create a new task if one is already running
+    if (uploadTaskHandle != nullptr) {
+        app->log("BackendClient: Upload task already running");
+        return true;
     }
     
     // Create the file upload task
@@ -85,6 +97,10 @@ bool BackendClient::startUploadTask() {
     }
     
     app->log("BackendClient: File upload task started");
+    
+    // Reset failure counter when starting upload task
+    resetConsecutiveUploadFailures();
+    
     return true;
 }
 
@@ -112,6 +128,26 @@ bool BackendClient::startReachabilityTask() {
     
     app->log("BackendClient: Backend reachability task started");
     return true;
+}
+
+bool BackendClient::stopUploadTask() {
+    if (uploadTaskHandle != nullptr) {
+        app->log("BackendClient: Stopping file upload task");
+        vTaskDelete(uploadTaskHandle);
+        uploadTaskHandle = nullptr;
+        return true;
+    }
+    return false;  // Task wasn't running
+}
+
+bool BackendClient::stopReachabilityTask() {
+    if (reachabilityTaskHandle != nullptr) {
+        app->log("BackendClient: Stopping backend reachability task");
+        vTaskDelete(reachabilityTaskHandle);
+        reachabilityTaskHandle = nullptr;
+        return true;
+    }
+    return false;  // Task wasn't running
 }
 
 TaskHandle_t BackendClient::getUploadTaskHandle() {
@@ -175,15 +211,52 @@ bool BackendClient::canUploadFiles() {
     bool batteryOk = isBatteryOkForUpload();
     
     bool canUpload = wifiConnected && backendReachable && filesInQueue && batteryOk;
-    
-    if (!canUpload) {
-        app->log("Upload conditions not met: WiFi=" + String(wifiConnected ? "yes" : "no") + 
-                ", Backend=" + String(backendReachable ? "yes" : "no") + 
-                ", Files=" + String(filesInQueue ? "yes" : "no") + 
-                ", Battery=" + String(batteryOk ? "ok" : "low"));
-    }
-    
+
     return canUpload;
+}
+
+bool BackendClient::shouldStartUploadTask() {
+    // Only start the upload task if these conditions are met:
+    // 1. Backend is reachable
+    // 2. WiFi is connected
+    // 3. There are files to upload
+    // 4. Battery is sufficient for upload
+    return app->isBackendReachable() && 
+           app->isWifiConnected() && 
+           app->hasWavFilesAvailable() && 
+           isBatteryOkForUpload();
+}
+
+int BackendClient::getConsecutiveUploadFailures() {
+    return consecutiveUploadFailures;
+}
+
+void BackendClient::resetConsecutiveUploadFailures() {
+    consecutiveUploadFailures = 0;
+}
+
+void BackendClient::incrementConsecutiveUploadFailures() {
+    consecutiveUploadFailures++;
+    
+    // Check if we've reached the maximum allowed failures
+    if (consecutiveUploadFailures >= MAX_CONSECUTIVE_UPLOAD_FAILURES) {
+        shouldRestartReachabilityTask = true;
+        
+        // Stop the upload task immediately
+        if (uploadTaskHandle != nullptr) {
+            app->log("BackendClient: Too many consecutive upload failures, stopping upload task");
+            vTaskDelete(uploadTaskHandle);
+            uploadTaskHandle = nullptr;
+            app->setUploadTaskHandle(nullptr);
+            
+            // Reset backend status 
+            app->setBackendReachable(false);
+            
+            // Trigger immediate backend check
+            setNextBackendCheckTime(millis());
+            setCurrentBackendInterval(MIN_SCAN_INTERVAL);
+        }
+    }
 }
 
 void BackendClient::fileUploadTaskFunction(void* parameter) {
@@ -227,11 +300,20 @@ void BackendClient::fileUploadTaskFunction(void* parameter) {
                             
                             // Remove from queue
                             app->removeFirstFromUploadQueue();
+                            
+                            // Reset failure counter on success
+                            resetConsecutiveUploadFailures();
                         } else {
                             app->log("Upload failed for: " + nextFile);
+                            
+                            // Track consecutive failures
+                            incrementConsecutiveUploadFailures();
                         }
                     } else {
                         app->log("Failed to read file into buffer: " + nextFile);
+                        
+                        // Count file read errors as upload failures too
+                        incrementConsecutiveUploadFailures();
                     }
                 } else {
                     // No files in queue
@@ -244,6 +326,18 @@ void BackendClient::fileUploadTaskFunction(void* parameter) {
             }
         }
         
+        // Check if we need to restart the reachability task
+        if (shouldRestartReachabilityTask) {
+            app->log("BackendClient: Restarting reachability task");
+            startReachabilityTask();
+            shouldRestartReachabilityTask = false;
+            
+            // Delete self (upload task)
+            app->log("BackendClient: Terminating upload task after failures");
+            vTaskDelete(nullptr);
+            return;
+        }
+        
         vTaskDelay(pdMS_TO_TICKS(UPLOAD_CHECK_INTERVAL));
     }
 }
@@ -254,7 +348,7 @@ bool BackendClient::uploadFileFromBuffer(size_t size, const String& filename) {
     }
     
     SemaphoreHandle_t httpMutex = app->getHttpMutex();
-    if (xSemaphoreTake(httpMutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+    if (xSemaphoreTake(httpMutex, pdMS_TO_TICKS(1000)) != pdTRUE) {
         app->log("Could not get HTTP mutex for file upload");
         return false;
     }
@@ -325,7 +419,7 @@ bool BackendClient::checkBackendReachability() {
     http.addHeader("X-API-Key", API_KEY);  // Add the API key as a custom header
 
     int httpResponseCode = http.GET();
-    app->log("Backend check response: " + String(httpResponseCode));
+    // app->log("Backend check response: " + String(httpResponseCode));
     
     http.end();
     xSemaphoreGive(httpMutex);
@@ -364,6 +458,20 @@ void BackendClient::backendReachabilityTaskFunction(void* parameter) {
                     setCurrentBackendInterval(MIN_SCAN_INTERVAL);
                     // Record successful check time
                     lastSuccessfulCheck = currentTime;
+                    
+                    // Check if we should start the upload task
+                    if (shouldStartUploadTask()) {
+                        app->log("Starting file upload task as backend is now reachable");
+                        if (startUploadTask()) {
+                            app->setUploadTaskHandle(uploadTaskHandle);
+                            
+                            // Delete self (reachability task) since upload task is now running
+                            app->log("BackendClient: Terminating reachability task as upload task is now running");
+                            app->setReachabilityTaskHandle(nullptr);
+                            vTaskDelete(nullptr);
+                            return;
+                        }
+                    }
                 } else {
                     app->log("Backend is not reachable");
                     app->setBackendReachable(false);

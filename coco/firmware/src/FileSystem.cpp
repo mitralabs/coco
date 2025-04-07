@@ -19,7 +19,7 @@ private:
     bool locked;
 public:
     SDLockGuard(SemaphoreHandle_t& mutex) : mutex(mutex), locked(false) {
-        locked = (xSemaphoreTake(mutex, pdMS_TO_TICKS(5000)) == pdTRUE);
+        locked = (xSemaphoreTake(mutex, pdMS_TO_TICKS(2000)) == pdTRUE);
     }
     ~SDLockGuard() {
         if (locked) xSemaphoreGive(mutex);
@@ -177,10 +177,6 @@ bool FileSystem::addToFile(const String& path, const String& content, bool isUpl
     if (bytesWritten != content.length()) {
         app->log("ERROR: Failed to write all data to file: " + path);
         return false;
-    }
-
-    if (isUploadQueue) {
-        app->log("Added to upload queue: " + content.substring(0, content.length() - 1)); // Remove newline
     }
 
     return true;
