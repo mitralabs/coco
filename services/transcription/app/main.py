@@ -13,7 +13,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Get the directory of the script
-BASE_DIR = Path()  # .resolve().parent.parent.parent  # Adjust based on depth
+BASE_DIR = (
+    Path().resolve().parent
+)  # .resolve().parent.parent.parent  # Adjust based on depth
 
 # Load .env file from the directory where Uvicorn is executed
 load_dotenv(BASE_DIR / ".env")
@@ -23,14 +25,13 @@ API_KEY = os.getenv("API_KEY")
 if not API_KEY:
     raise ValueError("API_KEY environment variable must be set")
 
-PATH_TO_MODEL = os.getenv("PATH_TO_MODEL")
-if not PATH_TO_MODEL:
-    raise ValueError("Model environment variable must be set")
+PATH_TO_WHISPER_DIRECTORY = BASE_DIR / "whisper.cpp"
+MODEL_NAME = os.getenv("MODEL_NAME", "base.bin")
+if not MODEL_NAME.startswith("ggml-"):
+    MODEL_NAME = f"ggml-{MODEL_NAME}"
 
-PATH_TO_EXECUTABLE = os.getenv("PATH_TO_EXECUTABLE")
-if not PATH_TO_EXECUTABLE:
-    raise ValueError("Executable environment variable must be set")
-
+PATH_TO_MODEL = PATH_TO_WHISPER_DIRECTORY / "models" / MODEL_NAME
+PATH_TO_EXECUTABLE = PATH_TO_WHISPER_DIRECTORY / "build" / "bin" / "whisper-cli"
 
 app = FastAPI()
 

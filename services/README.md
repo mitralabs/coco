@@ -26,12 +26,13 @@ From **this directory**:
 ```
 nohup python3 -m uvicorn transcription.app.main:app --host 0.0.0.0 --port 8000 --reload --log-level debug > transcription/uvicorn.log 2>&1 &
 ```
->Note: To show all background tasks, run `ps aux | grep uvicorn` <br> 
-And to stop it: `kill <PID>`
 
 This will run the whisper in a hidden process in the background on port 8000 of your machine, and further save the logs to /transcription/uvicorn.log
 
-Then:
+>Note: To show all background tasks, run `ps aux | grep uvicorn` <br> 
+And to stop one with it's ID run: `kill <PID>`
+
+**Then:**
 ```sh
 docker compose up -d --wait
 ```
@@ -42,6 +43,7 @@ This will:
 - spin up all containers
 - wait until container health checks pass
   (meaning the `/test` endpoints actually return status 200)
+- if a container is unhealthy, it most likely means that another container didn't spin up as supposed. E.g. when the orchestrator is unhealthy, make sure that the transcription service is running.
 
 (You can omit the `--wait` flag to not wait for the health check, but then containers might return no reply yet.)
 
@@ -50,3 +52,6 @@ If Dockerfiles were changed, force an image rebuild:
 ```sh
 docker compose up -d --wait --build
 ```
+
+## Notes:
+1. It is currently not implemented, that transcription is not done locally. But it's definitely possible to change that, since our approach follows the openai transcription standard.

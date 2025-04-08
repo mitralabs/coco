@@ -49,3 +49,7 @@ Well done. Your basics are setup. Now we need to setup the backend, and potentia
 
 1. Follow [this ReadMe](/services/README.md) to install the additional services.
 2. Set Up your Coco Device, by following [this ReadMe](/coco/firmware/README.md)
+
+
+### Notes to dev team:
+- The repo was primarily developed on mac os. Which means that you can run into trouble if running this on a different machine. Just contact us and we'll try to help as good as possible.

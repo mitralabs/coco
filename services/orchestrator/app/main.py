@@ -6,6 +6,8 @@ from fastapi import status, HTTPException
 import aiofiles
 import logging
 import threading
+import httpx
+import asyncio
 
 import os
 import sys
@@ -154,6 +156,39 @@ async def read_root():
 
 # Add a constant for max concurrent tasks
 MAX_CONCURRENT_TASKS = 1
+# Get the transcription test endpoint from environment variables
+TRANSCRIPTION_BASE_URL = os.getenv(
+    "COCO_TRANSCRIPTION_URL_BASE", "http://host.docker.internal:8000"
+)
+
+
+async def is_transcription_available():
+    """
+    Check if the transcription service is available
+
+    Returns:
+        bool: True if available, False otherwise
+    """
+    try:
+        test_url = f"{TRANSCRIPTION_BASE_URL}/test"
+        logger.info(f"Testing transcription service availability at: {test_url}")
+
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                test_url, headers={"X-API-Key": API_KEY}, timeout=5.0
+            )
+
+        if response.status_code == 200:
+            logger.info("Transcription service is available")
+            return True
+        else:
+            logger.error(
+                f"Transcription service returned status code: {response.status_code}"
+            )
+            return False
+    except Exception as e:
+        logger.error(f"Failed to connect to transcription service: {str(e)}")
+        return False
 
 
 # Route to upload audio data
@@ -164,6 +199,16 @@ async def upload_audio(
     api_key: str = Depends(get_api_key),
 ):
     try:
+        # Check if transcription service is available
+        if not await is_transcription_available():
+            return JSONResponse(
+                content={
+                    "status": "error",
+                    "message": "Transcription service is not available. Please try again later.",
+                },
+                status_code=503,  # Service Unavailable
+            )
+
         # Check if system is at capacity
         with task_lock:
             if active_tasks >= MAX_CONCURRENT_TASKS:

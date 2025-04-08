@@ -161,8 +161,9 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-# Ignore everything in the services/_data folder, including subdirectories and their contents
+# Ignore all files in the following directories
 services/_data/
+services/whisper.cpp/
 
 # Ignore all files that end with .wav
 *.wav
