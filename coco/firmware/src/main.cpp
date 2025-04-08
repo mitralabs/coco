@@ -8,6 +8,7 @@
 #include <freertos/queue.h>
 #include <freertos/semphr.h>
 #include <time.h>
+#include <esp_task_wdt.h>
 
 #include "config.h"  // Keep configuration header
 #include "secrets.h" // Keep secrets
@@ -82,7 +83,15 @@ void buttonTimerCallback(TimerHandle_t xTimer) {
  **********************************/
 void setup() {
   Serial.begin(115200);
-  setCpuFrequencyMhz(CPU_FREQ_MHZ); 
+  setCpuFrequencyMhz(CPU_FREQ_MHZ);
+
+  // Configure watchdog with proper struct configuration
+  esp_task_wdt_config_t wdt_config = {
+    .timeout_ms = WATCHDOG_TIMEOUT * 1000,  // Convert seconds to milliseconds
+    .idle_core_mask = (1 << 0),             // Watch idle task on CPU0
+    .trigger_panic = true                   // Trigger panic handler on timeout
+  };
+  esp_task_wdt_init(&wdt_config);
   
   // Initialize the application
   app = Application::getInstance();

@@ -38,6 +38,7 @@
  **********************************/
 #define LOG_QUEUE_SIZE 20       // Size of the log message queue
 #define ENABLE_STACK_MONITORING false  // Enable/disable stack usage monitoring
+#define WATCHDOG_TIMEOUT 10    // Watchdog timeout in seconds
 
 /**********************************
  *     TIMING & SLEEP SETTINGS    *

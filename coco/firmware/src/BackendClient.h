@@ -16,6 +16,7 @@
 #include <freertos/task.h>
 #include <HTTPClient.h>
 #include <esp_heap_caps.h>
+#include <esp_task_wdt.h>  // Include watchdog timer header
 
 #include "Application.h"
 #include "config.h"

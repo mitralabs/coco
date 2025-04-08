@@ -223,7 +223,6 @@ bool BackendClient::shouldStartUploadTask() {
     // 4. Battery is sufficient for upload
     return app->isBackendReachable() && 
            app->isWifiConnected() && 
-           app->hasWavFilesAvailable() && 
            isBatteryOkForUpload();
 }
 
@@ -240,22 +239,39 @@ void BackendClient::incrementConsecutiveUploadFailures() {
     
     // Check if we've reached the maximum allowed failures
     if (consecutiveUploadFailures >= MAX_CONSECUTIVE_UPLOAD_FAILURES) {
-        shouldRestartReachabilityTask = true;
+        app->log("BackendClient: Too many consecutive upload failures (" + 
+                 String(consecutiveUploadFailures) + ")");
         
-        // Stop the upload task immediately
+        // Reset backend status 
+        app->setBackendReachable(false);
+        
+        // Trigger immediate backend check
+        setNextBackendCheckTime(millis());
+        setCurrentBackendInterval(MIN_SCAN_INTERVAL);
+        
+        // Restart reachability task if it's not already running
+        if (reachabilityTaskHandle == nullptr) {
+            app->log("BackendClient: Starting reachability task to check backend");
+            if (startReachabilityTask()) {
+                app->log("BackendClient: Reachability task started successfully");
+            } else {
+                app->log("BackendClient: Failed to start reachability task");
+            }
+        } else {
+            app->log("BackendClient: Reachability task already running");
+        }
+        
+        // Stop the upload task
         if (uploadTaskHandle != nullptr) {
-            app->log("BackendClient: Too many consecutive upload failures, stopping upload task");
+            app->log("BackendClient: Stopping upload task due to consecutive failures");
             vTaskDelete(uploadTaskHandle);
             uploadTaskHandle = nullptr;
             app->setUploadTaskHandle(nullptr);
-            
-            // Reset backend status 
-            app->setBackendReachable(false);
-            
-            // Trigger immediate backend check
-            setNextBackendCheckTime(millis());
-            setCurrentBackendInterval(MIN_SCAN_INTERVAL);
+            app->log("BackendClient: Upload task stopped");
         }
+        
+        // Reset flag since we've handled the restart
+        shouldRestartReachabilityTask = false;
     }
 }
 
@@ -265,6 +281,14 @@ void BackendClient::fileUploadTaskFunction(void* parameter) {
         app->log("ERROR: Upload buffer was not allocated in PSRAM. Terminating upload task.");
         vTaskDelete(nullptr);
         return;
+    }
+
+    // Unsubscribe from the watchdog timer
+    esp_err_t err = esp_task_wdt_delete(NULL); 
+    if (err == ESP_OK) {
+        app->log("Task unsubscribed successfully from watchdog.");
+    } else {
+        app->log("Failed to unsubscribe task from watchdog.");
     }
 
     while (true) {
@@ -290,8 +314,6 @@ void BackendClient::fileUploadTaskFunction(void* parameter) {
                         
                         // If upload was successful, delete the file and remove from queue
                         if (uploadSuccess) {
-                            app->log("Upload successful, deleting file");
-                            
                             if (app->deleteFile(nextFile)) {
                                 app->log("File deleted: " + nextFile);
                             } else {
@@ -324,18 +346,6 @@ void BackendClient::fileUploadTaskFunction(void* parameter) {
                 app->setUploadInProgress(false);
                 xSemaphoreGive(uploadMutex);
             }
-        }
-        
-        // Check if we need to restart the reachability task
-        if (shouldRestartReachabilityTask) {
-            app->log("BackendClient: Restarting reachability task");
-            startReachabilityTask();
-            shouldRestartReachabilityTask = false;
-            
-            // Delete self (upload task)
-            app->log("BackendClient: Terminating upload task after failures");
-            vTaskDelete(nullptr);
-            return;
         }
         
         vTaskDelay(pdMS_TO_TICKS(UPLOAD_CHECK_INTERVAL));
