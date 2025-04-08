@@ -101,6 +101,17 @@ wait_for_startup() {
     return 1
 }
 
+# Function to check if whisper model already exists
+check_model_exists() {
+    local model=$1
+    local model_path="$WHISPER_DIR/models/ggml-$model.bin"
+    
+    if [ -f "$model_path" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
 
 # Load environment variables
 echo "🔍 Loading environment variables..."
@@ -170,13 +181,17 @@ else
     cd ..
 fi
 
-# Download the model
-echo "📥 Downloading whisper model: $WHISPER_MODEL..."
+# Check if the model already exists before attempting download
 cd "$WHISPER_DIR" || { echo "❌ Failed to navigate to $WHISPER_DIR"; exit 1; }
-sh ./models/download-ggml-model.sh "$WHISPER_MODEL" || { echo "❌ Failed to download the model"; exit 1; }
+if check_model_exists "$WHISPER_MODEL"; then
+    echo "✅ Model $WHISPER_MODEL already exists, skipping download."
+else
+    echo "📥 Downloading whisper model: $WHISPER_MODEL..."
+    sh ./models/download-ggml-model.sh "$WHISPER_MODEL" || { echo "❌ Failed to download the model"; exit 1; }
+    echo "✅ Model $WHISPER_MODEL downloaded successfully!"
+fi
 
 echo "✨ Setup complete! whisper.cpp is ready to use with model: $WHISPER_MODEL"
-
 
 # Return to the original directory
 cd "$(dirname "$0")" || { echo "❌ Failed to navigate to script directory"; exit 1; }
@@ -196,23 +211,27 @@ echo "🚀 Setting up transcription service..."
 # Check if virtual environment exists
 if [ -d "$VENV_DIR" ]; then
     echo "📁 Virtual environment already exists at $VENV_DIR"
+    venv_created=false
 else
     echo "🔧 Creating virtual environment at $VENV_DIR"
     python3 -m venv "$VENV_DIR" || { echo "❌ Failed to create virtual environment"; exit 1; }
     echo "✅ Virtual environment created successfully"
+    venv_created=true
 fi
 
 # Activate virtual environment
 echo "🔌 Activating virtual environment"
 source "$VENV_DIR/bin/activate" || { echo "❌ Failed to activate virtual environment"; exit 1; }
 
-# Install requirements
-if [ -f "$TRANSCRIPTION_DIR/requirements.txt" ]; then
+# Install requirements only if virtual environment was newly created
+if [ "$venv_created" = true ] && [ -f "$TRANSCRIPTION_DIR/requirements.txt" ]; then
     echo "📦 Installing requirements from $TRANSCRIPTION_DIR/requirements.txt"
     pip install -r "$TRANSCRIPTION_DIR/requirements.txt" -q || { echo "❌ Failed to install requirements"; exit 1; }
     echo "✅ Requirements installed successfully"
-else
+elif [ "$venv_created" = true ] && [ ! -f "$TRANSCRIPTION_DIR/requirements.txt" ]; then
     echo "⚠️ No requirements.txt found in $TRANSCRIPTION_DIR"
+else
+    echo "ℹ️ Using existing virtual environment, skipping requirements installation"
 fi
 
 cd "$TRANSCRIPTION_DIR" || { echo "❌ Failed to navigate to $TRANSCRIPTION_DIR"; exit 1; }

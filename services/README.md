@@ -6,33 +6,24 @@ This directory contains all services running on the base station.
 
 - **Transcription**: A FastAPI-based service that transcribes audio files into text using the Whisper model.
 - **Chunking**: Provides text chunking functionality using LangChain.
-- **Database**: Offers vector database functionality using ChromaDB for storing embeddings and metadata.
-- **Orchestrator**: Coordinates the transcription, chunking, and database services, managing the overall data flow.
-- **Docker Template**: A boilerplate FastAPI service for creating new services, including basic API key authentication.
-
-## Initial Usage (first time setup)
-1. Open a terminal, within this (coco/services) Directory.
-2. Create a virtual environment, by following the later steps:
-  - `python3 -m venv venv-coco`
-  - `source venv-coco/bin/activate` (-> this should suffice in the services directory)
-  - `pip install --upgrade pip`
-  - `pip install -r transcription/requirements.txt` (is it possible to include a path? should be...)
-3. Now have a look at the .env.template file. First remove the ".template" from the file name so that it's name is ".env". Then you have to exchange the two paths `PATH_TO_EXECUTABLE`and `PATH_TO_MODEL`, within that file.<br>
-Find the file named `whisper-cli` within the /whisper.cpp Directory. It is most likely under the path /whisper.cpp/build/bin. Copy the absolute path of the file. You can output the absolute path of a folder on your system by opening a terminal within that folder (right click, and open terminal) and typing `pwd`. This will probably output something like this `/Users/coco/path/to/whisper.cpp/build/bin`. Don't forget to append `whisper-cli`at the end. Do the same for the model-file which is probably under the /whisper.cpp/models/ directory and named `ggml-*.bin`.
+- **Database**: Offers vector database functionality using Postgres for storing embeddings and metadata.
+- **Orchestrator**: Is the bridge between the coco hardware device and the backend.
+- **Frontend**: A simple gradio frontend, which provides a chat interface.
 
 ## Usage
-From **this directory**:
+1. Duplicate the `.env.template`file and rename it to `.env`
+2. Feel free to choose another [whisper model](https://github.com/ggml-org/whisper.cpp/blob/master/models/README.md).
+3. *Instructions for the Openai API* will come later.
+4. Run the `backend_start.sh`script. It will do the following:
+  - Download the whisper.cpp repository, and remove git from it.
+  - Compile whisper for your machine.
+  - Download the whisper model of your choice
+  - Create a virtual environment for the packages needed for the transcription service.
+  - Start a FastAPI App in the Background as Transcription Service.
+  - Kick off the Build Process for all other services as Docker Containers.
 
-```
-nohup python3 -m uvicorn transcription.app.main:app --host 0.0.0.0 --port 8000 --reload --log-level debug > transcription/uvicorn.log 2>&1 &
-```
 
-This will run the whisper in a hidden process in the background on port 8000 of your machine, and further save the logs to /transcription/uvicorn.log
-
->Note: To show all background tasks, run `ps aux | grep uvicorn` <br> 
-And to stop one with it's ID run: `kill <PID>`
-
-**Then:**
+**Regarding Docker Compose**
 ```sh
 docker compose up -d --wait
 ```
@@ -54,4 +45,5 @@ docker compose up -d --wait --build
 ```
 
 ## Notes:
-1. It is currently not implemented, that transcription is not done locally. But it's definitely possible to change that, since our approach follows the openai transcription standard.
+- It is currently not implemented, that transcription is not done locally. But it's definitely possible to change that, since our approach follows the openai transcription standard.
+- If you want to see if the transcription process is running in the background use the command `ps aux | grep uvicorn`, which will show the uvicorn processes on your machine. If you further want to kill a process, use `kill <PID>` where <PID> is the Process ID.
