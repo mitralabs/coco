@@ -252,3 +252,8 @@ deactivate
 echo "🔌 Virtual environment deactivated"
 
 cd "$(dirname "$0")" || { echo "❌ Failed to navigate to script directory"; exit 1; }
+
+# Start Docker services
+echo "🐳 Starting Docker services..."
+docker compose up -d --wait || { echo "❌ Failed to start Docker services"; exit 1; }
+echo "✅ Docker services started. Please check whether the services are running healthy."
