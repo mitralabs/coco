@@ -1,0 +1,688 @@
+--- Category: people ---
+------------------------
+
+[Sample 1/20]
+  Query: Worüber habe ich mit Tom im Dezember 2023 gesprochen?
+  GT Answer: Du hast Tom am 16. Dezember 2023 getroffen und ihm zu seiner Beförderung gratuliert.
+  Chunks:
+    [ID: 6] [Datetime: 2023-12-10 18:30]
+      Ich: Hey Tom, hast du über Weihnachten Zeit? Ich dachte wir könnten uns vielleicht zwei Wochen vor Heiligabend treffen?
+      Tom: Klar, das klingt gut! Wie wäre es mit dem Samstag in einer Woche?
+      Ich: Perfekt, machen wir. Also am 16. Dezember.
+      Tom: Abgemacht.
+----------
+    [ID: 7] [Datetime: 2023-12-16 19:00]
+      Tom: Schön dich zu sehen!
+      Ich: Dich auch! Lange her. Wie läuft's?
+      Tom: Gut, gut. Beförderung bekommen, wie du vielleicht gehört hast.
+      Ich: Ja, Glückwunsch nochmal! Verdient hast du es dir.
+----------
+
+[Sample 2/20]
+  Query: Welche Tipps gab mir Tom zum Laufen?
+  GT Answer: Tom riet dir zu festen Terminen, Playlists und kleinen Zielen; er suchte auch Laufveranstaltungen heraus und motivierte dich.
+  Chunks:
+    [ID: 19] [Datetime: 2024-02-10 11:00]
+      Ich: Hi Tom, wie schaffst du es eigentlich, beim Laufen so dranzubleiben?
+      Tom: Feste Termine im Kalender und eine gute Playlist helfen mir.
+      Ich: Gute Idee. Ich laufe immer so unregelmäßig. Gestern wieder nur 4km.
+      Tom: Setz dir kleine Ziele, das motiviert.
+----------
+    [ID: 71] [Datetime: 2024-11-20 17:30]
+      Ich: Tom, ich überlege, mich für einen 10km-Lauf anzumelden. Nächstes Frühjahr vielleicht.
+      Tom: Super Idee! Das gibt nochmal extra Motivation.
+      Ich: Ja, das dachte ich auch. Muss nur einen passenden finden.
+      Tom: Kann dir gerne welche raussuchen.
+----------
+    [ID: 77] [Datetime: 2024-12-20 17:00]
+      Tom: Hey, super Sache mit den 10km!
+      Ich: Danke Tom! Deine Tipps haben echt geholfen.
+      Tom: Gerne! Und, schon einen Lauf für nächstes Jahr ausgesucht?
+      Ich: Ja, im April gibt es hier einen Stadtlauf. Da will ich mitmachen.
+----------
+    [ID: 91] [Datetime: 2025-02-20 16:00]
+      Tom: Trainingsplan für den Stadtlauf steht?
+      Ich: Ja, so ungefähr. Ich versuche, dreimal die Woche zu laufen. Ein langer Lauf am Wochenende.
+      Tom: Klingt vernünftig. Wie weit bist du jetzt?
+      Ich: Letzten Sonntag 12km. Langsam steigern.
+----------
+    [ID: 97] [Datetime: 2025-03-25 18:30]
+      Ich: Nur noch vier Wochen bis zum Stadtlauf.
+      Tom: Die Aufregung steigt?
+      Ich: Ja, total. Ich hoffe, ich bin gut genug vorbereitet.
+      Tom: Bist du! Du hast super trainiert.
+      Ich: Danke fürs Mutmachen.
+----------
+    [ID: 101] [Datetime: 2025-04-18 18:00]
+      Ich: Muskelkater vom Stadtlauf ist endlich weg.
+      Tom: Haha, das gehört dazu. Schon das nächste Ziel im Blick?
+      Ich: Puh, erstmal nicht. Vielleicht im Herbst ein weiterer 10km Lauf, aber jetzt genieße ich mal die Pause.
+      Tom: Vernünftig.
+----------
+    [ID: 126] [Datetime: 2025-10-10 17:30]
+      Tom: Eine Woche noch bis zum Lauf!
+      Ich: Jaa, langsam werde ich nervös. Aber ich freu mich auch drauf.
+      Tom: Das wird gut! Du bist doch top vorbereitet.
+      Ich: Danke! Drück mir die Daumen.
+----------
+    [ID: 153] [Datetime: 2026-04-03 17:30]
+      Ich: Das Halbmarathon-Training ist echt hart. Die langen Läufe am Wochenende schlauchen ganz schön.
+      Tom: Das ist normal. Aber du steigerst dich doch sicher, oder?
+      Ich: Ja, schon. Bin jetzt bei 15km. Aber 21km... Puh.
+      Tom: Das packst du! Wann ist der Lauf?
+----------
+    [ID: 161] [Datetime: 2026-05-29 16:00]
+      Tom: Wie läuft das HM-Training?
+      Ich: Gut, aber intensiv. Hab gestern 17km geschafft.
+      Tom: Super! Das ist schon eine Hausnummer.
+      Ich: Ja, ich merke es heute in den Beinen. Aber das Gefühl danach ist toll.
+----------
+    [ID: 169] [Datetime: 2026-07-24 15:00]
+      Tom: Projekt Delta also. Große Nummer! Was ist das genau?
+      Ich: Es geht um die Entwicklung einer neuen Software-Plattform für unsere Kernprodukte. Sehr strategisch.
+      Tom: Klingt spannend! Da kannst du ja alles anwenden, was du gelernt hast.
+      Ich: Das hoffe ich!
+----------
+    [ID: 176] [Datetime: 2026-09-11 14:00]
+      Ich: Halbmarathon geschafft! Es war unglaublich!
+      Tom: YES! Herzlichen Glückwunsch! Wie war die Zeit?
+      Ich: Zeit ist Nebensache. Ich bin einfach nur stolz, es durchgezogen zu haben. Die Atmosphäre war der Hammer.
+      Tom: Mega Leistung!
+----------
+    [ID: 219] [Datetime: 2024-02-16 08:30]
+      Ich: Guten Morgen. Kaffee?
+      Tom: Unbedingt. Die Nacht war kurz.
+      Ich: Bei mir auch. Konnte irgendwie schlecht einschlafen.
+      Tom: Zu viel nachgedacht?
+----------
+    [ID: 249] [Datetime: 2025-04-11 09:30]
+      Tom: Letzter Tag vor dem Stadtlauf! Alles bereit?
+      Ich: Ja! Klamotten liegen raus, Startnummer ist da. Jetzt nur noch gut schlafen.
+      Tom: Wird schon! Ich drück die Daumen!
+      Ich: Danke!
+----------
+    [ID: 312] [Datetime: 2025-10-20 09:00]
+      Ich: Guten Morgen. Puh, die Nacht war stürmisch.
+      Tom: Morgen. Ja, hat ganz schön gepfiffen draußen.
+      Ich: Konnte kaum schlafen.
+      Tom: Ich auch nicht. Kaffee?
+----------
+    [ID: 375] [Datetime: 2026-02-23 19:00]
+      Tom: Was macht das HM-Training?
+      Ich: Läuft. Bin jetzt bei 14km. Es wird langsam.
+      Tom: Das ist doch super! Weiter so!
+      Ich: Danke!
+----------
+    [ID: 402] [Datetime: 2025-09-18 10:00]
+      Ich: Das Training für den Herbstlauf läuft gut.
+      Tom: Super! Bist du im Plan?
+      Ich: Ja, fühle mich fit.
+      Tom: Klasse!
+----------
+    [ID: 430] [Datetime: 2025-10-06 16:00]
+      Ich: Das Training für den Lauf läuft. Bin ganz gut im Plan.
+      Tom: Super! Wie oft läufst du?
+      Ich: Dreimal die Woche. Zwei kürzere Läufe und einen langen am Wochenende.
+      Tom: Klingt gut.
+----------
+    [ID: 476] [Datetime: 2026-09-09 15:00]
+      Ich: Nur noch wenige Tage bis zum Halbmarathon! Die Nervosität steigt.
+      Tom: Das ist normal! Positiver Stress.
+      Ich: Ja, irgendwie schon. Ich freu mich ja auch drauf.
+      Tom: Wir drücken alle die Daumen!
+----------
+
+[Sample 3/20]
+  Query: Wann habe ich mit Max über meine Laufziele gesprochen?
+  GT Answer: Du sprachst häufig mit Max über deine Laufziele, z.B. über den Start des Trainings (Jan 2024), die Verletzung (Mai/Juni 2024), den erreichten 10km-Lauf (Dez 2024) und den Halbmarathon (Sept 2026).
+  Chunks:
+    [ID: 14] [Datetime: 2024-01-20 10:00]
+      Max: Hey, wie läuft das Lauftraining?
+      Ich: Puh, anstrengend. War gestern das erste Mal seit Ewigkeiten wieder joggen. Nur 3km geschafft.
+      Max: Aller Anfang ist schwer! Dranbleiben!
+      Ich: Ja, Motivation ist da!
+----------
+    [ID: 33] [Datetime: 2024-04-20 11:30]
+      Ich: Ich bin dieses Wochenende 7km gelaufen!
+      Max: Wow, super! Die 10km sind ja fast in Reichweite!
+      Ich: Ja, ich bin total motiviert jetzt. Das Laufen tut mir richtig gut, merke ich.
+      Max: Das ist die Hauptsache.
+----------
+    [ID: 41] [Datetime: 2024-05-25 11:00]
+      Max: Was macht der Knöchel?
+      Ich: Besser, danke. Ich hab aber immer noch Laufpause.
+      Max: Ärgerlich. Und das 10km Ziel?
+      Ich: Das muss ich wohl verschieben. Gesundheit geht vor.
+----------
+    [ID: 44] [Datetime: 2024-06-10 19:00]
+      Max: Und, wie war der 10km Lauf? Geschafft?
+      Ich: Leider nein. Ich hab zwar trainiert, aber kurz vorher hab ich mir den Knöchel verstaucht. Lesen klappt aber ganz gut, schon drei Romane dieses Jahr!
+      Max: Oh nein, gute Besserung! Aber immerhin das mit dem Lesen!
+----------
+    [ID: 59] [Datetime: 2024-09-15 16:00]
+      Ich: Hab heute versucht wieder zu laufen. Ganz langsam.
+      Max: Und?
+      Ich: Ging so. Der Knöchel hat nicht wehgetan, aber die Kondition ist komplett weg.
+      Max: Die kommt wieder. Nicht aufgeben.
+----------
+    [ID: 75] [Datetime: 2024-12-10 18:00]
+      Ich: Ich hab's getan! Ich hab 10km geschafft!
+      Max: Was? Echt jetzt? Großartig! Glückwunsch!
+      Ich: Danke! Bin total platt, aber glücklich. Am Ende war es hart, aber ich hab durchgezogen.
+      Max: Super Leistung! Dein Vorsatz für 2024 ist erreicht!
+----------
+    [ID: 81] [Datetime: 2025-01-12 15:00]
+      Max: Schon wieder am Trainieren für den Stadtlauf?
+      Ich: Ja, man muss ja dranbleiben. Heute lockere 5km.
+      Max: Respekt. Ich bin schon froh, wenn ich zum Sport komme.
+      Ich: Das Laufen ist echt zu meiner Routine geworden.
+----------
+    [ID: 94] [Datetime: 2025-03-08 12:00]
+      Ich: Ich war heute Morgen beim Arzt wegen meines Knöchels. Nur zur Kontrolle.
+      Max: Und? Alles okay für den Stadtlauf?
+      Ich: Ja, grünes Licht! Er meinte, solange ich es nicht übertreibe, passt das.
+      Max: Sehr gut!
+----------
+    [ID: 100] [Datetime: 2025-04-12 13:00]
+      Max: Und? Wie war der Stadtlauf?
+      Ich: Geschafft! Es war toll! Super Atmosphäre und ich bin gut durchgekommen.
+      Max: Klasse! Herzlichen Glückwunsch!
+      Ich: Danke! Jetzt erstmal die Beine hochlegen.
+----------
+    [ID: 175] [Datetime: 2026-09-04 18:00]
+      Max: Eine Woche noch! Bist du bereit für den Halbmarathon?
+      Ich: So bereit wie man sein kann. Ein bisschen aufgeregt, aber ich freue mich drauf.
+      Max: Das wird ein tolles Erlebnis!
+      Ich: Das glaube ich auch.
+----------
+    [ID: 176] [Datetime: 2026-09-11 14:00]
+      Ich: Halbmarathon geschafft! Es war unglaublich!
+      Tom: YES! Herzlichen Glückwunsch! Wie war die Zeit?
+      Ich: Zeit ist Nebensache. Ich bin einfach nur stolz, es durchgezogen zu haben. Die Atmosphäre war der Hammer.
+      Tom: Mega Leistung!
+----------
+    [ID: 246] [Datetime: 2025-03-07 12:00]
+      Max: Prüfung beim Arzt bestanden?
+      Ich: Haha, ja. Knöchel ist fit für den Stadtlauf.
+      Max: Super! Dann kann ja nichts mehr schiefgehen.
+      Ich: Hoffentlich nicht!
+----------
+    [ID: 271] [Datetime: 2026-02-16 12:00]
+      Max: Was macht das Halbmarathon-Projekt?
+      Ich: Haha, Projekt ist gut. Ich hab angefangen, nach Trainingsplänen zu schauen.
+      Max: Ehrgeizig! Traust du dir das zu?
+      Ich: Ich will es versuchen!
+----------
+    [ID: 286] [Datetime: 2026-09-07 15:00]
+      Max: Letzte Vorbereitungen für den Lauf?
+      Ich: Ja, locker trainieren, gut essen, viel schlafen.
+      Max: Klingt gut. Wird super!
+      Ich: Ich hoffe!
+----------
+    [ID: 347] [Datetime: 2026-06-15 15:00]
+      Ich: Ich bin am Wochenende 18km gelaufen!
+      Max: Wahnsinn! Halbmarathon-Training läuft!
+      Ich: Ja! War hart, aber ich hab's geschafft.
+      Max: Starke Leistung!
+----------
+    [ID: 377] [Datetime: 2026-08-24 18:00]
+      Max: Die 20km Marke geknackt beim Laufen?
+      Ich: Ja! Letzten Sonntag! War echt ein Meilenstein.
+      Max: Mega! Jetzt kann der Halbmarathon ja kommen.
+      Ich: Das hoffe ich!
+----------
+    [ID: 448] [Datetime: 2026-09-17 16:00]
+      Ich: Ich bin noch ganz euphorisch vom Halbmarathon!
+      Max: Das glaube ich! War sicher ein geiles Gefühl, ins Ziel zu laufen.
+      Ich: Ja, unbeschreiblich! Die ganze Anstrengung war vergessen.
+      Max: Sowas schweißt zusammen.
+----------
+    [ID: 453] [Datetime: 2024-03-11 10:00]
+      Max: 5km geschafft! Super!
+      Ich: Danke! Fühlt sich gut an, die Fortschritte zu sehen.
+      Max: Weiter so! Die 10km schaffst du locker bis Jahresende.
+      Ich: Das ist der Plan!
+----------
+    [ID: 475] [Datetime: 2026-06-10 19:00]
+      Max: Was macht das HM-Training?
+      Ich: Gut! Bin jetzt konstant bei 16-17km bei den langen Läufen.
+      Max: Stark! Du bist ja bald soweit.
+      Ich: Ja, die letzten Wochen werden nochmal intensiv.
+----------
+    [ID: 495] [Datetime: 2024-05-08 10:00]
+      Max: Dein Knöchel tut weh? Schon wieder?
+      Ich: Ja, leicht. Ich glaube, ich hab's beim Laufen übertrieben.
+      Max: Mach lieber mal Pause.
+      Ich: Ja, das mache ich.
+----------
+    [ID: 500] [Datetime: 2025-09-10 17:00]
+      Ich: Ich freue mich auf den Herbstlauf.
+      Max: Ja? Bist du gut drauf?
+      Ich: Ja, das Training läuft gut. Ich fühle mich fit.
+      Max: Dann wird das super!
+----------
+
+[Sample 4/20]
+  Query: Was habe ich mit Luise über meine Neujahrsvorsätze 2024 besprochen?
+  GT Answer: Du hast Luise Anfang Januar 2024 von deinen Vorsätzen erzählt: einen 10km-Lauf schaffen und mehr Bücher lesen.
+  Chunks:
+    [ID: 10] [Datetime: 2024-01-02 20:00]
+      Luise: Na, gute Vorsätze fürs neue Jahr?
+      Ich: Jaa, die Klassiker. Ich will versuchen endlich mal einen 10km Lauf zu schaffen und mehr Bücher zu lesen, nicht nur Arbeitssachen.
+      Luise: Ehrgeizig! Viel Erfolg dabei!
+----------
+
+[Sample 5/20]
+  Query: Worüber habe ich mich mit Anna Anfang Februar 2024 unterhalten?
+  GT Answer: Du hast dich mit Anna Anfang Februar 2024 über das Kick-Off für Projekt Alpha, deine Unsicherheit und Nervosität vor der Präsentation unterhalten.
+  Chunks:
+    [ID: 17] [Datetime: 2024-02-01 10:30]
+      Anna: Und, wie war das Kick-Off für Projekt Alpha?
+      Ich: Intensiv. Viel Verantwortung. Ähm, ich hoffe, ich pack das.
+      Anna: Klar packst du das! Du bist doch super organisiert.
+      Ich: Na ja, mal sehen. Die Erwartungen sind hoch.
+----------
+    [ID: 18] [Datetime: 2024-02-05 09:15]
+      Anna: Bist du bereit für die Präsentation für Projekt Alpha heute Nachmittag?
+      Ich: Ähm ja also ich glaube schon. Ich äh muss nur noch die äh die Folien noch mal durchgehen. Hoffentlich äh passt das alles so. Ist Herr Müller auch dabei?
+      Anna: Ja, der Chef kommt auch. Wird schon schiefgehen!
+      Ich: Ja hoffentlich. Ich bin äh etwas hm na ja angespannt.
+----------
+
+[Sample 6/20]
+  Query: Wann habe ich Lena von meinem Portugal-Urlaub erzählt?
+  GT Answer: Du hast Lena Ende September 2026 nach deiner Rückkehr von deinem Portugal-Urlaub davon erzählt.
+  Chunks:
+    [ID: 178] [Datetime: 2026-09-25 18:00]
+      Ich: Zurück aus Portugal. Es war traumhaft!
+      Lena: Willkommen zurück! Gut erholt?
+      Ich: Ja, total. Bereit für Projekt Delta.
+      Lena: Na dann kann's ja losgehen.
+----------
+    [ID: 288] [Datetime: 2026-09-28 16:00]
+      Ich: Zurück aus Portugal und voller Tatendrang für Projekt Delta!
+      Lena: Haha, das klingt gut! War der Urlaub schön?
+      Ich: Ja, super! Genau die richtige Mischung aus Stadt und Strand.
+      Lena: Perfekt.
+----------
+
+[Sample 7/20]
+  Query: Welches Feedback habe ich von Herr Müller im Juli 2024 bekommen?
+  GT Answer: Im Juli 2024 lobte Herr Müller deinen Erfolg bei Projekt Alpha und deine verbesserte proaktive Kommunikation.
+  Chunks:
+    [ID: 51] [Datetime: 2024-07-15 11:30]
+      Herr Müller: Halbjahresgespräch, Frau Bauer. Setzen Sie sich.
+      Ich: Ja, Herr Müller.
+      Herr Müller: Insgesamt bin ich zufrieden. Projekt Alpha war ein Erfolg, auch wenn der Start holprig war. Ihre proaktive Kommunikation hat sich verbessert.
+      Ich: Danke. Das freut mich.
+----------
+    [ID: 52] [Datetime: 2024-07-20 11:30]
+      Herr Müller: Bei Projekt Beta wünsche ich mir von Anfang an eine klare Struktur und regelmäßige Updates von Ihnen.
+      Ich: Ja, das werde ich sicherstellen.
+      Herr Müller: Gut. Gibt es von Ihrer Seite noch etwas?
+      Ich: Nein, danke.
+----------
+
+[Sample 8/20]
+  Query: Wann habe ich mit Papa über meine sportlichen Erfolge gesprochen?
+  GT Answer: Du hast mit Papa Ende Dezember 2024 darüber gesprochen, dass du deine sportlichen Ziele für das Jahr erreicht hast.
+  Chunks:
+    [ID: 78] [Datetime: 2024-12-28 11:00]
+      Ich: Frohe Weihnachten nachträglich, Papa!
+      Papa: Dir auch mein Kind! Na, wie war das Jahr?
+      Ich: Turbulent, aber gut. Hab meine sportlichen Ziele erreicht.
+      Papa: Das freut mich zu hören! Und die Arbeit?
+      Ich: Läuft auch gut.
+----------
+
+[Sample 9/20]
+  Query: Was habe ich mit Mama Ende Februar 2024 besprochen?
+  GT Answer: Du hast Ende Februar 2024 mit Mama über den Stress bei Projekt Alpha gesprochen und dass du einen Kuchen gebacken hast.
+  Chunks:
+    [ID: 22] [Datetime: 2024-02-25 16:00]
+      Ich: Hallo Mama. Ja, mir geht's gut. Projekt Alpha ist stressig, aber machbar.
+      Mama: Pass auf dich auf, Kind. Nicht zu viel arbeiten.
+      Ich: Ja Mama. Am Wochenende hab ich einen Kuchen gebacken, das entspannt mich immer.
+      Mama: Das ist schön. Was für einen denn?
+----------
+
+[Sample 10/20]
+  Query: Worüber habe ich mich mit Frau Schmidt im April 2024 unterhalten?
+  GT Answer: Du hast dich mit Frau Schmidt im April 2024 über die Übergabe der Unterlagen für Projekt Drache und den Abschluss des Projekts für dich unterhalten.
+  Chunks:
+    [ID: 31] [Datetime: 2024-04-10 16:00]
+      Ich: Frau Schmidt, die Unterlagen für Projekt Drache sind fertig. Soll ich sie Ihnen vorbeibringen?
+      Frau Schmidt: Legen Sie sie einfach auf meinen Schreibtisch, danke.
+      Ich: Okay. Ist das Projekt damit für mich abgeschlossen?
+      Frau Schmidt: Vorerst ja. Gut gemacht.
+----------
+
+[Sample 11/20]
+  Query: Wann habe ich Ben Klein eingearbeitet?
+  GT Answer: Du hast Ben Klein ab Anfang Juli 2024 eingearbeitet.
+  Chunks:
+    [ID: 47] [Datetime: 2024-06-25 10:00]
+      Frau Schmidt: Frau Bauer, könnten Sie die Einarbeitung von Herrn Klein übernehmen? Er fängt nächste Woche an.
+      Ich: Äh ja, klar. Gerne. In welchem Bereich wird er arbeiten?
+      Frau Schmidt: Er unterstützt uns im Marketing, auch bei Projekt Beta dann.
+      Ich: Alles klar.
+----------
+    [ID: 49] [Datetime: 2024-07-05 14:00]
+      Ich: Hi Ben, ich bin übrigens Ich. Ich soll dich einarbeiten.
+      Ben: Hallo Ich, freut mich. Ben Klein.
+      Ich: Willkommen im Team! Lass uns erstmal einen Kaffee trinken, dann zeig ich dir alles.
+      Ben: Super, danke!
+----------
+    [ID: 230] [Datetime: 2024-07-22 17:00]
+      Luise: Wie war die Einarbeitung von Ben?
+      Ich: Ganz gut. Netter Kerl, scheint motiviert zu sein.
+      Luise: Das ist doch super.
+      Ich: Ja, hoffe er lebt sich gut ein.
+----------
+    [ID: 307] [Datetime: 2024-07-19 09:30]
+      Ben: Kannst du mir kurz bei dieser Excel-Formel helfen?
+      Ich: Klar, zeig mal her.
+      Ben: Danke! Ich steh da gerade total auf dem Schlauch.
+      Ich: Kein Problem.
+----------
+    [ID: 325] [Datetime: 2024-08-12 09:30]
+      Ich: Ist Frau Schmidt heute im Haus?
+      Ben: Ich glaube ja. Hab sie vorhin gesehen.
+      Ich: Gut, danke. Muss ihr noch Unterlagen geben.
+      Ben: Kein Problem.
+----------
+    [ID: 340] [Datetime: 2024-07-29 14:00]
+      Ben: Hast du einen Tipp für ein gutes Restaurant hier in der Nähe?
+      Ich: Klar, der Italiener um die Ecke ist super. Oder der Asiate?
+      Ben: Italiener klingt gut. Danke!
+      Ich: Gerne!
+----------
+    [ID: 366] [Datetime: 2023-11-24 11:00]
+      Ich: Ich muss Frau Schmidt noch wegen der Budgetplanung für Projekt Drache ansprechen.
+      Tom: Mach das lieber bald. Sie mag keine Last-Minute-Aktionen.
+      Ich: Ich weiss. Gehe gleich mal rüber.
+      Tom: Viel Erfolg.
+----------
+    [ID: 371] [Datetime: 2025-01-27 14:00]
+      Ben: Der Abschlussbericht für Beta ist fertig. Willst du drüberschauen?
+      Ich: Ja, super, danke Ben! Schick mir den Link.
+      Ben: Erledigt.
+      Ich: Perfekt, danke!
+----------
+    [ID: 398] [Datetime: 2024-07-02 11:00]
+      Ich: Ben braucht noch etwas Unterstützung bei den Marketing-Tools.
+      Luise: Kannst du ihm das zeigen?
+      Ich: Ja, mache ich heute Nachmittag.
+      Luise: Super.
+----------
+    [ID: 411] [Datetime: 2024-07-11 14:00]
+      Ich: Ben hat sich schon gut eingearbeitet.
+      Max: Das ist doch super.
+      Ich: Ja, er ist eine gute Unterstützung für Projekt Beta.
+      Max: Freut mich für dich.
+----------
+    [ID: 440] [Datetime: 2024-07-24 10:00]
+      Ich: Ich muss Ben nochmal erklären, wie unser Reportingsystem funktioniert.
+      Tom: Ja, das ist am Anfang etwas unübersichtlich.
+      Ich: Finde ich auch. Ich mache ihm eine kurze Anleitung.
+      Tom: Super.
+----------
+    [ID: 496] [Datetime: 2024-08-08 16:00]
+      Ich: Ich muss Ben noch zeigen, wie die Urlaubsanträge funktionieren.
+      Anna: Ja, das System ist etwas umständlich.
+      Ich: Finde ich auch. Ich setz mich gleich mal mit ihm hin.
+      Anna: Super.
+----------
+
+[Sample 12/20]
+  Query: Welches Buch habe ich auf Empfehlung von Tom gelesen?
+  GT Answer: Auf Empfehlung von Tom hast du 'Der Hundertjährige, der aus dem Fenster stieg und verschwand' gelesen.
+  Chunks:
+    [ID: 46] [Datetime: 2024-06-20 17:00]
+      Ich: Tom, hast du einen Tipp für ein gutes Buch? Eher was Leichtes.
+      Tom: Klar, wie wäre es mit 'Der Hundertjährige, der aus dem Fenster stieg und verschwand'?
+      Ich: Oh ja, davon habe ich gehört. Ist das lustig?
+      Tom: Sehr!
+----------
+    [ID: 50] [Datetime: 2024-07-10 16:00]
+      Ich: Ich hab den 'Hundertjährigen' angefangen zu lesen. Echt witzig!
+      Tom: Sag ich doch!
+      Ich: Gute Empfehlung, danke!
+      Tom: Gerne. Was macht das Laufen?
+      Ich: Pausiert immer noch. Der Knöchel zwickt ab und zu.
+----------
+    [ID: 61] [Datetime: 2024-09-25 18:30]
+      Luise: Na, was macht die Lese-Challenge?
+      Ich: Gut! Hab den 'Hundertjährigen' durch und noch zwei andere Bücher im Urlaub gelesen. Sind jetzt schon sechs dieses Jahr!
+      Luise: Wow! Mehr als ich.
+      Ich: Dafür läufst du Marathons.
+----------
+
+[Sample 13/20]
+  Query: Mit wem habe ich meinen Geburtstag am 15. März 2024 gefeiert?
+  GT Answer: Du hast deinen Geburtstag am 15. März 2024 klein mit Lena und Luise gefeiert.
+  Chunks:
+    [ID: 23] [Datetime: 2024-03-01 12:00]
+      Max: Alles Gute zum Geburtstag nachträglich! War doch letzte Woche, oder?
+      Ich: Danke! Ja, am 15. März.
+      Max: Oh, dann war's ja vorgestern erst! Sorry! Wie hast du gefeiert?
+      Ich: Nur klein mit Lena und Luise. War sehr nett.
+----------
+    [ID: 26] [Datetime: 2024-03-15 19:00]
+      Lena: Happy Birthday!!
+      Ich: Danke Lena!
+      Luise: Alles Liebe auch von mir!
+      Ich: Danke Mädels! Schön, dass ihr da seid. Lasst uns anstossen!
+----------
+
+[Sample 14/20]
+  Query: Was habe ich mit Max Ende März 2024 über Kochen besprochen?
+  GT Answer: Du hast Max Ende März 2024 erzählt, dass du ein thailändisches Curry gekocht hast und Kochen vielleicht dein neues Hobby wird.
+  Chunks:
+    [ID: 28] [Datetime: 2024-03-25 18:30]
+      Ich: Ich hab dieses Wochenende ein neues Kochbuch ausprobiert. So ein thailändisches Curry.
+      Max: Oh lecker! Und, gut geworden?
+      Ich: Ja, erstaunlich gut! Hat total Spaß gemacht, die ganzen Gewürze und so. Ich glaube Kochen wird mein neues Hobby.
+      Max: Cool!
+----------
+    [ID: 467] [Datetime: 2024-03-25 11:00]
+      Lena: Dein Thai-Curry roch ja gestern Abend bis in den Flur!
+      Ich: Haha, echt? War auch sehr lecker.
+      Lena: Das glaube ich! Kochen ist echt dein Ding geworden.
+      Ich: Ja, macht mir total Spaß.
+----------
+
+[Sample 15/20]
+  Query: Worüber habe ich mich mit Anna Mitte Juni 2024 unterhalten?
+  GT Answer: Du hast dich Mitte Juni 2024 mit Anna über dein neu entdecktes Hobby Brotbacken unterhalten.
+  Chunks:
+    [ID: 45] [Datetime: 2024-06-15 12:30]
+      Anna: Mittagessen?
+      Ich: Ja gerne. Ich bin am Verhungern. Hab heute Morgen schon wieder ein Brot gebacken.
+      Anna: Du bist ja richtig zur Bäckerin mutiert!
+      Ich: Haha ja, das macht mir gerade total Spaß. Dieses Kneten und Warten, das ist fast meditativ.
+----------
+
+[Sample 16/20]
+  Query: Wann habe ich Luise vom erfolgreichen 10km-Lauf erzählt?
+  GT Answer: Du hast Luise Mitte Dezember 2024 vom erfolgreichen 10km-Lauf erzählt.
+  Chunks:
+    [ID: 76] [Datetime: 2024-12-15 16:00]
+      Luise: Herzlichen Glückwunsch zum 10km-Lauf!
+      Ich: Danke! War echt ein Kampf, aber es hat geklappt.
+      Luise: Mega! Und das Lesen?
+      Ich: Auch gut. Bin bei Buch Nummer neun für dieses Jahr. Das Ziel schaffe ich locker.
+      Luise: Läuft bei dir!
+----------
+    [ID: 240] [Datetime: 2024-12-16 17:00]
+      Ich: Geschafft! 10km! Ich kann's kaum glauben!
+      Luise: Ich hab's gehört! Mega! Herzlichen Glückwunsch!
+      Ich: Danke! Bin fix und fertig, aber glücklich.
+      Luise: Das musst du feiern!
+----------
+
+[Sample 17/20]
+  Query: Was waren meine Neujahrsvorsätze für 2025 laut meinem Gespräch mit Lena?
+  GT Answer: Laut deinem Gespräch mit Lena Anfang Januar 2025 waren deine Vorsätze für 2025, das Laufen beizubehalten und vielleicht einen Kochkurs zu machen.
+  Chunks:
+    [ID: 79] [Datetime: 2025-01-02 19:00]
+      Lena: Neue Vorsätze für 2025?
+      Ich: Puh, gute Frage. Ich glaube, ich will das Laufen beibehalten und vielleicht mal einen Kochkurs machen.
+      Lena: Kochkurs? Was für einen?
+      Ich: Vielleicht was Asiatisches oder Italienisches. Mal sehen.
+----------
+
+[Sample 18/20]
+  Query: Worüber habe ich mich mit Tom Ende November 2024 unterhalten?
+  GT Answer: Du hast dich Ende November 2024 mit Tom darüber unterhalten, dich für einen 10km-Lauf im nächsten Frühjahr anzumelden.
+  Chunks:
+    [ID: 71] [Datetime: 2024-11-20 17:30]
+      Ich: Tom, ich überlege, mich für einen 10km-Lauf anzumelden. Nächstes Frühjahr vielleicht.
+      Tom: Super Idee! Das gibt nochmal extra Motivation.
+      Ich: Ja, das dachte ich auch. Muss nur einen passenden finden.
+      Tom: Kann dir gerne welche raussuchen.
+----------
+
+[Sample 19/20]
+  Query: Mit wem habe ich hauptsächlich bei Projekt Gamma zusammengearbeitet?
+  GT Answer: Du hast bei Projekt Gamma hauptsächlich mit Sarah Müller zusammengearbeitet.
+  Chunks:
+    [ID: 115] [Datetime: 2025-07-25 14:00]
+      Ich: Hi Sarah, ich bin Ich. Wir arbeiten zusammen an Projekt Gamma.
+      Sarah: Hi Ich, freut mich. Sarah Müller, aber nicht verwandt mit dem Chef, haha.
+      Ich: Haha, gut zu wissen. Ich bin für das Marketing zuständig. Wollen wir uns nächste Woche mal zusammensetzen?
+      Sarah: Gerne. Ich mache das technische Projektmanagement.
+----------
+    [ID: 118] [Datetime: 2025-08-15 10:30]
+      Ich: Das Gamma-Projekt läuft gut an. Die Zusammenarbeit mit Sarah klappt super.
+      Tom: Das ist doch die Hauptsache. Ein gutes Team ist Gold wert.
+      Ich: Absolut. Wir nutzen jetzt auch einige agile Methoden, das hilft.
+      Tom: Siehst du, die Weiterbildung zahlt sich aus.
+----------
+    [ID: 122] [Datetime: 2025-09-12 16:30]
+      Sarah: Ich finde die Retrospektiven, die du eingeführt hast, echt hilfreich für Gamma.
+      Ich: Das freut mich. Ich finde auch, dass es die Zusammenarbeit verbessert.
+      Sarah: Definitiv. Man spricht Probleme früher an.
+      Ich: Genau das ist der Sinn.
+----------
+    [ID: 130] [Datetime: 2025-11-07 16:00]
+      Sarah: Die Abstimmung mit dem US-Team für Gamma ist manchmal etwas... äh... mühsam, findest du nicht?
+      Ich: Ja, die Zeitverschiebung macht es nicht einfach und die Erwartungen sind manchmal anders. Aber wir kriegen das hin.
+      Sarah: Stimmt. Gut, dass wir regelmäßige Calls haben.
+      Ich: Ja, das hilft.
+----------
+    [ID: 144] [Datetime: 2026-02-06 14:30]
+      Sarah: Der Rollout-Plan für Gamma steht jetzt, oder?
+      Ich: Ja, die letzten Details sind geklärt. Nächsten Monat geht es in den USA los.
+      Sarah: Super. Dann können wir ja fast durchatmen.
+      Ich: Fast. Die erste Phase wird sicher intensiv.
+----------
+    [ID: 151] [Datetime: 2026-03-20 16:00]
+      Ich: Der Englischkurs hat angefangen. Ist gut, aber auch anspruchsvoll.
+      Sarah: Business English? Ja, das kann knifflig sein. Aber super nützlich für unsere Calls.
+      Ich: Das hoffe ich. Ich merke schon, wo meine Schwächen liegen.
+      Sarah: Übung macht den Meister.
+----------
+    [ID: 156] [Datetime: 2026-04-24 14:00]
+      Sarah: Der Europa-Rollout von Gamma steht bevor. Alles bereit?
+      Ich: Ja, die Teams sind gebrieft, die Systeme angepasst. Nächste Woche geht's los.
+      Sarah: Spannend! Hoffentlich läuft es so glatt wie in den USA.
+      Ich: Daumen drücken!
+----------
+    [ID: 163] [Datetime: 2026-06-12 14:30]
+      Ich: Der Englischkurs ist bald vorbei. Ich überlege, danach einen Konversationskurs zu machen.
+      Sarah: Gute Idee. Das hilft am meisten, um flüssiger zu werden.
+      Ich: Ja, das denke ich auch. Muss mal schauen, was angeboten wird.
+      Sarah: Gibt sicher was Passendes.
+----------
+    [ID: 251] [Datetime: 2025-05-12 14:00]
+      Sarah: Hi Ich, ich habe gehört du machst die PM Weiterbildung? Wie ist sie so?
+      Ich: Hi Sarah! Ja, genau. Sie ist wirklich gut, sehr praxisnah. Kann ich empfehlen.
+      Sarah: Super, danke! Vielleicht mache ich die nächstes Jahr auch.
+      Ich: Gute Idee!
+----------
+    [ID: 311] [Datetime: 2025-06-24 16:00]
+      Sarah: Du wirkst manchmal etwas gestresst. Alles okay?
+      Ich: Ja, danke der Nachfrage. Nur viel zu tun gerade mit dem Gamma-Start.
+      Sarah: Wenn was ist, sag Bescheid, ja?
+      Ich: Danke, lieb von dir.
+----------
+    [ID: 329] [Datetime: 2025-07-14 16:00]
+      Ich: Das Gamma-Projekt erfordert viel Abstimmung.
+      Sarah: Ja, aber ich finde, wir machen das gut als Team.
+      Ich: Stimmt. Die Tools, die wir nutzen, helfen auch sehr.
+      Sarah: Ja, ohne wäre es Chaos.
+----------
+    [ID: 358] [Datetime: 2025-06-30 11:00]
+      Sarah: Ich fahre nächste Woche in Urlaub.
+      Ich: Oh schön! Wohin geht's?
+      Sarah: Nach Schweden, wandern.
+      Ich: Klingt toll! Genieß es!
+----------
+    [ID: 373] [Datetime: 2025-08-11 10:00]
+      Sarah: Wie organisierst du eigentlich deine Aufgaben?
+      Ich: Ich nutze eine Kombination aus digitalem Kalender und einer To-Do-App.
+      Sarah: Ah, okay. Ich bin eher der Listen-Typ auf Papier.
+      Ich: Jeder hat sein System.
+----------
+    [ID: 429] [Datetime: 2025-07-01 10:00]
+      Sarah: Willkommen im Gamma-Team! Ich freu mich auf die Zusammenarbeit.
+      Ich: Danke Sarah, ich mich auch! Wird bestimmt spannend.
+      Sarah: Denke ich auch.
+      Ich: Lass uns nächste Woche mal einen Kaffee trinken.
+----------
+    [ID: 444] [Datetime: 2025-08-06 15:00]
+      Ich: Die PM-Weiterbildung hat mir echt die Augen geöffnet für manche Dinge.
+      Sarah: Ja? Zum Beispiel?
+      Ich: Wie wichtig klare Rollenverteilung und gute Kommunikation sind.
+      Sarah: Absolut!
+----------
+
+[Sample 20/20]
+  Query: Worüber habe ich mit Sarah im Kontext von Projekt Delta gesprochen?
+  GT Answer: Du hast mit Sarah über das Kick-Off, Team-Herausforderungen, agile Methoden, Präsentationen, technische Komplexitäten, Wissensaustausch und externe Experten im Kontext von Projekt Delta gesprochen.
+  Chunks:
+    [ID: 180] [Datetime: 2026-10-09 11:00]
+      Ich: Das Kick-Off für Delta war gut. Viele neue Gesichter im Team.
+      Sarah: Ja, wird eine Herausforderung, alle unter einen Hut zu bekommen.
+      Ich: Stimmt. Aber ich habe ein gutes Gefühl. Wir haben die Rollen klar verteilt.
+      Sarah: Das ist schonmal die halbe Miete.
+----------
+    [ID: 186] [Datetime: 2026-11-20 17:00]
+      Ich: Die Arbeit im Delta-Team läuft gut. Wir haben einen guten Rhythmus gefunden.
+      Sarah: Ja, finde ich auch. Die Daily Stand-ups helfen sehr.
+      Ich: Und die Kommunikation ist offen. Das ist wichtig bei so einem großen Projekt.
+      Sarah: Absolut.
+----------
+    [ID: 197] [Datetime: 2027-01-29 15:00]
+      Sarah: Die erste Projektphase von Delta schließen wir ja bald ab.
+      Ich: Ja, sieht gut aus. Die Meilenstein-Präsentation ist nächste Woche.
+      Sarah: Bist du nervös?
+      Ich: Ein bisschen. Ist die erste große Präsi für Delta vor dem Management.
+      Sarah: Wird schon! Die Ergebnisse stimmen ja.
+----------
+    [ID: 318] [Datetime: 2027-02-08 10:00]
+      Ich: Ich finde es wichtig, dass wir im Delta-Team auch mal informell zusammensitzen.
+      Sarah: Ja, absolut. Das stärkt den Zusammenhalt.
+      Ich: Vielleicht sollten wir mal wieder einen Team-Lunch organisieren?
+      Sarah: Gute Idee!
+----------
+    [ID: 336] [Datetime: 2027-03-29 15:00]
+      Ich: Ich finde, wir sollten im Delta-Team mehr auf Wissensaustausch achten.
+      Sarah: Gute Idee. Vielleicht regelmäßige kurze Sessions, wo jemand was vorstellt?
+      Ich: Ja, zum Beispiel. Oder eine gemeinsame Wissensdatenbank.
+      Sarah: Lass uns das mal im nächsten Retro besprechen.
+----------
+    [ID: 436] [Datetime: 2027-04-28 14:00]
+      Ich: Phase 2 von Delta läuft an. Die technischen Details sind knifflig.
+      Sarah: Ja, da müssen wir echt aufpassen.
+      Ich: Aber die Experten, die wir hinzugezogen haben, sind gut.
+      Sarah: Das beruhigt.
+----------
+    [ID: 451] [Datetime: 2027-05-26 11:00]
+      Sarah: Die externen Experten für Delta sind echt gut.
+      Ich: Finde ich auch. Die bringen wichtiges Know-How rein.
+      Sarah: Das hilft uns bei den technischen Knackpunkten enorm.
+      Ich: Absolut.
+----------
+ 

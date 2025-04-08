@@ -1,0 +1,395 @@
+--- Category: time ---
+----------------------
+
+[Sample 1/20]
+  Query: Wann genau habe ich mich mit Tom getroffen, kurz bevor Weihnachten 2023 losging?
+  GT Answer: Ihr habt euch am 16. Dezember 2023 getroffen.
+  Chunks:
+    [ID: 6] [Datetime: 2023-12-10 18:30]
+      Ich: Hey Tom, hast du über Weihnachten Zeit? Ich dachte wir könnten uns vielleicht zwei Wochen vor Heiligabend treffen?
+      Tom: Klar, das klingt gut! Wie wäre es mit dem Samstag in einer Woche?
+      Ich: Perfekt, machen wir. Also am 16. Dezember.
+      Tom: Abgemacht.
+----------
+    [ID: 7] [Datetime: 2023-12-16 19:00]
+      Tom: Schön dich zu sehen!
+      Ich: Dich auch! Lange her. Wie läuft's?
+      Tom: Gut, gut. Beförderung bekommen, wie du vielleicht gehört hast.
+      Ich: Ja, Glückwunsch nochmal! Verdient hast du es dir.
+----------
+
+[Sample 2/20]
+  Query: An welchem Datum habe ich Geburtstag?
+  GT Answer: Dein Geburtstag ist am 15. März.
+  Chunks:
+    [ID: 23] [Datetime: 2024-03-01 12:00]
+      Max: Alles Gute zum Geburtstag nachträglich! War doch letzte Woche, oder?
+      Ich: Danke! Ja, am 15. März.
+      Max: Oh, dann war's ja vorgestern erst! Sorry! Wie hast du gefeiert?
+      Ich: Nur klein mit Lena und Luise. War sehr nett.
+----------
+    [ID: 95] [Datetime: 2025-03-15 20:00]
+      Luise: Alles Liebe zum Geburtstag!
+      Ich: Danke Luise!
+      Max: Von mir auch Happy Birthday!
+      Ich: Danke euch! Schön, dass ihr gekommen seid zum Essen.
+      Luise: Selbstgekocht?
+      Ich: Na klar! Italienisch, frisch aus dem Kochkurs.
+----------
+    [ID: 149] [Datetime: 2026-03-13 18:00]
+      Max: Bald ist dein Geburtstag! Schon Pläne?
+      Ich: Ja, ich mache eine kleine Feier am Samstagabend. Einfach gemütlich bei mir.
+      Max: Klingt gut! Bin dabei!
+      Ich: Super!
+----------
+    [ID: 203] [Datetime: 2027-03-12 19:30]
+      Max: Bald Geburtstag! Feierst du wieder?
+      Ich: Ich denke, dieses Jahr nur ganz klein. Vielleicht essen gehen mit dir und Lena?
+      Max: Sehr gerne!
+      Ich: Ich kläre das mal mit Lena.
+----------
+
+[Sample 3/20]
+  Query: In welchem Monat wollte ich den Keller aufräumen?
+  GT Answer: Du wolltest den Keller im Februar 2025 aufräumen.
+  Chunks:
+    [ID: 85] [Datetime: 2025-01-25 18:00]
+      Lena: Was steht bei dir so an in nächster Zeit?
+      Ich: Och, nicht viel. Nächsten Monat will ich endlich mal meinen Keller aufräumen. Das schiebe ich schon ewig vor mir her.
+      Lena: Haha, der Klassiker!
+----------
+
+[Sample 4/20]
+  Query: Wann begann der italienische Kochkurs, an dem ich teilgenommen habe?
+  GT Answer: Der italienische Kochkurs begann im Februar 2025.
+  Chunks:
+    [ID: 84] [Datetime: 2025-01-20 18:00]
+      Ich: Ich hab mich für einen italienischen Kochkurs angemeldet!
+      Luise: Oh wie cool! Wann geht der los?
+      Ich: Nächsten Monat, immer dienstags abends.
+      Luise: Toll! Da musst du uns ja bald bekochen.
+      Ich: Mal sehen, was ich lerne!
+----------
+    [ID: 87] [Datetime: 2025-02-04 21:00]
+      Ich: Der erste Abend vom Kochkurs war super!
+      Max: Erzähl!
+      Ich: Wir haben Gnocchi selbst gemacht. War einfacher als gedacht und sehr lecker.
+      Max: Klingt gut! Ich will auch Gnocchi!
+----------
+
+[Sample 5/20]
+  Query: An welchem Datum habe ich die 10km beim Laufen geschafft?
+  GT Answer: Du hast die 10km am oder kurz vor dem 10. Dezember 2024 geschafft.
+  Chunks:
+    [ID: 75] [Datetime: 2024-12-10 18:00]
+      Ich: Ich hab's getan! Ich hab 10km geschafft!
+      Max: Was? Echt jetzt? Großartig! Glückwunsch!
+      Ich: Danke! Bin total platt, aber glücklich. Am Ende war es hart, aber ich hab durchgezogen.
+      Max: Super Leistung! Dein Vorsatz für 2024 ist erreicht!
+----------
+
+[Sample 6/20]
+  Query: Wann habe ich die Einarbeitung von Herrn Klein übernommen?
+  GT Answer: Du hast die Einarbeitung von Herrn Klein Anfang Juli 2024 übernommen.
+  Chunks:
+    [ID: 47] [Datetime: 2024-06-25 10:00]
+      Frau Schmidt: Frau Bauer, könnten Sie die Einarbeitung von Herrn Klein übernehmen? Er fängt nächste Woche an.
+      Ich: Äh ja, klar. Gerne. In welchem Bereich wird er arbeiten?
+      Frau Schmidt: Er unterstützt uns im Marketing, auch bei Projekt Beta dann.
+      Ich: Alles klar.
+----------
+    [ID: 49] [Datetime: 2024-07-05 14:00]
+      Ich: Hi Ben, ich bin übrigens Ich. Ich soll dich einarbeiten.
+      Ben: Hallo Ich, freut mich. Ben Klein.
+      Ich: Willkommen im Team! Lass uns erstmal einen Kaffee trinken, dann zeig ich dir alles.
+      Ben: Super, danke!
+----------
+
+[Sample 7/20]
+  Query: In welchem Zeitraum fand mein Urlaub in Italien statt?
+  GT Answer: Dein Urlaub in Italien fand im August 2024 statt und dauerte zwei Wochen.
+  Chunks:
+    [ID: 43] [Datetime: 2024-06-05 18:30]
+      Luise: Urlaub schon gebucht?
+      Ich: Ja! Es geht im August für zwei Wochen nach Italien. Ich freu mich so!
+      Luise: Oh wie schön! Wohin genau?
+      Ich: Toskana. Bisschen Kultur, bisschen Entspannung.
+----------
+    [ID: 55] [Datetime: 2024-08-15 10:00]
+      Ich: Ciao aus Florenz! Es ist wunderschön hier!
+      Luise: Oh wie toll! Genieß es!
+      Ich: Mach ich! Das Essen ist ein Traum.
+----------
+    [ID: 56] [Datetime: 2024-09-01 09:00]
+      Ich: Bin wieder da! Der Urlaub war fantastisch.
+      Tom: Willkommen zurück! Gut erholt?
+      Ich: Ja, total. Bereit für Projekt Beta.
+      Tom: Na dann los!
+----------
+
+[Sample 8/20]
+  Query: Wann startete Projekt Alpha offiziell?
+  GT Answer: Projekt Alpha startete offiziell am 1. Februar 2024.
+  Chunks:
+    [ID: 16] [Datetime: 2024-02-01 08:45]
+      Ich: Guten Morgen Herr Müller.
+      Herr Müller: Morgen Frau Bauer. Kurze Info: Ab heute startet offiziell das Projekt Alpha. Sie übernehmen die Teilprojektleitung Marketing.
+      Ich: Oh, okay. Das ist... eine Herausforderung.
+      Herr Müller: Ich zähle auf Sie. Details gibt's im Kick-Off um 10.
+----------
+
+[Sample 9/20]
+  Query: Wann war die Abschlusspräsentation für Projekt Alpha?
+  GT Answer: Die Abschlusspräsentation für Projekt Alpha fand am 16. Mai 2024 statt.
+  Chunks:
+    [ID: 37] [Datetime: 2024-05-10 14:30]
+      Herr Müller: Frau Bauer, wie sieht es aus? Alpha-Präsentation nächste Woche.
+      Ich: Wir sind in den letzten Zügen. Ähm, die Kernpunkte stehen, das Design ist final. Es sollte alles klappen.
+      Herr Müller: Ich erwarte ein exzellentes Ergebnis.
+      Ich: Ja. Äh, natürlich.
+----------
+    [ID: 38] [Datetime: 2024-05-15 17:00]
+      Anna: Alles klar bei dir? Du siehst gestresst aus.
+      Ich: Bin ich auch. Die Alpha-Präsentation morgen macht mich nervös. Ich hab Angst, was falsch zu machen.
+      Anna: Quatsch, das wird super. Du hast doch alles im Griff.
+      Ich: Hoffentlich.
+----------
+    [ID: 39] [Datetime: 2024-05-16 16:00]
+      Tom: Und? Wie lief die Präsentation?
+      Ich: Gut! Herr Müller war zufrieden. Ich bin so erleichtert!
+      Tom: Siehst du! Hab ich doch gesagt.
+      Ich: Jetzt brauche ich erstmal ein Wochenende zum Entspannen.
+----------
+
+[Sample 10/20]
+  Query: Ich sprach mit Tom über einen Stadtlauf nächstes Frühjahr. Wann war dieses Gespräch, und wann sollte der Lauf stattfinden?
+  GT Answer: Das Gespräch war am 20. November 2024, und der Lauf sollte im Frühjahr 2025 stattfinden (er fand dann im April 2025 statt).
+  Chunks:
+    [ID: 71] [Datetime: 2024-11-20 17:30]
+      Ich: Tom, ich überlege, mich für einen 10km-Lauf anzumelden. Nächstes Frühjahr vielleicht.
+      Tom: Super Idee! Das gibt nochmal extra Motivation.
+      Ich: Ja, das dachte ich auch. Muss nur einen passenden finden.
+      Tom: Kann dir gerne welche raussuchen.
+----------
+    [ID: 77] [Datetime: 2024-12-20 17:00]
+      Tom: Hey, super Sache mit den 10km!
+      Ich: Danke Tom! Deine Tipps haben echt geholfen.
+      Tom: Gerne! Und, schon einen Lauf für nächstes Jahr ausgesucht?
+      Ich: Ja, im April gibt es hier einen Stadtlauf. Da will ich mitmachen.
+----------
+    [ID: 100] [Datetime: 2025-04-12 13:00]
+      Max: Und? Wie war der Stadtlauf?
+      Ich: Geschafft! Es war toll! Super Atmosphäre und ich bin gut durchgekommen.
+      Max: Klasse! Herzlichen Glückwunsch!
+      Ich: Danke! Jetzt erstmal die Beine hochlegen.
+----------
+
+[Sample 11/20]
+  Query: Wann habe ich mit dem Buch 'Der Schatten des Windes' angefangen, und wann war ich damit fertig?
+  GT Answer: Du hast kurz vor dem 25. Januar 2024 damit angefangen und warst am 15. April 2024 damit fertig.
+  Chunks:
+    [ID: 15] [Datetime: 2024-01-25 18:00]
+      Lena: Was liest du gerade Schönes?
+      Ich: Hab mit 'Der Schatten des Windes' angefangen. Ziemlich gut bisher.
+      Lena: Oh ja, das ist toll! Sag Bescheid, wie es dir gefallen hat.
+      Ich: Mach ich!
+----------
+    [ID: 30] [Datetime: 2024-04-05 20:00]
+      Luise: Was machst du am Wochenende?
+      Ich: Ich wollte mal wieder laufen gehen, vielleicht schaffe ich ja 7km. Und ich hab mir vorgenommen, endlich 'Der Schatten des Windes' zu beenden.
+      Luise: Klingt nach einem Plan. Viel Erfolg beim Laufen!
+----------
+    [ID: 32] [Datetime: 2024-04-15 19:00]
+      Lena: Und, Buch beendet?
+      Ich: Ja! 'Der Schatten des Windes' war fantastisch. Wirklich toll geschrieben.
+      Lena: Hab ich doch gesagt! Was liest du als nächstes?
+      Ich: Ich glaube, ich brauche erstmal was Leichteres nach diesem Wälzer.
+----------
+
+[Sample 12/20]
+  Query: Wann trat das Problem mit meinem Knöchel beim Laufen das erste Mal auf?
+  GT Answer: Das Problem mit deinem Knöchel trat am oder kurz vor dem 5. Mai 2024 auf.
+  Chunks:
+    [ID: 36] [Datetime: 2024-05-05 15:00]
+      Ich: Heute war ich wieder laufen. Fast 8km! Aber mein Knöchel tut jetzt weh.
+      Luise: Oh je, überanstrengt?
+      Ich: Ich hoffe nicht. Ich mach mal ein paar Tage Pause.
+      Luise: Gute Idee. Nicht dass du dich verletzt vor deinem 10km Ziel.
+----------
+    [ID: 495] [Datetime: 2024-05-08 10:00]
+      Max: Dein Knöchel tut weh? Schon wieder?
+      Ich: Ja, leicht. Ich glaube, ich hab's beim Laufen übertrieben.
+      Max: Mach lieber mal Pause.
+      Ich: Ja, das mache ich.
+----------
+
+[Sample 13/20]
+  Query: Wann fand das Halbjahresgespräch mit Herr Müller im Jahr 2024 statt?
+  GT Answer: Das Halbjahresgespräch mit Herr Müller fand am 15. Juli 2024 statt.
+  Chunks:
+    [ID: 51] [Datetime: 2024-07-15 11:30]
+      Herr Müller: Halbjahresgespräch, Frau Bauer. Setzen Sie sich.
+      Ich: Ja, Herr Müller.
+      Herr Müller: Insgesamt bin ich zufrieden. Projekt Alpha war ein Erfolg, auch wenn der Start holprig war. Ihre proaktive Kommunikation hat sich verbessert.
+      Ich: Danke. Das freut mich.
+----------
+
+[Sample 14/20]
+  Query: Wann startete Projekt Beta?
+  GT Answer: Projekt Beta startete im September 2024.
+  Chunks:
+    [ID: 42] [Datetime: 2024-06-01 09:00]
+      Herr Müller: Frau Bauer, gute Arbeit bei Projekt Alpha. Das Ergebnis war überzeugend.
+      Ich: Danke Herr Müller. Das freut mich sehr.
+      Herr Müller: Als nächstes wartet Projekt Beta auf Sie. Das wird aber entspannter. Start ist im September.
+      Ich: Okay, danke für die Info.
+----------
+    [ID: 56] [Datetime: 2024-09-01 09:00]
+      Ich: Bin wieder da! Der Urlaub war fantastisch.
+      Tom: Willkommen zurück! Gut erholt?
+      Ich: Ja, total. Bereit für Projekt Beta.
+      Tom: Na dann los!
+----------
+
+[Sample 15/20]
+  Query: Ich habe gesagt, Herr Müller gebe mir bis Ende nächster Woche Bescheid bezüglich der Weiterbildungen. Wann war das, und bis wann sollte ich spätestens Bescheid bekommen?
+  GT Answer: Das Gespräch war am 10. Februar 2025. Du solltest bis spätestens zum 21. Februar 2025 Bescheid bekommen (und hast es am 25. Februar bekommen).
+  Chunks:
+    [ID: 88] [Datetime: 2025-02-10 14:00]
+      Ich: Herr Müller, hier sind die Vorschläge für Projektmanagement-Weiterbildungen.
+      Herr Müller: Danke Frau Bauer. Ich schaue es mir an und gebe Ihnen bis Ende nächster Woche Bescheid.
+      Ich: Vielen Dank.
+----------
+    [ID: 92] [Datetime: 2025-02-25 11:30]
+      Herr Müller: Frau Bauer, ich habe mir die Weiterbildungen angesehen. Der Kurs 'Agiles Projektmanagement für Fortgeschrittene' scheint mir passend. Wir übernehmen die Kosten.
+      Ich: Oh, super! Vielen Dank, Herr Müller!
+      Herr Müller: Melden Sie sich an. Beginn ist im Mai.
+----------
+
+[Sample 16/20]
+  Query: Wann fand der Stadtlauf statt, an dem ich teilgenommen habe?
+  GT Answer: Der Stadtlauf fand am oder kurz vor dem 12. April 2025 statt.
+  Chunks:
+    [ID: 91] [Datetime: 2025-02-20 16:00]
+      Tom: Trainingsplan für den Stadtlauf steht?
+      Ich: Ja, so ungefähr. Ich versuche, dreimal die Woche zu laufen. Ein langer Lauf am Wochenende.
+      Tom: Klingt vernünftig. Wie weit bist du jetzt?
+      Ich: Letzten Sonntag 12km. Langsam steigern.
+----------
+    [ID: 97] [Datetime: 2025-03-25 18:30]
+      Ich: Nur noch vier Wochen bis zum Stadtlauf.
+      Tom: Die Aufregung steigt?
+      Ich: Ja, total. Ich hoffe, ich bin gut genug vorbereitet.
+      Tom: Bist du! Du hast super trainiert.
+      Ich: Danke fürs Mutmachen.
+----------
+    [ID: 99] [Datetime: 2025-04-05 17:00]
+      Ich: Ich bin so nervös wegen des Laufs nächste Woche.
+      Lena: Ach was. Das wird super! Denk dran, wie weit du gekommen bist.
+      Ich: Ja, stimmt schon. Von 3km letztes Jahr auf jetzt 12-14km im Training.
+      Lena: Siehst du! Einfach laufen und genießen.
+----------
+    [ID: 100] [Datetime: 2025-04-12 13:00]
+      Max: Und? Wie war der Stadtlauf?
+      Ich: Geschafft! Es war toll! Super Atmosphäre und ich bin gut durchgekommen.
+      Max: Klasse! Herzlichen Glückwunsch!
+      Ich: Danke! Jetzt erstmal die Beine hochlegen.
+----------
+
+[Sample 17/20]
+  Query: Wann genau habe ich mit Luise und Lena meinen Geburtstag 2024 gefeiert?
+  GT Answer: Du hast am 15. März 2024 mit Luise und Lena gefeiert.
+  Chunks:
+    [ID: 23] [Datetime: 2024-03-01 12:00]
+      Max: Alles Gute zum Geburtstag nachträglich! War doch letzte Woche, oder?
+      Ich: Danke! Ja, am 15. März.
+      Max: Oh, dann war's ja vorgestern erst! Sorry! Wie hast du gefeiert?
+      Ich: Nur klein mit Lena und Luise. War sehr nett.
+----------
+    [ID: 26] [Datetime: 2024-03-15 19:00]
+      Lena: Happy Birthday!!
+      Ich: Danke Lena!
+      Luise: Alles Liebe auch von mir!
+      Ich: Danke Mädels! Schön, dass ihr da seid. Lasst uns anstossen!
+----------
+
+[Sample 18/20]
+  Query: Wann hatte ich erwähnt, dass ich nächsten Monat den Keller aufräumen will?
+  GT Answer: Du hast am 25. Januar 2025 erwähnt, dass du nächsten Monat den Keller aufräumen willst.
+  Chunks:
+    [ID: 85] [Datetime: 2025-01-25 18:00]
+      Lena: Was steht bei dir so an in nächster Zeit?
+      Ich: Och, nicht viel. Nächsten Monat will ich endlich mal meinen Keller aufräumen. Das schiebe ich schon ewig vor mir her.
+      Lena: Haha, der Klassiker!
+----------
+
+[Sample 19/20]
+  Query: Wann begann die Weiterbildung 'Agiles Projektmanagement', die Herr Müller genehmigt hat?
+  GT Answer: Die Weiterbildung begann im Mai 2025.
+  Chunks:
+    [ID: 92] [Datetime: 2025-02-25 11:30]
+      Herr Müller: Frau Bauer, ich habe mir die Weiterbildungen angesehen. Der Kurs 'Agiles Projektmanagement für Fortgeschrittene' scheint mir passend. Wir übernehmen die Kosten.
+      Ich: Oh, super! Vielen Dank, Herr Müller!
+      Herr Müller: Melden Sie sich an. Beginn ist im Mai.
+----------
+    [ID: 96] [Datetime: 2025-03-20 09:00]
+      Anna: Na, wie war die Geburtstagsfeier?
+      Ich: Sehr schön! Das Essen ist gut angekommen.
+      Anna: Das glaube ich. Wann fängt deine Weiterbildung an?
+      Ich: Im Mai. Ich freu mich schon drauf.
+----------
+    [ID: 103] [Datetime: 2025-05-02 09:00]
+      Herr Müller: Frau Bauer, Ihr Projektmanagement-Kurs beginnt ja diesen Monat, richtig?
+      Ich: Ja, genau. Nächste Woche geht es los.
+      Herr Müller: Gut. Ich erwarte, dass Sie das Gelernte dann auch in zukünftigen Projekten anwenden.
+      Ich: Selbstverständlich.
+----------
+
+[Sample 20/20]
+  Query: Wann fand der Halbmarathon statt, für den ich trainiert habe?
+  GT Answer: Der Halbmarathon fand im September 2026 statt, am oder kurz vor dem 11. September.
+  Chunks:
+    [ID: 154] [Datetime: 2026-04-10 19:00]
+      Ich: Ich überlege, im Herbst den Halbmarathon zu laufen. Es gibt einen schönen im September.
+      Luise: Oh, das passt ja gut. Dann hast du noch genug Zeit zum Trainieren.
+      Ich: Ja, das dachte ich auch. Muss mich nur bald anmelden.
+      Luise: Mach das!
+----------
+    [ID: 159] [Datetime: 2026-05-15 17:00]
+      Ich: Bin für den Halbmarathon im September angemeldet!
+      Lena: Yeah! Glückwunsch zur Entscheidung!
+      Ich: Danke! Jetzt gibt's kein Zurück mehr. Das Training wird jetzt ernst.
+      Lena: Du schaffst das!
+----------
+    [ID: 170] [Datetime: 2026-07-31 18:30]
+      Ich: Hab den Portugal-Urlaub gebucht! Zwei Wochen im September, nach dem Halbmarathon.
+      Max: Perfekt getimt! Lissabon und Algarve?
+      Ich: Ja, erst ein paar Tage Lissabon, dann runter an die Küste.
+      Max: Sehr gut! Ich bin neidisch.
+----------
+    [ID: 171] [Datetime: 2026-08-07 16:00]
+      Ich: Nur noch 6 Wochen bis zum Halbmarathon.
+      Sarah: Und, wie läuft's? Nervös?
+      Ich: Geht so. Das Training ist hart, aber ich bin im Plan. Längster Lauf war jetzt 19km.
+      Sarah: Wow! Das schaffst du locker!
+      Ich: Ich hoffe es!
+----------
+    [ID: 174] [Datetime: 2026-08-28 19:00]
+      Ich: Der letzte lange Lauf vor dem Halbmarathon ist geschafft! 20km!
+      Luise: Wahnsinn! Du bist eine Maschine!
+      Ich: Haha, danke. Bin aber auch echt platt jetzt.
+      Luise: Kann ich verstehen. Jetzt nur noch die Beine hochlegen bis zum Lauf.
+----------
+    [ID: 175] [Datetime: 2026-09-04 18:00]
+      Max: Eine Woche noch! Bist du bereit für den Halbmarathon?
+      Ich: So bereit wie man sein kann. Ein bisschen aufgeregt, aber ich freue mich drauf.
+      Max: Das wird ein tolles Erlebnis!
+      Ich: Das glaube ich auch.
+----------
+    [ID: 176] [Datetime: 2026-09-11 14:00]
+      Ich: Halbmarathon geschafft! Es war unglaublich!
+      Tom: YES! Herzlichen Glückwunsch! Wie war die Zeit?
+      Ich: Zeit ist Nebensache. Ich bin einfach nur stolz, es durchgezogen zu haben. Die Atmosphäre war der Hammer.
+      Tom: Mega Leistung!
+----------
+ 

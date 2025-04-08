@@ -1,0 +1,1167 @@
+--- Category: language_sentiment ---
+------------------------------------
+
+[Sample 1/20]
+  Query: In welchen Situationen wirkte ich nervös oder unsicher?
+  GT Answer: Du wirktest besonders nervös und unsicher in Gesprächen über Projekt Alpha, insbesondere wenn du mit Vorgesetzten wie Herr Müller oder Frau Schmidt sprachst oder kurz vor wichtigen Präsentationen dazu.
+  Chunks:
+    [ID: 12] [Datetime: 2024-01-10 09:30]
+      Ich: Morgen Frau Schmidt. Haben Sie kurz Zeit wegen Projekt Drache?
+      Frau Schmidt: Ja, aber nur fünf Minuten. Was gibt's?
+      Ich: Ich bräuchte noch Input bezüglich der Zielgruppe. Da bin ich etwas unsicher.
+      Frau Schmidt: Schicken Sie mir Ihre Fragen per Mail, ich antworte später.
+----------
+    [ID: 16] [Datetime: 2024-02-01 08:45]
+      Ich: Guten Morgen Herr Müller.
+      Herr Müller: Morgen Frau Bauer. Kurze Info: Ab heute startet offiziell das Projekt Alpha. Sie übernehmen die Teilprojektleitung Marketing.
+      Ich: Oh, okay. Das ist... eine Herausforderung.
+      Herr Müller: Ich zähle auf Sie. Details gibt's im Kick-Off um 10.
+----------
+    [ID: 17] [Datetime: 2024-02-01 10:30]
+      Anna: Und, wie war das Kick-Off für Projekt Alpha?
+      Ich: Intensiv. Viel Verantwortung. Ähm, ich hoffe, ich pack das.
+      Anna: Klar packst du das! Du bist doch super organisiert.
+      Ich: Na ja, mal sehen. Die Erwartungen sind hoch.
+----------
+    [ID: 18] [Datetime: 2024-02-05 09:15]
+      Anna: Bist du bereit für die Präsentation für Projekt Alpha heute Nachmittag?
+      Ich: Ähm ja also ich glaube schon. Ich äh muss nur noch die äh die Folien noch mal durchgehen. Hoffentlich äh passt das alles so. Ist Herr Müller auch dabei?
+      Anna: Ja, der Chef kommt auch. Wird schon schiefgehen!
+      Ich: Ja hoffentlich. Ich bin äh etwas hm na ja angespannt.
+----------
+    [ID: 20] [Datetime: 2024-02-15 14:00]
+      Herr Müller: Wie läuft es denn mit dem Alpha Projekt? Sind wir im Zeitplan?
+      Ich: Ähm ja also im Großen und Ganzen schon. Es gab da ähm ein kleines Problem mit der äh Ressourcenzuweisung aber das das kriegen wir hin. Ich äh arbeite dran. Deadline ist ja erst im Mai.
+      Herr Müller: Gut, ich erwarte da bald ein Update.
+      Ich: Ja natürlich äh bekommen Sie.
+----------
+    [ID: 24] [Datetime: 2024-03-05 09:00]
+      Anna: Stress wegen Alpha?
+      Ich: Ja, total. Die Designer liefern nicht rechtzeitig und die Texte sind auch noch nicht freigegeben. Ich weiss nicht, wie ich die Deadline halten soll.
+      Anna: Atme tief durch. Sprich mal mit Herrn Müller darüber.
+      Ich: Ich weiss nicht. Ich will nicht schon wieder mit Problemen ankommen.
+----------
+    [ID: 27] [Datetime: 2024-03-20 17:30]
+      Ich: Herr Müller, ich müsste kurz mit Ihnen über Projekt Alpha sprechen.
+      Herr Müller: Geht es um die Verzögerungen im Design?
+      Ich: Äh ja, unter anderem. Es gibt da äh Kommunikationsprobleme mit der Agentur.
+      Herr Müller: Kümmern Sie sich drum, Frau Bauer. Finden Sie eine Lösung. Die Deadline steht.
+----------
+    [ID: 37] [Datetime: 2024-05-10 14:30]
+      Herr Müller: Frau Bauer, wie sieht es aus? Alpha-Präsentation nächste Woche.
+      Ich: Wir sind in den letzten Zügen. Ähm, die Kernpunkte stehen, das Design ist final. Es sollte alles klappen.
+      Herr Müller: Ich erwarte ein exzellentes Ergebnis.
+      Ich: Ja. Äh, natürlich.
+----------
+    [ID: 38] [Datetime: 2024-05-15 17:00]
+      Anna: Alles klar bei dir? Du siehst gestresst aus.
+      Ich: Bin ich auch. Die Alpha-Präsentation morgen macht mich nervös. Ich hab Angst, was falsch zu machen.
+      Anna: Quatsch, das wird super. Du hast doch alles im Griff.
+      Ich: Hoffentlich.
+----------
+    [ID: 423] [Datetime: 2023-12-14 15:00]
+      Herr Müller: Frau Bauer, die Budgetplanung bitte bis morgen früh.
+      Ich: Oh, ich dachte bis Ende der Woche?
+       Herr Müller: Nein, morgen früh. Ich brauche die Zahlen für eine Besprechung.
+      Ich: Äh, okay. Dann muss ich mich ranhalten.
+----------
+
+[Sample 2/20]
+  Query: Bei welchem Thema zeigte ich durchweg Begeisterung?
+  GT Answer: Du zeigtest durchweg Begeisterung, wenn du über Kochen und Backen sprachst, insbesondere über neue Rezepte, Techniken und gelungene Ergebnisse.
+  Chunks:
+    [ID: 28] [Datetime: 2024-03-25 18:30]
+      Ich: Ich hab dieses Wochenende ein neues Kochbuch ausprobiert. So ein thailändisches Curry.
+      Max: Oh lecker! Und, gut geworden?
+      Ich: Ja, erstaunlich gut! Hat total Spaß gemacht, die ganzen Gewürze und so. Ich glaube Kochen wird mein neues Hobby.
+      Max: Cool!
+----------
+    [ID: 40] [Datetime: 2024-05-20 19:00]
+      Ich: Ich hab am Wochenende ein neues Rezept ausprobiert: selbstgemachte Pasta!
+      Lena: Wow! Und?
+      Ich: War ne ziemliche Sauerei in der Küche, aber es hat unglaublich gut geschmeckt! Total befriedigend, das selbst zu machen.
+      Lena: Das glaube ich! Bringst du mal was mit?
+----------
+    [ID: 45] [Datetime: 2024-06-15 12:30]
+      Anna: Mittagessen?
+      Ich: Ja gerne. Ich bin am Verhungern. Hab heute Morgen schon wieder ein Brot gebacken.
+      Anna: Du bist ja richtig zur Bäckerin mutiert!
+      Ich: Haha ja, das macht mir gerade total Spaß. Dieses Kneten und Warten, das ist fast meditativ.
+----------
+    [ID: 58] [Datetime: 2024-09-10 19:00]
+      Lena: Erzähl mal vom Urlaub!
+      Ich: Hach, es war so schön. Die Landschaft, die Städte, das Essen... Ich hab unglaublich viel Pasta gegessen.
+      Lena: Haha, das klingt nach dir.
+      Ich: Absolut. Und ich hab ein tolles Kochbuch mitgebracht.
+----------
+    [ID: 63] [Datetime: 2024-10-10 19:00]
+      Ich: Ich habe am Wochenende einen Sauerteig angesetzt.
+      Max: Oh wow, das ist ja Hardcore-Backen!
+      Ich: Ja, mal sehen ob es was wird. Riecht schon sehr... interessant.
+      Max: Haha, halt mich auf dem Laufenden!
+----------
+    [ID: 68] [Datetime: 2024-11-05 18:00]
+      Ich: Der Sauerteig lebt! Ich hab mein erstes Sauerteigbrot gebacken!
+      Luise: Wow! Und, essbar?
+      Ich: Ja, total lecker! Kruste super, Krume gut. Ich bin begeistert!
+      Luise: Klingt ja toll. Bringst du mal eine Kostprobe mit?
+----------
+    [ID: 84] [Datetime: 2025-01-20 18:00]
+      Ich: Ich hab mich für einen italienischen Kochkurs angemeldet!
+      Luise: Oh wie cool! Wann geht der los?
+      Ich: Nächsten Monat, immer dienstags abends.
+      Luise: Toll! Da musst du uns ja bald bekochen.
+      Ich: Mal sehen, was ich lerne!
+----------
+    [ID: 87] [Datetime: 2025-02-04 21:00]
+      Ich: Der erste Abend vom Kochkurs war super!
+      Max: Erzähl!
+      Ich: Wir haben Gnocchi selbst gemacht. War einfacher als gedacht und sehr lecker.
+      Max: Klingt gut! Ich will auch Gnocchi!
+----------
+    [ID: 90] [Datetime: 2025-02-18 21:30]
+      Luise: Na, Koch-Profi?
+      Ich: Haha, noch nicht. Aber gestern haben wir Risotto gemacht. War auch sehr lecker.
+      Luise: Mmmh, Risotto.
+      Ich: Ich merke richtig, wie ich da immer mehr Spaß dran finde. Das ist so kreativ.
+----------
+    [ID: 95] [Datetime: 2025-03-15 20:00]
+      Luise: Alles Liebe zum Geburtstag!
+      Ich: Danke Luise!
+      Max: Von mir auch Happy Birthday!
+      Ich: Danke euch! Schön, dass ihr gekommen seid zum Essen.
+      Luise: Selbstgekocht?
+      Ich: Na klar! Italienisch, frisch aus dem Kochkurs.
+----------
+    [ID: 108] [Datetime: 2025-06-06 18:00]
+      Luise: Na, was macht die Kunst? Schon wieder was Leckeres gekocht?
+      Ich: Gestern gab es selbstgemachte Pizza nach einem Rezept aus dem Kurs.
+      Luise: Mmmh, Pizza! Du machst mich hungrig.
+      Ich: Haha, sorry. War aber auch wirklich gut.
+----------
+    [ID: 160] [Datetime: 2026-05-22 19:30]
+      Ich: Hab heute versucht, Focaccia zu backen. Ist ganz gut geworden.
+      Luise: Oh lecker! Du bist echt eine Backfee geworden.
+      Ich: Haha, naja. Es macht einfach Spaß, neue Sachen auszuprobieren.
+      Luise: Bringst du Montag was mit?
+----------
+    [ID: 185] [Datetime: 2026-11-13 18:00]
+      Lena: Na, Projektleiterin, noch Zeit zum Leben?
+      Ich: Haha, ja doch. Der Konversationskurs macht Spaß. Und am Wochenende hab ich Apfelkuchen gebacken.
+      Lena: Mmmh, Apfelkuchen. Bringst du was mit?
+      Ich: Wenn noch was da ist!
+----------
+    [ID: 236] [Datetime: 2024-10-21 12:30]
+      Max: Was ist denn mit dem Sauerteig passiert?
+      Ich: Der lebt! Ich füttere ihn brav jeden Tag.
+      Max: Krass. Und das Brot schmeckt?
+      Ich: Ja, erstaunlich gut sogar.
+----------
+    [ID: 245] [Datetime: 2025-02-24 18:00]
+      Ich: Der Kochkurs macht so Spaß! Ich lerne echt viel.
+      Luise: Das ist toll! Was gab's gestern?
+      Ich: Wir haben verschiedene Antipasti gemacht. Lecker!
+      Luise: Mmmh!
+----------
+    [ID: 310] [Datetime: 2025-03-11 20:00]
+      Ich: Der Kochkurs ist vorbei. War echt toll.
+      Mama: Das freut mich, mein Schatz. Hast du viel gelernt?
+      Ich: Ja, Mama. Ich kann jetzt richtig gute Pasta machen.
+      Mama: Oh, dann musst du uns ja bald bekochen!
+----------
+    [ID: 317] [Datetime: 2026-12-14 18:00]
+      Ich: Ich habe Plätzchen gebacken!
+      Tom: Oh lecker! Welche Sorten?
+      Ich: Vanillekipferl, Zimtsterne und Butterplätzchen.
+      Tom: Die Klassiker! Bringst du morgen welche mit?
+----------
+    [ID: 326] [Datetime: 2024-10-17 17:00]
+      Luise: Dein selbstgebackenes Brot ist einfach das Beste!
+      Ich: Danke! Freut mich, dass es dir schmeckt.
+      Luise: Hast du ein Geheimnis?
+      Ich: Geduld und ein guter Sauerteig.
+----------
+    [ID: 337] [Datetime: 2023-12-11 16:00]
+      Ich: Ich habe heute Lebkuchen für die Kollegen mitgebracht.
+      Anna: Oh, wie lieb von dir! Selbstgebacken?
+      Ich: Ja, nach Mamas Rezept.
+      Anna: Lecker!
+----------
+    [ID: 342] [Datetime: 2025-02-07 17:00]
+      Max: Der Gnocchi-Abend war super!
+      Ich: Fand ich auch! War lecker, was wir im Kochkurs gelernt haben.
+      Max: Musst du unbedingt öfter machen!
+      Ich: Haha, mal sehen.
+----------
+    [ID: 370] [Datetime: 2024-10-11 18:00]
+      Ich: Der Sauerteig ist mir am Wochenende fast gestorben!
+      Max: Oh nein! Konntest du ihn retten?
+      Ich: Ja, gerade nochmal Glück gehabt. Hab ihn schnell gefüttert.
+      Max: Puh!
+----------
+    [ID: 387] [Datetime: 2025-06-09 18:00]
+      Ich: Ich habe am Wochenende versucht, einen Käsekuchen zu backen.
+      Anna: Und? Gelungen?
+      Ich: Naja, essbar. Aber er ist etwas zusammengefallen.
+      Anna: Übung macht den Meister!
+----------
+    [ID: 399] [Datetime: 2024-10-28 18:00]
+      Max: Dein Sauerteigbrot ist legendär!
+      Ich: Haha, danke!
+      Max: Wann backst du mal wieder?
+      Ich: Am Wochenende wahrscheinlich.
+----------
+    [ID: 401] [Datetime: 2025-06-17 17:00]
+      Lena: Wie war der Käsekuchen-Backversuch?
+      Ich: Naja, geht so. Geschmacklich gut, aber die Optik...
+      Lena: Haha, Hauptsache es schmeckt!
+      Ich: Stimmt.
+----------
+    [ID: 427] [Datetime: 2024-11-26 14:00]
+      Luise: Dein Sauerteigbrot riecht ja bis hierher!
+      Ich: Haha, ja? Ist gerade frisch aus dem Ofen.
+      Luise: Kann ich ein Stück probieren?
+      Ich: Klar, warte kurz.
+----------
+    [ID: 441] [Datetime: 2024-10-23 17:00]
+      Luise: Ich bewundere deine Geduld mit dem Sauerteig.
+      Ich: Haha, ist gar nicht so schlimm. Ist Routine geworden.
+      Luise: Und das Ergebnis lohnt sich ja.
+      Ich: Das auf jeden Fall!
+----------
+    [ID: 467] [Datetime: 2024-03-25 11:00]
+      Lena: Dein Thai-Curry roch ja gestern Abend bis in den Flur!
+      Ich: Haha, echt? War auch sehr lecker.
+      Lena: Das glaube ich! Kochen ist echt dein Ding geworden.
+      Ich: Ja, macht mir total Spaß.
+----------
+    [ID: 472] [Datetime: 2025-08-14 17:00]
+      Ich: Ich habe Pesto aus meinem Balkon-Basilikum gemacht!
+      Lena: Oh lecker! Selbstgemacht schmeckt am besten.
+      Ich: Ja, finde ich auch. Und es ging ganz schnell.
+      Lena: Muss ich auch mal probieren.
+----------
+    [ID: 483] [Datetime: 2024-10-16 19:00]
+      Lena: Dein Brot ist einfach unglaublich.
+      Ich: Danke! Freut mich, wenn's schmeckt.
+      Lena: Nimmst du Bestellungen an?
+      Ich: Haha, nein. Nur für Freunde.
+----------
+    [ID: 486] [Datetime: 2025-08-28 18:00]
+      Ich: Ich habe heute Abend Pesto gemacht. Der ganze Balkon duftet.
+      Anna: Mmmh, lecker! Mit Pinienkernen?
+      Ich: Ja, und Parmesan. Klassisch.
+      Anna: Perfekt!
+----------
+    [ID: 498] [Datetime: 2025-02-18 15:00]
+      Ich: Der Kochkurs macht mich mutiger beim Ausprobieren.
+      Tom: Das ist doch gut!
+      Ich: Ja, ich variiere jetzt öfter mal Rezepte.
+      Tom: Super!
+----------
+    [ID: 499] [Datetime: 2025-06-10 11:00]
+      Luise: Dein Käsekuchen sah auf dem Foto aber gut aus!
+      Ich: Haha, danke. Geschmacklich war er auch okay.
+      Luise: Das ist doch die Hauptsache.
+      Ich: Stimmt.
+----------
+
+[Sample 3/20]
+  Query: Wann klang ich stolz auf meine Leistungen?
+  GT Answer: Du klangst stolz, wenn du über deine Fortschritte und Erfolge beim Laufen sprachst, wie das Erreichen von Distanzzielen.
+  Chunks:
+    [ID: 25] [Datetime: 2024-03-10 15:00]
+      Ich: Geschafft! 5km am Stück gelaufen!
+      Tom: Super! Siehst du, geht doch!
+      Ich: Ja, ich bin total stolz. Langsam steigere ich mich.
+      Tom: Weiter so!
+----------
+    [ID: 33] [Datetime: 2024-04-20 11:30]
+      Ich: Ich bin dieses Wochenende 7km gelaufen!
+      Max: Wow, super! Die 10km sind ja fast in Reichweite!
+      Ich: Ja, ich bin total motiviert jetzt. Das Laufen tut mir richtig gut, merke ich.
+      Max: Das ist die Hauptsache.
+----------
+    [ID: 64] [Datetime: 2024-10-15 15:00]
+      Tom: Laufeinheit heute?
+      Ich: Ja, hab 5km geschafft ohne Probleme.
+      Tom: Super! Die Form kommt zurück.
+      Ich: Langsam, aber sicher. Fühlt sich gut an.
+----------
+    [ID: 69] [Datetime: 2024-11-10 11:00]
+      Max: Na, Lauf-Update?
+      Ich: War gestern wieder unterwegs. 7km diesmal. Es läuft!
+      Max: Stark! Die 10km rücken näher.
+      Ich: Ja, vielleicht schaffe ich es ja doch noch dieses Jahr.
+----------
+    [ID: 75] [Datetime: 2024-12-10 18:00]
+      Ich: Ich hab's getan! Ich hab 10km geschafft!
+      Max: Was? Echt jetzt? Großartig! Glückwunsch!
+      Ich: Danke! Bin total platt, aber glücklich. Am Ende war es hart, aber ich hab durchgezogen.
+      Max: Super Leistung! Dein Vorsatz für 2024 ist erreicht!
+----------
+    [ID: 76] [Datetime: 2024-12-15 16:00]
+      Luise: Herzlichen Glückwunsch zum 10km-Lauf!
+      Ich: Danke! War echt ein Kampf, aber es hat geklappt.
+      Luise: Mega! Und das Lesen?
+      Ich: Auch gut. Bin bei Buch Nummer neun für dieses Jahr. Das Ziel schaffe ich locker.
+      Luise: Läuft bei dir!
+----------
+    [ID: 100] [Datetime: 2025-04-12 13:00]
+      Max: Und? Wie war der Stadtlauf?
+      Ich: Geschafft! Es war toll! Super Atmosphäre und ich bin gut durchgekommen.
+      Max: Klasse! Herzlichen Glückwunsch!
+      Ich: Danke! Jetzt erstmal die Beine hochlegen.
+----------
+    [ID: 127] [Datetime: 2025-10-17 15:00]
+      Ich: Hab den Lauf geschafft! Sogar etwas schneller als letztes Mal.
+      Luise: Wow, herzlichen Glückwunsch! Super!
+      Ich: Danke! War ein tolles Gefühl im Ziel.
+      Luise: Das glaube ich dir!
+----------
+    [ID: 147] [Datetime: 2026-02-27 17:00]
+      Ich: Ich fange jetzt mit dem Halbmarathon-Training an. Ganz langsam.
+      Luise: Wow, du ziehst das durch! Respekt!
+      Ich: Mal sehen, wie es läuft. Der erste lange Lauf über 12km steht am Wochenende an.
+      Luise: Viel Erfolg! Du schaffst das.
+----------
+    [ID: 153] [Datetime: 2026-04-03 17:30]
+      Ich: Das Halbmarathon-Training ist echt hart. Die langen Läufe am Wochenende schlauchen ganz schön.
+      Tom: Das ist normal. Aber du steigerst dich doch sicher, oder?
+      Ich: Ja, schon. Bin jetzt bei 15km. Aber 21km... Puh.
+      Tom: Das packst du! Wann ist der Lauf?
+----------
+    [ID: 161] [Datetime: 2026-05-29 16:00]
+      Tom: Wie läuft das HM-Training?
+      Ich: Gut, aber intensiv. Hab gestern 17km geschafft.
+      Tom: Super! Das ist schon eine Hausnummer.
+      Ich: Ja, ich merke es heute in den Beinen. Aber das Gefühl danach ist toll.
+----------
+    [ID: 171] [Datetime: 2026-08-07 16:00]
+      Ich: Nur noch 6 Wochen bis zum Halbmarathon.
+      Sarah: Und, wie läuft's? Nervös?
+      Ich: Geht so. Das Training ist hart, aber ich bin im Plan. Längster Lauf war jetzt 19km.
+      Sarah: Wow! Das schaffst du locker!
+      Ich: Ich hoffe es!
+----------
+    [ID: 174] [Datetime: 2026-08-28 19:00]
+      Ich: Der letzte lange Lauf vor dem Halbmarathon ist geschafft! 20km!
+      Luise: Wahnsinn! Du bist eine Maschine!
+      Ich: Haha, danke. Bin aber auch echt platt jetzt.
+      Luise: Kann ich verstehen. Jetzt nur noch die Beine hochlegen bis zum Lauf.
+----------
+    [ID: 176] [Datetime: 2026-09-11 14:00]
+      Ich: Halbmarathon geschafft! Es war unglaublich!
+      Tom: YES! Herzlichen Glückwunsch! Wie war die Zeit?
+      Ich: Zeit ist Nebensache. Ich bin einfach nur stolz, es durchgezogen zu haben. Die Atmosphäre war der Hammer.
+      Tom: Mega Leistung!
+----------
+    [ID: 240] [Datetime: 2024-12-16 17:00]
+      Ich: Geschafft! 10km! Ich kann's kaum glauben!
+      Luise: Ich hab's gehört! Mega! Herzlichen Glückwunsch!
+      Ich: Danke! Bin fix und fertig, aber glücklich.
+      Luise: Das musst du feiern!
+----------
+    [ID: 347] [Datetime: 2026-06-15 15:00]
+      Ich: Ich bin am Wochenende 18km gelaufen!
+      Max: Wahnsinn! Halbmarathon-Training läuft!
+      Ich: Ja! War hart, aber ich hab's geschafft.
+      Max: Starke Leistung!
+----------
+    [ID: 375] [Datetime: 2026-02-23 19:00]
+      Tom: Was macht das HM-Training?
+      Ich: Läuft. Bin jetzt bei 14km. Es wird langsam.
+      Tom: Das ist doch super! Weiter so!
+      Ich: Danke!
+----------
+    [ID: 446] [Datetime: 2026-02-25 17:00]
+      Ich: Ich merke richtig, wie das HM-Training anzieht.
+      Luise: Ja? Wirst du schneller?
+      Ich: Nicht unbedingt schneller, aber die Ausdauer wird besser.
+      Luise: Das ist doch das Wichtigste!
+----------
+    [ID: 448] [Datetime: 2026-09-17 16:00]
+      Ich: Ich bin noch ganz euphorisch vom Halbmarathon!
+      Max: Das glaube ich! War sicher ein geiles Gefühl, ins Ziel zu laufen.
+      Ich: Ja, unbeschreiblich! Die ganze Anstrengung war vergessen.
+      Max: Sowas schweißt zusammen.
+----------
+    [ID: 453] [Datetime: 2024-03-11 10:00]
+      Max: 5km geschafft! Super!
+      Ich: Danke! Fühlt sich gut an, die Fortschritte zu sehen.
+      Max: Weiter so! Die 10km schaffst du locker bis Jahresende.
+      Ich: Das ist der Plan!
+----------
+
+[Sample 4/20]
+  Query: In Gesprächen mit wem wirkte ich oft gestresst bezüglich Arbeit?
+  GT Answer: Du wirktest oft gestresst in Gesprächen mit Anna, wenn es um herausfordernde Arbeitsprojekte oder hohen Arbeitsdruck ging.
+  Chunks:
+    [ID: 17] [Datetime: 2024-02-01 10:30]
+      Anna: Und, wie war das Kick-Off für Projekt Alpha?
+      Ich: Intensiv. Viel Verantwortung. Ähm, ich hoffe, ich pack das.
+      Anna: Klar packst du das! Du bist doch super organisiert.
+      Ich: Na ja, mal sehen. Die Erwartungen sind hoch.
+----------
+    [ID: 18] [Datetime: 2024-02-05 09:15]
+      Anna: Bist du bereit für die Präsentation für Projekt Alpha heute Nachmittag?
+      Ich: Ähm ja also ich glaube schon. Ich äh muss nur noch die äh die Folien noch mal durchgehen. Hoffentlich äh passt das alles so. Ist Herr Müller auch dabei?
+      Anna: Ja, der Chef kommt auch. Wird schon schiefgehen!
+      Ich: Ja hoffentlich. Ich bin äh etwas hm na ja angespannt.
+----------
+    [ID: 24] [Datetime: 2024-03-05 09:00]
+      Anna: Stress wegen Alpha?
+      Ich: Ja, total. Die Designer liefern nicht rechtzeitig und die Texte sind auch noch nicht freigegeben. Ich weiss nicht, wie ich die Deadline halten soll.
+      Anna: Atme tief durch. Sprich mal mit Herrn Müller darüber.
+      Ich: Ich weiss nicht. Ich will nicht schon wieder mit Problemen ankommen.
+----------
+    [ID: 34] [Datetime: 2024-04-25 09:30]
+      Anna: Nur noch ein Monat bis zur Alpha-Deadline.
+      Ich: Sag nichts. Ich zähle die Tage. Aber wir liegen jetzt gut im Plan.
+      Anna: Sehr gut. Hast du eigentlich schon Urlaub geplant für den Sommer?
+      Ich: Noch nicht. Nach dem Projekt vielleicht. Ich dachte an Italien.
+----------
+    [ID: 38] [Datetime: 2024-05-15 17:00]
+      Anna: Alles klar bei dir? Du siehst gestresst aus.
+      Ich: Bin ich auch. Die Alpha-Präsentation morgen macht mich nervös. Ich hab Angst, was falsch zu machen.
+      Anna: Quatsch, das wird super. Du hast doch alles im Griff.
+      Ich: Hoffentlich.
+----------
+    [ID: 109] [Datetime: 2025-06-13 09:15]
+      Anna: Projekt Gamma klingt spannend, oder? Internationalisierung!
+      Ich: Ja, schon. Aber auch sicher wieder viel Arbeit. Und äh hoffentlich läuft die Abstimmung mit den internationalen Kollegen besser als bei Alpha damals mit der Agentur.
+      Anna: Das wird schon. Du hast ja jetzt mehr Erfahrung.
+      Ich: Hm ja. Und die PM-Weiterbildung hilft vielleicht auch.
+----------
+    [ID: 311] [Datetime: 2025-06-24 16:00]
+      Sarah: Du wirkst manchmal etwas gestresst. Alles okay?
+      Ich: Ja, danke der Nachfrage. Nur viel zu tun gerade mit dem Gamma-Start.
+      Sarah: Wenn was ist, sag Bescheid, ja?
+      Ich: Danke, lieb von dir.
+----------
+    [ID: 368] [Datetime: 2024-04-29 09:00]
+      Ich: Puh, die Woche wird stressig. Viele Termine.
+      Anna: Bei mir auch. Alpha-Endspurt.
+      Ich: Lass uns heute Mittag bewusst Pause machen.
+      Anna: Gute Idee!
+----------
+    [ID: 396] [Datetime: 2023-12-21 09:30]
+      Ich: Nur noch wenige Tage bis Weihnachten. Der Stresslevel steigt.
+      Anna: Bei mir auch. Noch so viel zu tun.
+      Ich: Lass uns heute Mittag mal bewusst abschalten.
+      Anna: Ja, bitte!
+----------
+
+[Sample 5/20]
+  Query: Bei welchem Projekt schien ich anfangs überfordert oder sehr herausgefordert?
+  GT Answer: Du schienst bei Projekt Alpha anfangs überfordert und äußertest Zweifel, ob du dem gewachsen bist.
+  Chunks:
+    [ID: 16] [Datetime: 2024-02-01 08:45]
+      Ich: Guten Morgen Herr Müller.
+      Herr Müller: Morgen Frau Bauer. Kurze Info: Ab heute startet offiziell das Projekt Alpha. Sie übernehmen die Teilprojektleitung Marketing.
+      Ich: Oh, okay. Das ist... eine Herausforderung.
+      Herr Müller: Ich zähle auf Sie. Details gibt's im Kick-Off um 10.
+----------
+    [ID: 17] [Datetime: 2024-02-01 10:30]
+      Anna: Und, wie war das Kick-Off für Projekt Alpha?
+      Ich: Intensiv. Viel Verantwortung. Ähm, ich hoffe, ich pack das.
+      Anna: Klar packst du das! Du bist doch super organisiert.
+      Ich: Na ja, mal sehen. Die Erwartungen sind hoch.
+----------
+    [ID: 20] [Datetime: 2024-02-15 14:00]
+      Herr Müller: Wie läuft es denn mit dem Alpha Projekt? Sind wir im Zeitplan?
+      Ich: Ähm ja also im Großen und Ganzen schon. Es gab da ähm ein kleines Problem mit der äh Ressourcenzuweisung aber das das kriegen wir hin. Ich äh arbeite dran. Deadline ist ja erst im Mai.
+      Herr Müller: Gut, ich erwarte da bald ein Update.
+      Ich: Ja natürlich äh bekommen Sie.
+----------
+
+[Sample 6/20]
+  Query: Wann habe ich deutliche Erleichterung ausgedrückt?
+  GT Answer: Du hast deutliche Erleichterung ausgedrückt, nachdem die Präsentation für Projekt Alpha gut lief und Herr Müller zufrieden war, sowie nach der ersten großen Präsentation für Projekt Delta.
+  Chunks:
+    [ID: 39] [Datetime: 2024-05-16 16:00]
+      Tom: Und? Wie lief die Präsentation?
+      Ich: Gut! Herr Müller war zufrieden. Ich bin so erleichtert!
+      Tom: Siehst du! Hab ich doch gesagt.
+      Ich: Jetzt brauche ich erstmal ein Wochenende zum Entspannen.
+----------
+    [ID: 198] [Datetime: 2027-02-05 16:00]
+      Ich: Präsentation ist super gelaufen! Das Management war sehr angetan.
+      Anna: Klasse! Glückwunsch!
+      Ich: Danke! Bin echt erleichtert. Jetzt können wir in Phase 2 starten.
+      Anna: Weiter so!
+----------
+    [ID: 298] [Datetime: 2027-02-15 18:00]
+      Lena: Na, wie war die Präsentation?
+      Ich: Super! Lief echt gut. Bin erleichtert.
+      Lena: Klasse! Siehst du, war doch kein Problem.
+      Ich: Nee, war es nicht.
+----------
+
+[Sample 7/20]
+  Query: Bei welcher Tätigkeit wirkte ich entspannt und fast meditativ?
+  GT Answer: Du wirktest entspannt und beschriebst das Brotbacken als fast meditativ; auch Yoga half dir zu entspannen.
+  Chunks:
+    [ID: 45] [Datetime: 2024-06-15 12:30]
+      Anna: Mittagessen?
+      Ich: Ja gerne. Ich bin am Verhungern. Hab heute Morgen schon wieder ein Brot gebacken.
+      Anna: Du bist ja richtig zur Bäckerin mutiert!
+      Ich: Haha ja, das macht mir gerade total Spaß. Dieses Kneten und Warten, das ist fast meditativ.
+----------
+    [ID: 131] [Datetime: 2025-11-14 19:00]
+      Lena: Was machst du eigentlich in letzter Zeit so zum Entspannen? Immer noch Backen?
+      Ich: Ja, backen immer wieder gerne. Aber ich hab auch Yoga für mich entdeckt.
+      Lena: Echt? Cool! Machst du einen Kurs?
+      Ich: Nein, nur zu Hause mit Videos. Aber es tut mir erstaunlich gut.
+----------
+    [ID: 146] [Datetime: 2026-02-20 19:00]
+      Lena: Was macht das Yoga?
+      Ich: Immer noch dabei! Ich merke richtig, wie es mir hilft, runterzukommen nach der Arbeit.
+      Lena: Das ist doch super. Vielleicht sollte ich das auch mal probieren.
+      Ich: Kann ich nur empfehlen.
+----------
+    [ID: 264] [Datetime: 2025-11-10 17:00]
+      Ich: Dieses Yoga tut mir echt gut. Ich bin viel entspannter.
+      Tom: Das ist doch super. Wie oft machst du das?
+      Ich: So zwei bis dreimal die Woche. Immer abends.
+      Tom: Respekt.
+----------
+
+[Sample 8/20]
+  Query: In welcher Phase von Projekt Alpha war ich besonders angespannt?
+  GT Answer: Du warst besonders angespannt kurz vor der Abschlusspräsentation für Projekt Alpha im Mai 2024 sowie während Phasen mit Problemen und Verzögerungen.
+  Chunks:
+    [ID: 18] [Datetime: 2024-02-05 09:15]
+      Anna: Bist du bereit für die Präsentation für Projekt Alpha heute Nachmittag?
+      Ich: Ähm ja also ich glaube schon. Ich äh muss nur noch die äh die Folien noch mal durchgehen. Hoffentlich äh passt das alles so. Ist Herr Müller auch dabei?
+      Anna: Ja, der Chef kommt auch. Wird schon schiefgehen!
+      Ich: Ja hoffentlich. Ich bin äh etwas hm na ja angespannt.
+----------
+    [ID: 20] [Datetime: 2024-02-15 14:00]
+      Herr Müller: Wie läuft es denn mit dem Alpha Projekt? Sind wir im Zeitplan?
+      Ich: Ähm ja also im Großen und Ganzen schon. Es gab da ähm ein kleines Problem mit der äh Ressourcenzuweisung aber das das kriegen wir hin. Ich äh arbeite dran. Deadline ist ja erst im Mai.
+      Herr Müller: Gut, ich erwarte da bald ein Update.
+      Ich: Ja natürlich äh bekommen Sie.
+----------
+    [ID: 24] [Datetime: 2024-03-05 09:00]
+      Anna: Stress wegen Alpha?
+      Ich: Ja, total. Die Designer liefern nicht rechtzeitig und die Texte sind auch noch nicht freigegeben. Ich weiss nicht, wie ich die Deadline halten soll.
+      Anna: Atme tief durch. Sprich mal mit Herrn Müller darüber.
+      Ich: Ich weiss nicht. Ich will nicht schon wieder mit Problemen ankommen.
+----------
+    [ID: 27] [Datetime: 2024-03-20 17:30]
+      Ich: Herr Müller, ich müsste kurz mit Ihnen über Projekt Alpha sprechen.
+      Herr Müller: Geht es um die Verzögerungen im Design?
+      Ich: Äh ja, unter anderem. Es gibt da äh Kommunikationsprobleme mit der Agentur.
+      Herr Müller: Kümmern Sie sich drum, Frau Bauer. Finden Sie eine Lösung. Die Deadline steht.
+----------
+    [ID: 37] [Datetime: 2024-05-10 14:30]
+      Herr Müller: Frau Bauer, wie sieht es aus? Alpha-Präsentation nächste Woche.
+      Ich: Wir sind in den letzten Zügen. Ähm, die Kernpunkte stehen, das Design ist final. Es sollte alles klappen.
+      Herr Müller: Ich erwarte ein exzellentes Ergebnis.
+      Ich: Ja. Äh, natürlich.
+----------
+    [ID: 38] [Datetime: 2024-05-15 17:00]
+      Anna: Alles klar bei dir? Du siehst gestresst aus.
+      Ich: Bin ich auch. Die Alpha-Präsentation morgen macht mich nervös. Ich hab Angst, was falsch zu machen.
+      Anna: Quatsch, das wird super. Du hast doch alles im Griff.
+      Ich: Hoffentlich.
+----------
+
+[Sample 9/20]
+  Query: Zeigte ich Enthusiasmus, wenn ich über Bücher rede?
+  GT Answer: Ja, du zeigtest Enthusiasmus, wenn du über Bücher sprachst, die dir besonders gefallen haben (z.B. 'Der Schatten des Windes'), auch wenn du manchmal von anstrengenden Büchern berichtetest.
+  Chunks:
+    [ID: 15] [Datetime: 2024-01-25 18:00]
+      Lena: Was liest du gerade Schönes?
+      Ich: Hab mit 'Der Schatten des Windes' angefangen. Ziemlich gut bisher.
+      Lena: Oh ja, das ist toll! Sag Bescheid, wie es dir gefallen hat.
+      Ich: Mach ich!
+----------
+    [ID: 32] [Datetime: 2024-04-15 19:00]
+      Lena: Und, Buch beendet?
+      Ich: Ja! 'Der Schatten des Windes' war fantastisch. Wirklich toll geschrieben.
+      Lena: Hab ich doch gesagt! Was liest du als nächstes?
+      Ich: Ich glaube, ich brauche erstmal was Leichteres nach diesem Wälzer.
+----------
+    [ID: 46] [Datetime: 2024-06-20 17:00]
+      Ich: Tom, hast du einen Tipp für ein gutes Buch? Eher was Leichtes.
+      Tom: Klar, wie wäre es mit 'Der Hundertjährige, der aus dem Fenster stieg und verschwand'?
+      Ich: Oh ja, davon habe ich gehört. Ist das lustig?
+      Tom: Sehr!
+----------
+    [ID: 50] [Datetime: 2024-07-10 16:00]
+      Ich: Ich hab den 'Hundertjährigen' angefangen zu lesen. Echt witzig!
+      Tom: Sag ich doch!
+      Ich: Gute Empfehlung, danke!
+      Tom: Gerne. Was macht das Laufen?
+      Ich: Pausiert immer noch. Der Knöchel zwickt ab und zu.
+----------
+    [ID: 61] [Datetime: 2024-09-25 18:30]
+      Luise: Na, was macht die Lese-Challenge?
+      Ich: Gut! Hab den 'Hundertjährigen' durch und noch zwei andere Bücher im Urlaub gelesen. Sind jetzt schon sechs dieses Jahr!
+      Luise: Wow! Mehr als ich.
+      Ich: Dafür läufst du Marathons.
+----------
+    [ID: 66] [Datetime: 2024-10-25 20:00]
+      Lena: Was liest du gerade?
+      Ich: Hab mit 'QualityLand' angefangen. Ziemlich skurril, aber gut.
+      Lena: Oh ja, das kenne ich. Bisschen düster, oder?
+      Ich: Ja, aber regt zum Nachdenken an.
+----------
+    [ID: 72] [Datetime: 2024-11-25 19:00]
+      Lena: 'QualityLand' schon durch?
+      Ich: Ja. Puh, das Ende war krass. Aber gut.
+      Lena: Ja, fand ich auch. Was kommt als nächstes?
+      Ich: Ich glaube, ich brauche was zum Lachen. Vielleicht den neuen Fitzek?
+      Lena: Haha, Fitzek zum Lachen? Sicher?
+----------
+    [ID: 124] [Datetime: 2025-09-26 11:00]
+      Ich: Ich lese gerade 'Der Circle'. Ziemlich beklemmend.
+      Lena: Oh ja, das kenne ich. Regt zum Nachdenken an über unsere digitale Welt.
+      Ich: Total. Manchmal lege ich es weg, weil es mir zu unheimlich wird.
+      Lena: Ging mir auch so.
+----------
+    [ID: 129] [Datetime: 2025-10-31 18:00]
+      Ich: 'Der Circle' hab ich durch. Puh. Jetzt brauche ich dringend was Leichtes.
+      Max: Schon wieder? Wie wäre es mit einem lustigen Roman?
+      Ich: Ja, gute Idee. Hast du einen Tipp?
+      Max: Ich hab letztens was von Kerstin Gier gelesen, das war ganz witzig.
+----------
+    [ID: 173] [Datetime: 2026-08-21 17:00]
+      Lena: Was liest du gerade Schönes?
+      Ich: Hab mir den Tipp von Max zu Herzen genommen und lese 'Rubinrot'. Echt witzig und unterhaltsam.
+      Lena: Oh ja, die Reihe ist super für zwischendurch.
+      Ich: Genau das Richtige gerade.
+----------
+    [ID: 196] [Datetime: 2027-01-22 18:00]
+      Ich: Hab mir fest vorgenommen, dieses Jahr wieder mehr zu lesen. Gleich mal ein neues Buch angefangen.
+      Max: Oh, was denn?
+      Ich: 'Eine kurze Geschichte der Menschheit'. Ziemlich dicker Schinken.
+      Max: Respekt! Das wollte ich auch immer mal lesen.
+----------
+    [ID: 205] [Datetime: 2027-03-19 17:00]
+      Ich: Ich lese immer noch an der 'Kurzen Geschichte der Menschheit'. Ist faszinierend, aber zieht sich.
+      Sarah: Haha, das glaube ich. Sachbücher können manchmal zäh sein.
+      Ich: Ja, aber ich will es durchziehen.
+      Sarah: Ehrgeizig!
+----------
+    [ID: 211] [Datetime: 2027-04-30 17:00]
+      Lena: Geschafft! 'Kurze Geschichte der Menschheit' ist durch!
+      Ich: Wow! Respekt! Und, hat es sich gelohnt?
+      Lena: Ja, schon. Viel gelernt, aber war auch anstrengend.
+      Ich: Das glaube ich.
+----------
+    [ID: 320] [Datetime: 2027-05-10 16:00]
+      Ich: Ich brauche einen neuen Roman. Hast du was Gutes gelesen?
+      Max: Ich lese gerade einen spannenden Krimi von Nele Neuhaus.
+      Ich: Oh, die mag ich! Welcher ist das?
+      Max: 'Monster'. Sehr fesselnd.
+----------
+    [ID: 359] [Datetime: 2025-09-22 18:00]
+      Ich: Ich habe 'Gut gegen Nordwind' gelesen. War echt nett.
+      Max: Hab ich doch gesagt!
+      Ich: Ja, danke für den Tipp! Genau das Richtige für zwischendurch.
+      Max: Gerne.
+----------
+    [ID: 380] [Datetime: 2027-05-24 17:00]
+      Ich: Ich habe den Krimi von Nele Neuhaus angefangen.
+      Luise: Und? Gut?
+      Ich: Ja, sehr spannend! Genau mein Geschmack.
+      Luise: Super!
+----------
+    [ID: 395] [Datetime: 2027-05-31 10:00]
+      Ich: Ich habe den Krimi durch. War super spannend!
+      Lena: Gut! Was liest du als nächstes?
+      Ich: Ich glaube, ich wage mich mal an einen Klassiker.
+      Lena: Oh, welchen denn?
+----------
+    [ID: 408] [Datetime: 2027-05-05 15:00]
+      Ich: Ich lese gerade 'Stolz und Vorurteil'.
+      Tom: Oh, ein Klassiker! Wie findest du es?
+      Ich: Etwas langatmig am Anfang, aber jetzt wird es interessant.
+      Tom: Ja, muss man sich drauf einlassen.
+----------
+    [ID: 481] [Datetime: 2024-04-16 10:00]
+      Tom: Dein Buch 'Der Schatten des Windes' ist durch?
+      Ich: Ja, endlich! War echt super.
+      Tom: Was liest du jetzt?
+      Ich: Brauche was Leichteres. Hab mir einen Krimi geholt.
+----------
+    [ID: 493] [Datetime: 2027-05-27 18:00]
+      Lena: 'Stolz und Vorurteil' durch?
+      Ich: Ja! Endlich! War aber echt gut.
+      Lena: Siehst du! Was kommt als Nächstes?
+      Ich: Keine Ahnung. Erstmal eine Lesepause.
+----------
+
+[Sample 10/20]
+  Query: Wie äußerte sich meine Unsicherheit gegenüber Vorgesetzten in schwierigen Projektsituationen?
+  GT Answer: Deine Unsicherheit äußerte sich durch Zögern, Füllwörter wie 'äh' oder 'hm' und die Formulierung von Bedenken, ob du den Anforderungen gerecht wirst oder Probleme ansprechen sollst.
+  Chunks:
+    [ID: 12] [Datetime: 2024-01-10 09:30]
+      Ich: Morgen Frau Schmidt. Haben Sie kurz Zeit wegen Projekt Drache?
+      Frau Schmidt: Ja, aber nur fünf Minuten. Was gibt's?
+      Ich: Ich bräuchte noch Input bezüglich der Zielgruppe. Da bin ich etwas unsicher.
+      Frau Schmidt: Schicken Sie mir Ihre Fragen per Mail, ich antworte später.
+----------
+    [ID: 17] [Datetime: 2024-02-01 10:30]
+      Anna: Und, wie war das Kick-Off für Projekt Alpha?
+      Ich: Intensiv. Viel Verantwortung. Ähm, ich hoffe, ich pack das.
+      Anna: Klar packst du das! Du bist doch super organisiert.
+      Ich: Na ja, mal sehen. Die Erwartungen sind hoch.
+----------
+    [ID: 18] [Datetime: 2024-02-05 09:15]
+      Anna: Bist du bereit für die Präsentation für Projekt Alpha heute Nachmittag?
+      Ich: Ähm ja also ich glaube schon. Ich äh muss nur noch die äh die Folien noch mal durchgehen. Hoffentlich äh passt das alles so. Ist Herr Müller auch dabei?
+      Anna: Ja, der Chef kommt auch. Wird schon schiefgehen!
+      Ich: Ja hoffentlich. Ich bin äh etwas hm na ja angespannt.
+----------
+    [ID: 20] [Datetime: 2024-02-15 14:00]
+      Herr Müller: Wie läuft es denn mit dem Alpha Projekt? Sind wir im Zeitplan?
+      Ich: Ähm ja also im Großen und Ganzen schon. Es gab da ähm ein kleines Problem mit der äh Ressourcenzuweisung aber das das kriegen wir hin. Ich äh arbeite dran. Deadline ist ja erst im Mai.
+      Herr Müller: Gut, ich erwarte da bald ein Update.
+      Ich: Ja natürlich äh bekommen Sie.
+----------
+    [ID: 24] [Datetime: 2024-03-05 09:00]
+      Anna: Stress wegen Alpha?
+      Ich: Ja, total. Die Designer liefern nicht rechtzeitig und die Texte sind auch noch nicht freigegeben. Ich weiss nicht, wie ich die Deadline halten soll.
+      Anna: Atme tief durch. Sprich mal mit Herrn Müller darüber.
+      Ich: Ich weiss nicht. Ich will nicht schon wieder mit Problemen ankommen.
+----------
+    [ID: 27] [Datetime: 2024-03-20 17:30]
+      Ich: Herr Müller, ich müsste kurz mit Ihnen über Projekt Alpha sprechen.
+      Herr Müller: Geht es um die Verzögerungen im Design?
+      Ich: Äh ja, unter anderem. Es gibt da äh Kommunikationsprobleme mit der Agentur.
+      Herr Müller: Kümmern Sie sich drum, Frau Bauer. Finden Sie eine Lösung. Die Deadline steht.
+----------
+    [ID: 37] [Datetime: 2024-05-10 14:30]
+      Herr Müller: Frau Bauer, wie sieht es aus? Alpha-Präsentation nächste Woche.
+      Ich: Wir sind in den letzten Zügen. Ähm, die Kernpunkte stehen, das Design ist final. Es sollte alles klappen.
+      Herr Müller: Ich erwarte ein exzellentes Ergebnis.
+      Ich: Ja. Äh, natürlich.
+----------
+    [ID: 109] [Datetime: 2025-06-13 09:15]
+      Anna: Projekt Gamma klingt spannend, oder? Internationalisierung!
+      Ich: Ja, schon. Aber auch sicher wieder viel Arbeit. Und äh hoffentlich läuft die Abstimmung mit den internationalen Kollegen besser als bei Alpha damals mit der Agentur.
+      Anna: Das wird schon. Du hast ja jetzt mehr Erfahrung.
+      Ich: Hm ja. Und die PM-Weiterbildung hilft vielleicht auch.
+----------
+    [ID: 423] [Datetime: 2023-12-14 15:00]
+      Herr Müller: Frau Bauer, die Budgetplanung bitte bis morgen früh.
+      Ich: Oh, ich dachte bis Ende der Woche?
+       Herr Müller: Nein, morgen früh. Ich brauche die Zahlen für eine Besprechung.
+      Ich: Äh, okay. Dann muss ich mich ranhalten.
+----------
+
+[Sample 11/20]
+  Query: Wann klang ich enttäuscht oder frustriert über mein Lauftraining?
+  GT Answer: Du klangst enttäuscht, als du wegen deines verstauchten Knöchels pausieren und dein 10km-Ziel verschieben musstest, und frustriert, als die Kondition nach der Pause weg war.
+  Chunks:
+    [ID: 36] [Datetime: 2024-05-05 15:00]
+      Ich: Heute war ich wieder laufen. Fast 8km! Aber mein Knöchel tut jetzt weh.
+      Luise: Oh je, überanstrengt?
+      Ich: Ich hoffe nicht. Ich mach mal ein paar Tage Pause.
+      Luise: Gute Idee. Nicht dass du dich verletzt vor deinem 10km Ziel.
+----------
+    [ID: 41] [Datetime: 2024-05-25 11:00]
+      Max: Was macht der Knöchel?
+      Ich: Besser, danke. Ich hab aber immer noch Laufpause.
+      Max: Ärgerlich. Und das 10km Ziel?
+      Ich: Das muss ich wohl verschieben. Gesundheit geht vor.
+----------
+    [ID: 44] [Datetime: 2024-06-10 19:00]
+      Max: Und, wie war der 10km Lauf? Geschafft?
+      Ich: Leider nein. Ich hab zwar trainiert, aber kurz vorher hab ich mir den Knöchel verstaucht. Lesen klappt aber ganz gut, schon drei Romane dieses Jahr!
+      Max: Oh nein, gute Besserung! Aber immerhin das mit dem Lesen!
+----------
+    [ID: 59] [Datetime: 2024-09-15 16:00]
+      Ich: Hab heute versucht wieder zu laufen. Ganz langsam.
+      Max: Und?
+      Ich: Ging so. Der Knöchel hat nicht wehgetan, aber die Kondition ist komplett weg.
+      Max: Die kommt wieder. Nicht aufgeben.
+----------
+
+[Sample 12/20]
+  Query: In Bezug auf welches Projekt klang ich von Anfang an zuversichtlicher, und warum?
+  GT Answer: Du klangst bei Projekt Gamma von Anfang an zuversichtlicher, weil du mehr Erfahrung hattest und die Erkenntnisse aus deiner Projektmanagement-Weiterbildung einsetzen konntest.
+  Chunks:
+    [ID: 109] [Datetime: 2025-06-13 09:15]
+      Anna: Projekt Gamma klingt spannend, oder? Internationalisierung!
+      Ich: Ja, schon. Aber auch sicher wieder viel Arbeit. Und äh hoffentlich läuft die Abstimmung mit den internationalen Kollegen besser als bei Alpha damals mit der Agentur.
+      Anna: Das wird schon. Du hast ja jetzt mehr Erfahrung.
+      Ich: Hm ja. Und die PM-Weiterbildung hilft vielleicht auch.
+----------
+    [ID: 113] [Datetime: 2025-07-11 11:30]
+      Tom: Und, wie war das Gamma Kick-Off?
+      Ich: Gut, sehr informativ. Das Team ist international, wird spannend. Aber ich glaube, ich kann die Methoden aus der Weiterbildung gut einsetzen.
+      Tom: Das ist doch super. Klingt viel besser als damals bei Alpha.
+      Ich: Ja, ich fühle mich diesmal äh sicherer.
+----------
+    [ID: 118] [Datetime: 2025-08-15 10:30]
+      Ich: Das Gamma-Projekt läuft gut an. Die Zusammenarbeit mit Sarah klappt super.
+      Tom: Das ist doch die Hauptsache. Ein gutes Team ist Gold wert.
+      Ich: Absolut. Wir nutzen jetzt auch einige agile Methoden, das hilft.
+      Tom: Siehst du, die Weiterbildung zahlt sich aus.
+----------
+    [ID: 120] [Datetime: 2025-08-29 15:00]
+      Herr Müller: Frau Bauer, wie ist der Status bei Gamma? Sind die internationalen Teams an Bord?
+      Ich: Ja, Herr Müller. Die ersten Workshops waren produktiv. Wir haben einen gemeinsamen Planungsansatz gefunden.
+       Herr Müller: Sehr gut. Ihre neuen Methoden scheinen zu fruchten.
+      Ich: Ja, das agile Vorgehen hilft bei der Koordination.
+----------
+
+[Sample 13/20]
+  Query: Wie reagierte ich auf die Ankündigung, die Gesamtprojektleitung für Delta zu übernehmen?
+  GT Answer: Du reagiertest überrascht, nanntest es eine große Ehre und Verantwortung, zeigtest aber auch Aufregung und etwas Bammel.
+  Chunks:
+    [ID: 165] [Datetime: 2026-06-26 09:00]
+      Herr Müller: Frau Bauer, Projekt Gamma läuft ja hervorragend. Zeit für neue Herausforderungen?
+      Ich: Äh, wie meinen Sie das, Herr Müller?
+      Herr Müller: Wir planen Projekt Delta. Noch komplexer, strategischer. Ich würde Ihnen gerne die Gesamtprojektleitung anbieten.
+      Ich: Wow. Die Gesamtleitung? Das ist... eine große Ehre. Und Verantwortung.
+----------
+    [ID: 166] [Datetime: 2026-07-03 17:00]
+      Ich: Ich soll Projekt Delta leiten! Die Gesamtleitung!
+      Lena: Was? Das ist ja mega! Herzlichen Glückwunsch!
+      Ich: Danke! Ich bin total aufgeregt und hab auch ein bisschen Bammel.
+      Lena: Das packst du! Du bist doch super im Projektmanagement.
+----------
+    [ID: 167] [Datetime: 2026-07-10 12:30]
+      Anna: Gesamtprojektleitung für Delta! Wow, Ich! Das ist ein Riesenschritt!
+      Ich: Ja, ich kann es selbst kaum glauben. Hoffentlich wachse ich da rein.
+      Anna: Sicher! Wann geht's los?
+      Ich: Nach dem Sommer, im Oktober soll der Start sein.
+----------
+
+[Sample 14/20]
+  Query: Wann habe ich Bedenken geäußert, mit Problemen zu meinem Chef zu gehen?
+  GT Answer: Du hast während Projekt Alpha Bedenken geäußert, mit Problemen bezüglich Design-Verzögerungen zu Herr Müller zu gehen, weil du nicht schon wieder damit ankommen wolltest.
+  Chunks:
+    [ID: 24] [Datetime: 2024-03-05 09:00]
+      Anna: Stress wegen Alpha?
+      Ich: Ja, total. Die Designer liefern nicht rechtzeitig und die Texte sind auch noch nicht freigegeben. Ich weiss nicht, wie ich die Deadline halten soll.
+      Anna: Atme tief durch. Sprich mal mit Herrn Müller darüber.
+      Ich: Ich weiss nicht. Ich will nicht schon wieder mit Problemen ankommen.
+----------
+
+[Sample 15/20]
+  Query: Zeigte ich Vorfreude auf meine Urlaube?
+  GT Answer: Ja, du hast deutliche Vorfreude auf deine Urlaube in Italien (2024) und Portugal (2026) gezeigt, z.B. indem du sagtest, du zählst die Stunden oder freust dich riesig.
+  Chunks:
+    [ID: 43] [Datetime: 2024-06-05 18:30]
+      Luise: Urlaub schon gebucht?
+      Ich: Ja! Es geht im August für zwei Wochen nach Italien. Ich freu mich so!
+      Luise: Oh wie schön! Wohin genau?
+      Ich: Toskana. Bisschen Kultur, bisschen Entspannung.
+----------
+    [ID: 48] [Datetime: 2024-07-01 19:30]
+      Lena: Na, Urlaubsreif?
+      Ich: Und wie! Noch sechs Wochen bis Italien.
+      Lena: Hach, ich bin neidisch. Ich muss dieses Jahr wohl Balkonien machen.
+      Ich: Auch schön! Hauptsache entspannt.
+----------
+    [ID: 53] [Datetime: 2024-07-25 18:00]
+      Max: Noch drei Wochen bis zum Urlaub!
+      Ich: Jaaa! Ich zähle schon die Stunden. Hab mir einen neuen Reiseführer für die Toskana gekauft.
+      Max: Sehr gut. Was willst du unbedingt sehen?
+      Ich: Florenz natürlich, und vielleicht Siena.
+----------
+    [ID: 54] [Datetime: 2024-08-01 12:00]
+      Anna: Na, aufgeregt wegen Italien?
+      Ich: Total! Ich packe gedanklich schon meinen Koffer.
+      Anna: Haha. Bring schönes Wetter mit!
+      Ich: Wird gemacht!
+----------
+    [ID: 164] [Datetime: 2026-06-19 18:00]
+      Max: Sommerurlaub schon geplant?
+      Ich: Noch nicht fix. Vielleicht im August oder September. Ich dachte an Portugal.
+      Max: Oh, Portugal ist toll! Lissabon oder eher Algarve?
+      Ich: Beides vielleicht? Eine kleine Rundreise?
+----------
+    [ID: 170] [Datetime: 2026-07-31 18:30]
+      Ich: Hab den Portugal-Urlaub gebucht! Zwei Wochen im September, nach dem Halbmarathon.
+      Max: Perfekt getimt! Lissabon und Algarve?
+      Ich: Ja, erst ein paar Tage Lissabon, dann runter an die Küste.
+      Max: Sehr gut! Ich bin neidisch.
+----------
+    [ID: 231] [Datetime: 2024-08-05 13:00]
+      Ich: Ich freu mich so auf den Urlaub. Einfach mal nichts tun.
+      Max: Kann ich verstehen. Wann geht's los?
+      Ich: Nächste Woche! Endlich!
+      Max: Schön! Genieß es!
+----------
+    [ID: 283] [Datetime: 2026-08-03 17:00]
+      Ich: Hab Urlaub gebucht! Portugal im September!
+      Lena: Oh wie schön! Das hast du dir verdient!
+      Ich: Ja, freu mich schon riesig. Nach dem Halbmarathon.
+      Lena: Perfekte Belohnung!
+----------
+    [ID: 348] [Datetime: 2026-09-21 11:00]
+      Sarah: Willkommen zurück aus Portugal!
+      Ich: Danke Sarah! War wunderschön.
+      Sarah: Das freut mich. Bereit für Delta?
+      Ich: Ja! Voller Energie.
+----------
+    [ID: 392] [Datetime: 2026-09-30 17:00]
+      Luise: Wie war Portugal?
+      Ich: Wunderschön! Lissabon ist toll und die Algarve hat traumhafte Strände.
+      Luise: Oh, da muss ich auch mal hin.
+      Ich: Unbedingt!
+----------
+
+[Sample 16/20]
+  Query: Bei welchem Hobby wirkte ich besonders experimentierfreudig?
+  GT Answer: Du wirktest beim Backen experimentierfreudig, als du dich an Sauerteig gewagt und später mit verschiedenen Mehlsorten experimentiert hast.
+  Chunks:
+    [ID: 63] [Datetime: 2024-10-10 19:00]
+      Ich: Ich habe am Wochenende einen Sauerteig angesetzt.
+      Max: Oh wow, das ist ja Hardcore-Backen!
+      Ich: Ja, mal sehen ob es was wird. Riecht schon sehr... interessant.
+      Max: Haha, halt mich auf dem Laufenden!
+----------
+    [ID: 68] [Datetime: 2024-11-05 18:00]
+      Ich: Der Sauerteig lebt! Ich hab mein erstes Sauerteigbrot gebacken!
+      Luise: Wow! Und, essbar?
+      Ich: Ja, total lecker! Kruste super, Krume gut. Ich bin begeistert!
+      Luise: Klingt ja toll. Bringst du mal eine Kostprobe mit?
+----------
+    [ID: 459] [Datetime: 2025-11-03 12:00]
+      Max: Dein Sauerteigbrot wird immer besser!
+      Ich: Danke! Ich experimentiere gerade mit verschiedenen Mehlsorten.
+      Max: Oh, spannend. Merkt man einen Unterschied?
+      Ich: Ja, schon.
+----------
+
+[Sample 17/20]
+  Query: Wie war meine Grundstimmung während Projekt Beta und Gamma im Vergleich zu Alpha?
+  GT Answer: Deine Grundstimmung während Projekt Beta und Gamma war deutlich entspannter, positiver und zuversichtlicher als während Projekt Alpha.
+  Chunks:
+    [ID: 17] [Datetime: 2024-02-01 10:30]
+      Anna: Und, wie war das Kick-Off für Projekt Alpha?
+      Ich: Intensiv. Viel Verantwortung. Ähm, ich hoffe, ich pack das.
+      Anna: Klar packst du das! Du bist doch super organisiert.
+      Ich: Na ja, mal sehen. Die Erwartungen sind hoch.
+----------
+    [ID: 20] [Datetime: 2024-02-15 14:00]
+      Herr Müller: Wie läuft es denn mit dem Alpha Projekt? Sind wir im Zeitplan?
+      Ich: Ähm ja also im Großen und Ganzen schon. Es gab da ähm ein kleines Problem mit der äh Ressourcenzuweisung aber das das kriegen wir hin. Ich äh arbeite dran. Deadline ist ja erst im Mai.
+      Herr Müller: Gut, ich erwarte da bald ein Update.
+      Ich: Ja natürlich äh bekommen Sie.
+----------
+    [ID: 24] [Datetime: 2024-03-05 09:00]
+      Anna: Stress wegen Alpha?
+      Ich: Ja, total. Die Designer liefern nicht rechtzeitig und die Texte sind auch noch nicht freigegeben. Ich weiss nicht, wie ich die Deadline halten soll.
+      Anna: Atme tief durch. Sprich mal mit Herrn Müller darüber.
+      Ich: Ich weiss nicht. Ich will nicht schon wieder mit Problemen ankommen.
+----------
+    [ID: 37] [Datetime: 2024-05-10 14:30]
+      Herr Müller: Frau Bauer, wie sieht es aus? Alpha-Präsentation nächste Woche.
+      Ich: Wir sind in den letzten Zügen. Ähm, die Kernpunkte stehen, das Design ist final. Es sollte alles klappen.
+      Herr Müller: Ich erwarte ein exzellentes Ergebnis.
+      Ich: Ja. Äh, natürlich.
+----------
+    [ID: 38] [Datetime: 2024-05-15 17:00]
+      Anna: Alles klar bei dir? Du siehst gestresst aus.
+      Ich: Bin ich auch. Die Alpha-Präsentation morgen macht mich nervös. Ich hab Angst, was falsch zu machen.
+      Anna: Quatsch, das wird super. Du hast doch alles im Griff.
+      Ich: Hoffentlich.
+----------
+    [ID: 57] [Datetime: 2024-09-05 10:30]
+      Ich: So Ben, lass uns mit Projekt Beta starten. Hier ist der erste Entwurf des Projektplans.
+      Ben: Sieht gut aus. Übersichtlich.
+      Ich: Danke. Ich lege Wert darauf, dass wir von Anfang an strukturiert vorgehen.
+      Ben: Find ich gut.
+----------
+    [ID: 60] [Datetime: 2024-09-20 14:00]
+      Herr Müller: Frau Bauer, erster Zwischenstand zu Beta?
+      Ich: Ja, Herr Müller. Der Plan steht, die ersten Aufgaben sind verteilt. Ben Klein ist gut eingearbeitet und unterstützt tatkräftig.
+      Herr Müller: Sehr gut. Weiter so.
+      Ich: Danke.
+----------
+    [ID: 62] [Datetime: 2024-10-01 11:00]
+      Anna: Wie läuft Beta so?
+      Ich: Viel besser als Alpha. Entspannter Start, gute Zusammenarbeit mit Ben.
+      Anna: Das freut mich für dich. Du wirkst auch entspannter.
+      Ich: Bin ich auch.
+----------
+    [ID: 67] [Datetime: 2024-11-01 09:30]
+      Ich: Guten Morgen Herr Müller. Hier der Monatsreport für Projekt Beta.
+      Herr Müller: Danke Frau Bauer. Sieht auf den ersten Blick gut aus. Sehr strukturiert.
+      Ich: Danke. Wir liegen gut im Zeitplan.
+      Herr Müller: Ausgezeichnet.
+----------
+    [ID: 74] [Datetime: 2024-12-05 09:00]
+      Herr Müller: Frau Bauer, die Zwischenpräsentation zu Beta war sehr überzeugend. Gute Arbeit, auch von Herrn Klein.
+      Ich: Danke Herr Müller. Das Teamwork funktioniert wirklich gut.
+      Herr Müller: Das sehe ich auch so.
+----------
+    [ID: 86] [Datetime: 2025-01-30 09:30]
+      Ben: Projekt Beta läuft ja super nach Plan.
+      Ich: Ja, das stimmt. Danke nochmal für deine tolle Mitarbeit!
+      Ben: Gerne! Hat Spaß gemacht mit dir.
+      Ich: Fand ich auch. Jetzt müssen wir nur noch den Abschlussbericht fertig machen.
+----------
+    [ID: 109] [Datetime: 2025-06-13 09:15]
+      Anna: Projekt Gamma klingt spannend, oder? Internationalisierung!
+      Ich: Ja, schon. Aber auch sicher wieder viel Arbeit. Und äh hoffentlich läuft die Abstimmung mit den internationalen Kollegen besser als bei Alpha damals mit der Agentur.
+      Anna: Das wird schon. Du hast ja jetzt mehr Erfahrung.
+      Ich: Hm ja. Und die PM-Weiterbildung hilft vielleicht auch.
+----------
+    [ID: 113] [Datetime: 2025-07-11 11:30]
+      Tom: Und, wie war das Gamma Kick-Off?
+      Ich: Gut, sehr informativ. Das Team ist international, wird spannend. Aber ich glaube, ich kann die Methoden aus der Weiterbildung gut einsetzen.
+      Tom: Das ist doch super. Klingt viel besser als damals bei Alpha.
+      Ich: Ja, ich fühle mich diesmal äh sicherer.
+----------
+    [ID: 118] [Datetime: 2025-08-15 10:30]
+      Ich: Das Gamma-Projekt läuft gut an. Die Zusammenarbeit mit Sarah klappt super.
+      Tom: Das ist doch die Hauptsache. Ein gutes Team ist Gold wert.
+      Ich: Absolut. Wir nutzen jetzt auch einige agile Methoden, das hilft.
+      Tom: Siehst du, die Weiterbildung zahlt sich aus.
+----------
+    [ID: 120] [Datetime: 2025-08-29 15:00]
+      Herr Müller: Frau Bauer, wie ist der Status bei Gamma? Sind die internationalen Teams an Bord?
+      Ich: Ja, Herr Müller. Die ersten Workshops waren produktiv. Wir haben einen gemeinsamen Planungsansatz gefunden.
+       Herr Müller: Sehr gut. Ihre neuen Methoden scheinen zu fruchten.
+      Ich: Ja, das agile Vorgehen hilft bei der Koordination.
+----------
+    [ID: 180] [Datetime: 2026-10-09 11:00]
+      Ich: Das Kick-Off für Delta war gut. Viele neue Gesichter im Team.
+      Sarah: Ja, wird eine Herausforderung, alle unter einen Hut zu bekommen.
+      Ich: Stimmt. Aber ich habe ein gutes Gefühl. Wir haben die Rollen klar verteilt.
+      Sarah: Das ist schonmal die halbe Miete.
+----------
+    [ID: 181] [Datetime: 2026-10-16 17:00]
+      Max: Und, wie ist es, die große Projektleiterin zu sein?
+      Ich: Aufregend! Viel Verantwortung, viele Meetings. Aber auch sehr spannend.
+      Max: Glaub ich dir. Stressig?
+      Ich: Geht eigentlich. Ich versuche, die Methoden aus der Weiterbildung konsequent anzuwenden.
+----------
+    [ID: 186] [Datetime: 2026-11-20 17:00]
+      Ich: Die Arbeit im Delta-Team läuft gut. Wir haben einen guten Rhythmus gefunden.
+      Sarah: Ja, finde ich auch. Die Daily Stand-ups helfen sehr.
+      Ich: Und die Kommunikation ist offen. Das ist wichtig bei so einem großen Projekt.
+      Sarah: Absolut.
+----------
+    [ID: 188] [Datetime: 2026-12-04 14:00]
+      Anna: Projekt Delta scheint ja richtig gut zu laufen unter deiner Leitung.
+      Ich: Danke! Es ist viel Arbeit, aber es macht auch Spaß, das Ganze zu gestalten.
+      Anna: Das glaube ich. Ganz andere Nummer als Alpha damals.
+      Ich: Oh ja. Kein Vergleich.
+----------
+    [ID: 197] [Datetime: 2027-01-29 15:00]
+      Sarah: Die erste Projektphase von Delta schließen wir ja bald ab.
+      Ich: Ja, sieht gut aus. Die Meilenstein-Präsentation ist nächste Woche.
+      Sarah: Bist du nervös?
+      Ich: Ein bisschen. Ist die erste große Präsi für Delta vor dem Management.
+      Sarah: Wird schon! Die Ergebnisse stimmen ja.
+----------
+    [ID: 198] [Datetime: 2027-02-05 16:00]
+      Ich: Präsentation ist super gelaufen! Das Management war sehr angetan.
+      Anna: Klasse! Glückwunsch!
+      Ich: Danke! Bin echt erleichtert. Jetzt können wir in Phase 2 starten.
+      Anna: Weiter so!
+----------
+    [ID: 200] [Datetime: 2027-02-19 17:30]
+      Tom: Alles klar bei dir? Du wirkst so beschäftigt.
+      Ich: Ja, Projekt Delta fordert schon viel Zeit. Aber auf eine gute Art.
+      Tom: Das ist gut. Solange der Spaß nicht verloren geht.
+      Ich: Nein, absolut nicht. Es ist spannend.
+----------
+
+[Sample 18/20]
+  Query: War ich nervös vor meinen Wettkämpfen?
+  GT Answer: Ja, du warst vor dem Stadtlauf 2025, dem 10km-Lauf im Herbst 2025 und dem Halbmarathon 2026 nervös und aufgeregt, auch wenn du dich meistens auch gefreut hast.
+  Chunks:
+    [ID: 97] [Datetime: 2025-03-25 18:30]
+      Ich: Nur noch vier Wochen bis zum Stadtlauf.
+      Tom: Die Aufregung steigt?
+      Ich: Ja, total. Ich hoffe, ich bin gut genug vorbereitet.
+      Tom: Bist du! Du hast super trainiert.
+      Ich: Danke fürs Mutmachen.
+----------
+    [ID: 99] [Datetime: 2025-04-05 17:00]
+      Ich: Ich bin so nervös wegen des Laufs nächste Woche.
+      Lena: Ach was. Das wird super! Denk dran, wie weit du gekommen bist.
+      Ich: Ja, stimmt schon. Von 3km letztes Jahr auf jetzt 12-14km im Training.
+      Lena: Siehst du! Einfach laufen und genießen.
+----------
+    [ID: 126] [Datetime: 2025-10-10 17:30]
+      Tom: Eine Woche noch bis zum Lauf!
+      Ich: Jaa, langsam werde ich nervös. Aber ich freu mich auch drauf.
+      Tom: Das wird gut! Du bist doch top vorbereitet.
+      Ich: Danke! Drück mir die Daumen.
+----------
+    [ID: 171] [Datetime: 2026-08-07 16:00]
+      Ich: Nur noch 6 Wochen bis zum Halbmarathon.
+      Sarah: Und, wie läuft's? Nervös?
+      Ich: Geht so. Das Training ist hart, aber ich bin im Plan. Längster Lauf war jetzt 19km.
+      Sarah: Wow! Das schaffst du locker!
+      Ich: Ich hoffe es!
+----------
+    [ID: 175] [Datetime: 2026-09-04 18:00]
+      Max: Eine Woche noch! Bist du bereit für den Halbmarathon?
+      Ich: So bereit wie man sein kann. Ein bisschen aufgeregt, aber ich freue mich drauf.
+      Max: Das wird ein tolles Erlebnis!
+      Ich: Das glaube ich auch.
+----------
+    [ID: 249] [Datetime: 2025-04-11 09:30]
+      Tom: Letzter Tag vor dem Stadtlauf! Alles bereit?
+      Ich: Ja! Klamotten liegen raus, Startnummer ist da. Jetzt nur noch gut schlafen.
+      Tom: Wird schon! Ich drück die Daumen!
+      Ich: Danke!
+----------
+    [ID: 262] [Datetime: 2025-10-13 14:00]
+      Ich: Nur noch wenige Tage bis zum Lauf. Das Wetter soll gut werden.
+      Anna: Super, das ist ja schon die halbe Miete.
+      Ich: Stimmt. Ich hoffe, ich bin fit.
+      Anna: Bist du!
+----------
+    [ID: 285] [Datetime: 2026-08-31 18:00]
+      Ich: Nur noch zwei Wochen bis zum Halbmarathon!
+      Luise: Die Zeit rennt! Bist du aufgeregt?
+      Ich: Ja, total! Aber auch Vorfreude.
+      Luise: Wir kommen zum Anfeuern!
+----------
+    [ID: 476] [Datetime: 2026-09-09 15:00]
+      Ich: Nur noch wenige Tage bis zum Halbmarathon! Die Nervosität steigt.
+      Tom: Das ist normal! Positiver Stress.
+      Ich: Ja, irgendwie schon. Ich freu mich ja auch drauf.
+      Tom: Wir drücken alle die Daumen!
+----------
+
+[Sample 19/20]
+  Query: Bei welchem Thema klang ich zögerlich, aber auch neugierig?
+  GT Answer: Du klangst zögerlich, aber auch neugierig, als du überlegtest, dich für einen 10km-Lauf anzumelden, und als du über einen Halbmarathon nachdachtest.
+  Chunks:
+    [ID: 71] [Datetime: 2024-11-20 17:30]
+      Ich: Tom, ich überlege, mich für einen 10km-Lauf anzumelden. Nächstes Frühjahr vielleicht.
+      Tom: Super Idee! Das gibt nochmal extra Motivation.
+      Ich: Ja, das dachte ich auch. Muss nur einen passenden finden.
+      Tom: Kann dir gerne welche raussuchen.
+----------
+    [ID: 142] [Datetime: 2026-01-23 17:00]
+      Tom: Na, neue Vorsätze für 2026?
+      Ich: Nicht wirklich. Laufen beibehalten, vielleicht mal einen Halbmarathon anvisieren? Und mehr Yoga machen.
+      Tom: Halbmarathon? Respekt!
+      Ich: Mal sehen. Ist nur so eine Idee.
+----------
+
+[Sample 20/20]
+  Query: Wie drückte sich meine Motivation beim Lauftraining aus, nachdem ich erste Erfolge hatte?
+  GT Answer: Nachdem du erste Erfolge (wie die 5km) hattest, drückte sich deine Motivation dadurch aus, dass du stolz warst, dich steigern wolltest und das Laufen dir gut tat.
+  Chunks:
+    [ID: 25] [Datetime: 2024-03-10 15:00]
+      Ich: Geschafft! 5km am Stück gelaufen!
+      Tom: Super! Siehst du, geht doch!
+      Ich: Ja, ich bin total stolz. Langsam steigere ich mich.
+      Tom: Weiter so!
+----------
+    [ID: 33] [Datetime: 2024-04-20 11:30]
+      Ich: Ich bin dieses Wochenende 7km gelaufen!
+      Max: Wow, super! Die 10km sind ja fast in Reichweite!
+      Ich: Ja, ich bin total motiviert jetzt. Das Laufen tut mir richtig gut, merke ich.
+      Max: Das ist die Hauptsache.
+----------
+ 

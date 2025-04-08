@@ -1,0 +1,2110 @@
+--- Category: multi_query ---
+-----------------------------
+
+[Sample 1/20]
+  Query: Was waren meine Neujahrsvorsätze für 2024, und habe ich sie erreicht?
+  GT Answer: Deine Vorsätze für 2024 waren, einen 10km-Lauf zu schaffen und mehr Bücher zu lesen. Du hast den 10km-Lauf im Dezember 2024 geschafft und bis dahin neun Bücher gelesen, womit du beide Ziele erreicht hast.
+  Chunks:
+    [ID: 10] [Datetime: 2024-01-02 20:00]
+      Luise: Na, gute Vorsätze fürs neue Jahr?
+      Ich: Jaa, die Klassiker. Ich will versuchen endlich mal einen 10km Lauf zu schaffen und mehr Bücher zu lesen, nicht nur Arbeitssachen.
+      Luise: Ehrgeizig! Viel Erfolg dabei!
+----------
+    [ID: 11] [Datetime: 2024-01-05 14:00]
+      Anna: Was hast du dir für 2024 vorgenommen?
+      Ich: Mehr Sport, also regelmäßig laufen gehen. Ziel ist ein 10km Lauf. Und mehr lesen.
+      Anna: Klingt gut. Ich will versuchen, weniger Geld für Unsinn auszugeben.
+----------
+    [ID: 75] [Datetime: 2024-12-10 18:00]
+      Ich: Ich hab's getan! Ich hab 10km geschafft!
+      Max: Was? Echt jetzt? Großartig! Glückwunsch!
+      Ich: Danke! Bin total platt, aber glücklich. Am Ende war es hart, aber ich hab durchgezogen.
+      Max: Super Leistung! Dein Vorsatz für 2024 ist erreicht!
+----------
+    [ID: 76] [Datetime: 2024-12-15 16:00]
+      Luise: Herzlichen Glückwunsch zum 10km-Lauf!
+      Ich: Danke! War echt ein Kampf, aber es hat geklappt.
+      Luise: Mega! Und das Lesen?
+      Ich: Auch gut. Bin bei Buch Nummer neun für dieses Jahr. Das Ziel schaffe ich locker.
+      Luise: Läuft bei dir!
+----------
+
+[Sample 2/20]
+  Query: Ich wollte 2024 einen 10km-Lauf schaffen. Gab es dabei Hindernisse, und wann habe ich das Ziel erreicht?
+  GT Answer: Ja, es gab Hindernisse. Du musstest wegen eines verstauchten Knöchels im Mai 2024 eine Laufpause einlegen. Das Ziel, einen 10km-Lauf zu schaffen, hast du schließlich im Dezember 2024 erreicht.
+  Chunks:
+    [ID: 10] [Datetime: 2024-01-02 20:00]
+      Luise: Na, gute Vorsätze fürs neue Jahr?
+      Ich: Jaa, die Klassiker. Ich will versuchen endlich mal einen 10km Lauf zu schaffen und mehr Bücher zu lesen, nicht nur Arbeitssachen.
+      Luise: Ehrgeizig! Viel Erfolg dabei!
+----------
+    [ID: 36] [Datetime: 2024-05-05 15:00]
+      Ich: Heute war ich wieder laufen. Fast 8km! Aber mein Knöchel tut jetzt weh.
+      Luise: Oh je, überanstrengt?
+      Ich: Ich hoffe nicht. Ich mach mal ein paar Tage Pause.
+      Luise: Gute Idee. Nicht dass du dich verletzt vor deinem 10km Ziel.
+----------
+    [ID: 41] [Datetime: 2024-05-25 11:00]
+      Max: Was macht der Knöchel?
+      Ich: Besser, danke. Ich hab aber immer noch Laufpause.
+      Max: Ärgerlich. Und das 10km Ziel?
+      Ich: Das muss ich wohl verschieben. Gesundheit geht vor.
+----------
+    [ID: 44] [Datetime: 2024-06-10 19:00]
+      Max: Und, wie war der 10km Lauf? Geschafft?
+      Ich: Leider nein. Ich hab zwar trainiert, aber kurz vorher hab ich mir den Knöchel verstaucht. Lesen klappt aber ganz gut, schon drei Romane dieses Jahr!
+      Max: Oh nein, gute Besserung! Aber immerhin das mit dem Lesen!
+----------
+    [ID: 75] [Datetime: 2024-12-10 18:00]
+      Ich: Ich hab's getan! Ich hab 10km geschafft!
+      Max: Was? Echt jetzt? Großartig! Glückwunsch!
+      Ich: Danke! Bin total platt, aber glücklich. Am Ende war es hart, aber ich hab durchgezogen.
+      Max: Super Leistung! Dein Vorsatz für 2024 ist erreicht!
+----------
+
+[Sample 3/20]
+  Query: Welche Koch- und Backprojekte habe ich verfolgt, und welche Kurse dazu besucht?
+  GT Answer: Du hast Kuchen, Muffins, Brot (auch Sauerteig) und Focaccia gebacken, Thai-Curry gekocht sowie selbstgemachte Pasta, Pizza, Gnocchi und Risotto zubereitet. Dazu hast du im Frühjahr 2025 einen italienischen Kochkurs besucht.
+  Chunks:
+    [ID: 1] [Datetime: 2023-11-15 19:00]
+      Ich: Hallo Mama, wie geht es dir?
+      Mama: Gut mein Schatz, und dir? Lange nichts gehört.
+      Ich: Ja, viel Stress auf der Arbeit. Aber am Wochenende wollte ich vielleicht mal wieder backen.
+----------
+    [ID: 22] [Datetime: 2024-02-25 16:00]
+      Ich: Hallo Mama. Ja, mir geht's gut. Projekt Alpha ist stressig, aber machbar.
+      Mama: Pass auf dich auf, Kind. Nicht zu viel arbeiten.
+      Ich: Ja Mama. Am Wochenende hab ich einen Kuchen gebacken, das entspannt mich immer.
+      Mama: Das ist schön. Was für einen denn?
+----------
+    [ID: 28] [Datetime: 2024-03-25 18:30]
+      Ich: Ich hab dieses Wochenende ein neues Kochbuch ausprobiert. So ein thailändisches Curry.
+      Max: Oh lecker! Und, gut geworden?
+      Ich: Ja, erstaunlich gut! Hat total Spaß gemacht, die ganzen Gewürze und so. Ich glaube Kochen wird mein neues Hobby.
+      Max: Cool!
+----------
+    [ID: 40] [Datetime: 2024-05-20 19:00]
+      Ich: Ich hab am Wochenende ein neues Rezept ausprobiert: selbstgemachte Pasta!
+      Lena: Wow! Und?
+      Ich: War ne ziemliche Sauerei in der Küche, aber es hat unglaublich gut geschmeckt! Total befriedigend, das selbst zu machen.
+      Lena: Das glaube ich! Bringst du mal was mit?
+----------
+    [ID: 45] [Datetime: 2024-06-15 12:30]
+      Anna: Mittagessen?
+      Ich: Ja gerne. Ich bin am Verhungern. Hab heute Morgen schon wieder ein Brot gebacken.
+      Anna: Du bist ja richtig zur Bäckerin mutiert!
+      Ich: Haha ja, das macht mir gerade total Spaß. Dieses Kneten und Warten, das ist fast meditativ.
+----------
+    [ID: 63] [Datetime: 2024-10-10 19:00]
+      Ich: Ich habe am Wochenende einen Sauerteig angesetzt.
+      Max: Oh wow, das ist ja Hardcore-Backen!
+      Ich: Ja, mal sehen ob es was wird. Riecht schon sehr... interessant.
+      Max: Haha, halt mich auf dem Laufenden!
+----------
+    [ID: 68] [Datetime: 2024-11-05 18:00]
+      Ich: Der Sauerteig lebt! Ich hab mein erstes Sauerteigbrot gebacken!
+      Luise: Wow! Und, essbar?
+      Ich: Ja, total lecker! Kruste super, Krume gut. Ich bin begeistert!
+      Luise: Klingt ja toll. Bringst du mal eine Kostprobe mit?
+----------
+    [ID: 79] [Datetime: 2025-01-02 19:00]
+      Lena: Neue Vorsätze für 2025?
+      Ich: Puh, gute Frage. Ich glaube, ich will das Laufen beibehalten und vielleicht mal einen Kochkurs machen.
+      Lena: Kochkurs? Was für einen?
+      Ich: Vielleicht was Asiatisches oder Italienisches. Mal sehen.
+----------
+    [ID: 84] [Datetime: 2025-01-20 18:00]
+      Ich: Ich hab mich für einen italienischen Kochkurs angemeldet!
+      Luise: Oh wie cool! Wann geht der los?
+      Ich: Nächsten Monat, immer dienstags abends.
+      Luise: Toll! Da musst du uns ja bald bekochen.
+      Ich: Mal sehen, was ich lerne!
+----------
+    [ID: 87] [Datetime: 2025-02-04 21:00]
+      Ich: Der erste Abend vom Kochkurs war super!
+      Max: Erzähl!
+      Ich: Wir haben Gnocchi selbst gemacht. War einfacher als gedacht und sehr lecker.
+      Max: Klingt gut! Ich will auch Gnocchi!
+----------
+    [ID: 90] [Datetime: 2025-02-18 21:30]
+      Luise: Na, Koch-Profi?
+      Ich: Haha, noch nicht. Aber gestern haben wir Risotto gemacht. War auch sehr lecker.
+      Luise: Mmmh, Risotto.
+      Ich: Ich merke richtig, wie ich da immer mehr Spaß dran finde. Das ist so kreativ.
+----------
+    [ID: 93] [Datetime: 2025-03-03 19:00]
+      Lena: Bald ist der Kochkurs vorbei, oder?
+      Ich: Ja, leider. Nur noch zwei Abende. Ich hab echt viel gelernt.
+      Lena: Was war das Beste?
+      Ich: Puh, schwer zu sagen. Die frische Pasta war toll, aber auch die Saucen-Grundlagen.
+----------
+    [ID: 108] [Datetime: 2025-06-06 18:00]
+      Luise: Na, was macht die Kunst? Schon wieder was Leckeres gekocht?
+      Ich: Gestern gab es selbstgemachte Pizza nach einem Rezept aus dem Kurs.
+      Luise: Mmmh, Pizza! Du machst mich hungrig.
+      Ich: Haha, sorry. War aber auch wirklich gut.
+----------
+    [ID: 160] [Datetime: 2026-05-22 19:30]
+      Ich: Hab heute versucht, Focaccia zu backen. Ist ganz gut geworden.
+      Luise: Oh lecker! Du bist echt eine Backfee geworden.
+      Ich: Haha, naja. Es macht einfach Spaß, neue Sachen auszuprobieren.
+      Luise: Bringst du Montag was mit?
+----------
+    [ID: 185] [Datetime: 2026-11-13 18:00]
+      Lena: Na, Projektleiterin, noch Zeit zum Leben?
+      Ich: Haha, ja doch. Der Konversationskurs macht Spaß. Und am Wochenende hab ich Apfelkuchen gebacken.
+      Lena: Mmmh, Apfelkuchen. Bringst du was mit?
+      Ich: Wenn noch was da ist!
+----------
+    [ID: 225] [Datetime: 2024-05-06 17:30]
+      Ich: Mein Knöchel zwickt schon wieder leicht.
+      Luise: Oh je. Nicht, dass das wieder schlimmer wird.
+      Ich: Ich hoffe nicht. Ich dehne jetzt immer extra lange nach dem Laufen.
+      Luise: Gute Idee.
+----------
+    [ID: 236] [Datetime: 2024-10-21 12:30]
+      Max: Was ist denn mit dem Sauerteig passiert?
+      Ich: Der lebt! Ich füttere ihn brav jeden Tag.
+      Max: Krass. Und das Brot schmeckt?
+      Ich: Ja, erstaunlich gut sogar.
+----------
+    [ID: 245] [Datetime: 2025-02-24 18:00]
+      Ich: Der Kochkurs macht so Spaß! Ich lerne echt viel.
+      Luise: Das ist toll! Was gab's gestern?
+      Ich: Wir haben verschiedene Antipasti gemacht. Lecker!
+      Luise: Mmmh!
+----------
+    [ID: 310] [Datetime: 2025-03-11 20:00]
+      Ich: Der Kochkurs ist vorbei. War echt toll.
+      Mama: Das freut mich, mein Schatz. Hast du viel gelernt?
+      Ich: Ja, Mama. Ich kann jetzt richtig gute Pasta machen.
+      Mama: Oh, dann musst du uns ja bald bekochen!
+----------
+    [ID: 317] [Datetime: 2026-12-14 18:00]
+      Ich: Ich habe Plätzchen gebacken!
+      Tom: Oh lecker! Welche Sorten?
+      Ich: Vanillekipferl, Zimtsterne und Butterplätzchen.
+      Tom: Die Klassiker! Bringst du morgen welche mit?
+----------
+    [ID: 326] [Datetime: 2024-10-17 17:00]
+      Luise: Dein selbstgebackenes Brot ist einfach das Beste!
+      Ich: Danke! Freut mich, dass es dir schmeckt.
+      Luise: Hast du ein Geheimnis?
+      Ich: Geduld und ein guter Sauerteig.
+----------
+    [ID: 337] [Datetime: 2023-12-11 16:00]
+      Ich: Ich habe heute Lebkuchen für die Kollegen mitgebracht.
+      Anna: Oh, wie lieb von dir! Selbstgebacken?
+      Ich: Ja, nach Mamas Rezept.
+      Anna: Lecker!
+----------
+    [ID: 342] [Datetime: 2025-02-07 17:00]
+      Max: Der Gnocchi-Abend war super!
+      Ich: Fand ich auch! War lecker, was wir im Kochkurs gelernt haben.
+      Max: Musst du unbedingt öfter machen!
+      Ich: Haha, mal sehen.
+----------
+    [ID: 370] [Datetime: 2024-10-11 18:00]
+      Ich: Der Sauerteig ist mir am Wochenende fast gestorben!
+      Max: Oh nein! Konntest du ihn retten?
+      Ich: Ja, gerade nochmal Glück gehabt. Hab ihn schnell gefüttert.
+      Max: Puh!
+----------
+    [ID: 387] [Datetime: 2025-06-09 18:00]
+      Ich: Ich habe am Wochenende versucht, einen Käsekuchen zu backen.
+      Anna: Und? Gelungen?
+      Ich: Naja, essbar. Aber er ist etwas zusammengefallen.
+      Anna: Übung macht den Meister!
+----------
+    [ID: 399] [Datetime: 2024-10-28 18:00]
+      Max: Dein Sauerteigbrot ist legendär!
+      Ich: Haha, danke!
+      Max: Wann backst du mal wieder?
+      Ich: Am Wochenende wahrscheinlich.
+----------
+    [ID: 401] [Datetime: 2025-06-17 17:00]
+      Lena: Wie war der Käsekuchen-Backversuch?
+      Ich: Naja, geht so. Geschmacklich gut, aber die Optik...
+      Lena: Haha, Hauptsache es schmeckt!
+      Ich: Stimmt.
+----------
+    [ID: 424] [Datetime: 2024-02-26 11:00]
+      Ich: Ich habe am Wochenende Muffins gebacken.
+      Tom: Oh, lecker! Mit Schokolade?
+      Ich: Ja! Willst du einen?
+      Tom: Unbedingt!
+----------
+    [ID: 427] [Datetime: 2024-11-26 14:00]
+      Luise: Dein Sauerteigbrot riecht ja bis hierher!
+      Ich: Haha, ja? Ist gerade frisch aus dem Ofen.
+      Luise: Kann ich ein Stück probieren?
+      Ich: Klar, warte kurz.
+----------
+    [ID: 441] [Datetime: 2024-10-23 17:00]
+      Luise: Ich bewundere deine Geduld mit dem Sauerteig.
+      Ich: Haha, ist gar nicht so schlimm. Ist Routine geworden.
+      Luise: Und das Ergebnis lohnt sich ja.
+      Ich: Das auf jeden Fall!
+----------
+    [ID: 467] [Datetime: 2024-03-25 11:00]
+      Lena: Dein Thai-Curry roch ja gestern Abend bis in den Flur!
+      Ich: Haha, echt? War auch sehr lecker.
+      Lena: Das glaube ich! Kochen ist echt dein Ding geworden.
+      Ich: Ja, macht mir total Spaß.
+----------
+    [ID: 472] [Datetime: 2025-08-14 17:00]
+      Ich: Ich habe Pesto aus meinem Balkon-Basilikum gemacht!
+      Lena: Oh lecker! Selbstgemacht schmeckt am besten.
+      Ich: Ja, finde ich auch. Und es ging ganz schnell.
+      Lena: Muss ich auch mal probieren.
+----------
+    [ID: 483] [Datetime: 2024-10-16 19:00]
+      Lena: Dein Brot ist einfach unglaublich.
+      Ich: Danke! Freut mich, wenn's schmeckt.
+      Lena: Nimmst du Bestellungen an?
+      Ich: Haha, nein. Nur für Freunde.
+----------
+    [ID: 486] [Datetime: 2025-08-28 18:00]
+      Ich: Ich habe heute Abend Pesto gemacht. Der ganze Balkon duftet.
+      Anna: Mmmh, lecker! Mit Pinienkernen?
+      Ich: Ja, und Parmesan. Klassisch.
+      Anna: Perfekt!
+----------
+    [ID: 498] [Datetime: 2025-02-18 15:00]
+      Ich: Der Kochkurs macht mich mutiger beim Ausprobieren.
+      Tom: Das ist doch gut!
+      Ich: Ja, ich variiere jetzt öfter mal Rezepte.
+      Tom: Super!
+----------
+    [ID: 499] [Datetime: 2025-06-10 11:00]
+      Luise: Dein Käsekuchen sah auf dem Foto aber gut aus!
+      Ich: Haha, danke. Geschmacklich war er auch okay.
+      Luise: Das ist doch die Hauptsache.
+      Ich: Stimmt.
+----------
+
+[Sample 4/20]
+  Query: Ich hatte Probleme mit meinem Knöchel. Wann trat das auf, wann war es wieder gut, und hatte es Folgen für meine Laufziele?
+  GT Answer: Die Knöchelprobleme traten erstmals im Mai 2024 auf. Du musstest pausieren und dein 10km-Ziel verschieben. Im September 2024 konntest du langsam wieder anfangen, und im März 2025 gab der Arzt grünes Licht. Die Pause führte dazu, dass du das 10km-Ziel erst später erreichtest.
+  Chunks:
+    [ID: 36] [Datetime: 2024-05-05 15:00]
+      Ich: Heute war ich wieder laufen. Fast 8km! Aber mein Knöchel tut jetzt weh.
+      Luise: Oh je, überanstrengt?
+      Ich: Ich hoffe nicht. Ich mach mal ein paar Tage Pause.
+      Luise: Gute Idee. Nicht dass du dich verletzt vor deinem 10km Ziel.
+----------
+    [ID: 41] [Datetime: 2024-05-25 11:00]
+      Max: Was macht der Knöchel?
+      Ich: Besser, danke. Ich hab aber immer noch Laufpause.
+      Max: Ärgerlich. Und das 10km Ziel?
+      Ich: Das muss ich wohl verschieben. Gesundheit geht vor.
+----------
+    [ID: 44] [Datetime: 2024-06-10 19:00]
+      Max: Und, wie war der 10km Lauf? Geschafft?
+      Ich: Leider nein. Ich hab zwar trainiert, aber kurz vorher hab ich mir den Knöchel verstaucht. Lesen klappt aber ganz gut, schon drei Romane dieses Jahr!
+      Max: Oh nein, gute Besserung! Aber immerhin das mit dem Lesen!
+----------
+    [ID: 50] [Datetime: 2024-07-10 16:00]
+      Ich: Ich hab den 'Hundertjährigen' angefangen zu lesen. Echt witzig!
+      Tom: Sag ich doch!
+      Ich: Gute Empfehlung, danke!
+      Tom: Gerne. Was macht das Laufen?
+      Ich: Pausiert immer noch. Der Knöchel zwickt ab und zu.
+----------
+    [ID: 59] [Datetime: 2024-09-15 16:00]
+      Ich: Hab heute versucht wieder zu laufen. Ganz langsam.
+      Max: Und?
+      Ich: Ging so. Der Knöchel hat nicht wehgetan, aber die Kondition ist komplett weg.
+      Max: Die kommt wieder. Nicht aufgeben.
+----------
+    [ID: 94] [Datetime: 2025-03-08 12:00]
+      Ich: Ich war heute Morgen beim Arzt wegen meines Knöchels. Nur zur Kontrolle.
+      Max: Und? Alles okay für den Stadtlauf?
+      Ich: Ja, grünes Licht! Er meinte, solange ich es nicht übertreibe, passt das.
+      Max: Sehr gut!
+----------
+    [ID: 225] [Datetime: 2024-05-06 17:30]
+      Ich: Mein Knöchel zwickt schon wieder leicht.
+      Luise: Oh je. Nicht, dass das wieder schlimmer wird.
+      Ich: Ich hoffe nicht. Ich dehne jetzt immer extra lange nach dem Laufen.
+      Luise: Gute Idee.
+----------
+    [ID: 258] [Datetime: 2025-08-18 10:00]
+      Lena: Was macht eigentlich dein Knöchel?
+      Ich: Gut, danke. Seit ich regelmäßig dehne und gute Schuhe habe, ist es viel besser.
+      Lena: Das ist ja super.
+      Ich: Ja, toi toi toi.
+----------
+
+[Sample 5/20]
+  Query: Welche größeren Projekte habe ich bei der Arbeit geleitet, und wie wurden sie eingeschätzt?
+  GT Answer: Du hast Projekt Alpha (Teilprojektleitung; stressig, aber erfolgreich), Projekt Beta (Teilprojektleitung; entspannt, gut), Projekt Gamma (Teilprojektleitung; erfolgreich, gut gemanagt) und Projekt Delta (Gesamtprojektleitung; komplex, positiv laufend) geleitet bzw. leitest es.
+  Chunks:
+    [ID: 16] [Datetime: 2024-02-01 08:45]
+      Ich: Guten Morgen Herr Müller.
+      Herr Müller: Morgen Frau Bauer. Kurze Info: Ab heute startet offiziell das Projekt Alpha. Sie übernehmen die Teilprojektleitung Marketing.
+      Ich: Oh, okay. Das ist... eine Herausforderung.
+      Herr Müller: Ich zähle auf Sie. Details gibt's im Kick-Off um 10.
+----------
+    [ID: 17] [Datetime: 2024-02-01 10:30]
+      Anna: Und, wie war das Kick-Off für Projekt Alpha?
+      Ich: Intensiv. Viel Verantwortung. Ähm, ich hoffe, ich pack das.
+      Anna: Klar packst du das! Du bist doch super organisiert.
+      Ich: Na ja, mal sehen. Die Erwartungen sind hoch.
+----------
+    [ID: 20] [Datetime: 2024-02-15 14:00]
+      Herr Müller: Wie läuft es denn mit dem Alpha Projekt? Sind wir im Zeitplan?
+      Ich: Ähm ja also im Großen und Ganzen schon. Es gab da ähm ein kleines Problem mit der äh Ressourcenzuweisung aber das das kriegen wir hin. Ich äh arbeite dran. Deadline ist ja erst im Mai.
+      Herr Müller: Gut, ich erwarte da bald ein Update.
+      Ich: Ja natürlich äh bekommen Sie.
+----------
+    [ID: 39] [Datetime: 2024-05-16 16:00]
+      Tom: Und? Wie lief die Präsentation?
+      Ich: Gut! Herr Müller war zufrieden. Ich bin so erleichtert!
+      Tom: Siehst du! Hab ich doch gesagt.
+      Ich: Jetzt brauche ich erstmal ein Wochenende zum Entspannen.
+----------
+    [ID: 42] [Datetime: 2024-06-01 09:00]
+      Herr Müller: Frau Bauer, gute Arbeit bei Projekt Alpha. Das Ergebnis war überzeugend.
+      Ich: Danke Herr Müller. Das freut mich sehr.
+      Herr Müller: Als nächstes wartet Projekt Beta auf Sie. Das wird aber entspannter. Start ist im September.
+      Ich: Okay, danke für die Info.
+----------
+    [ID: 57] [Datetime: 2024-09-05 10:30]
+      Ich: So Ben, lass uns mit Projekt Beta starten. Hier ist der erste Entwurf des Projektplans.
+      Ben: Sieht gut aus. Übersichtlich.
+      Ich: Danke. Ich lege Wert darauf, dass wir von Anfang an strukturiert vorgehen.
+      Ben: Find ich gut.
+----------
+    [ID: 60] [Datetime: 2024-09-20 14:00]
+      Herr Müller: Frau Bauer, erster Zwischenstand zu Beta?
+      Ich: Ja, Herr Müller. Der Plan steht, die ersten Aufgaben sind verteilt. Ben Klein ist gut eingearbeitet und unterstützt tatkräftig.
+      Herr Müller: Sehr gut. Weiter so.
+      Ich: Danke.
+----------
+    [ID: 62] [Datetime: 2024-10-01 11:00]
+      Anna: Wie läuft Beta so?
+      Ich: Viel besser als Alpha. Entspannter Start, gute Zusammenarbeit mit Ben.
+      Anna: Das freut mich für dich. Du wirkst auch entspannter.
+      Ich: Bin ich auch.
+----------
+    [ID: 86] [Datetime: 2025-01-30 09:30]
+      Ben: Projekt Beta läuft ja super nach Plan.
+      Ich: Ja, das stimmt. Danke nochmal für deine tolle Mitarbeit!
+      Ben: Gerne! Hat Spaß gemacht mit dir.
+      Ich: Fand ich auch. Jetzt müssen wir nur noch den Abschlussbericht fertig machen.
+----------
+    [ID: 107] [Datetime: 2025-05-30 14:00]
+      Herr Müller: Frau Bauer, kleines Update: Ab Juli startet Projekt Gamma. Sie werden wieder die Marketing-Teilprojektleitung übernehmen.
+      Ich: Okay, Projekt Gamma. Worum geht es da?
+      Herr Müller: Internationalisierung einer Produktlinie. Mehr Details folgen.
+      Ich: Verstanden.
+----------
+    [ID: 109] [Datetime: 2025-06-13 09:15]
+      Anna: Projekt Gamma klingt spannend, oder? Internationalisierung!
+      Ich: Ja, schon. Aber auch sicher wieder viel Arbeit. Und äh hoffentlich läuft die Abstimmung mit den internationalen Kollegen besser als bei Alpha damals mit der Agentur.
+      Anna: Das wird schon. Du hast ja jetzt mehr Erfahrung.
+      Ich: Hm ja. Und die PM-Weiterbildung hilft vielleicht auch.
+----------
+    [ID: 113] [Datetime: 2025-07-11 11:30]
+      Tom: Und, wie war das Gamma Kick-Off?
+      Ich: Gut, sehr informativ. Das Team ist international, wird spannend. Aber ich glaube, ich kann die Methoden aus der Weiterbildung gut einsetzen.
+      Tom: Das ist doch super. Klingt viel besser als damals bei Alpha.
+      Ich: Ja, ich fühle mich diesmal äh sicherer.
+----------
+    [ID: 120] [Datetime: 2025-08-29 15:00]
+      Herr Müller: Frau Bauer, wie ist der Status bei Gamma? Sind die internationalen Teams an Bord?
+      Ich: Ja, Herr Müller. Die ersten Workshops waren produktiv. Wir haben einen gemeinsamen Planungsansatz gefunden.
+       Herr Müller: Sehr gut. Ihre neuen Methoden scheinen zu fruchten.
+      Ich: Ja, das agile Vorgehen hilft bei der Koordination.
+----------
+    [ID: 128] [Datetime: 2025-10-24 09:30]
+      Herr Müller: Glückwunsch zum erfolgreichen Lauf, Frau Bauer. Hab ich gehört.
+      Ich: Oh, danke Herr Müller.
+      Herr Müller: Zeigt ja auch Einsatzbereitschaft. Wie sieht es bei Gamma aus?
+      Ich: Wir sind im Plan. Die ersten Marketingmaterialien für den internationalen Rollout sind in der Abstimmung.
+----------
+    [ID: 135] [Datetime: 2025-12-12 14:00]
+      Herr Müller: Jahresendspurt bei Gamma, Frau Bauer. Halten wir die Timelines?
+      Ich: Ja, es ist eng, aber wir sind auf Kurs für den Rollout im ersten Quartal nächstes Jahr.
+       Herr Müller: Gut. Ich will keine Überraschungen kurz vor Weihnachten.
+      Ich: Keine Sorge. Die Risiken sind gemanagt.
+----------
+    [ID: 144] [Datetime: 2026-02-06 14:30]
+      Sarah: Der Rollout-Plan für Gamma steht jetzt, oder?
+      Ich: Ja, die letzten Details sind geklärt. Nächsten Monat geht es in den USA los.
+      Sarah: Super. Dann können wir ja fast durchatmen.
+      Ich: Fast. Die erste Phase wird sicher intensiv.
+----------
+    [ID: 148] [Datetime: 2026-03-06 09:00]
+      Anna: Der Gamma-Rollout in den USA ist gestartet!
+      Ich: Ja! Bisher läuft alles nach Plan. Toi toi toi.
+      Anna: Super gemacht! Dein Projektmanagement war echt klasse.
+      Ich: Danke! War aber auch Teamarbeit, vor allem mit Sarah.
+----------
+    [ID: 152] [Datetime: 2026-03-27 11:00]
+      Herr Müller: Der Rollout in den USA läuft stabil, Frau Bauer?
+      Ich: Ja, die ersten Feedbacks sind positiv. Wir monitoren das engmaschig.
+      Herr Müller: Ausgezeichnet. Planen Sie schon den Rollout für Europa?
+      Ich: Die Vorbereitungen laufen parallel. Start ist für Mai geplant.
+----------
+    [ID: 156] [Datetime: 2026-04-24 14:00]
+      Sarah: Der Europa-Rollout von Gamma steht bevor. Alles bereit?
+      Ich: Ja, die Teams sind gebrieft, die Systeme angepasst. Nächste Woche geht's los.
+      Sarah: Spannend! Hoffentlich läuft es so glatt wie in den USA.
+      Ich: Daumen drücken!
+----------
+    [ID: 158] [Datetime: 2026-05-08 10:00]
+      Herr Müller: Frau Bauer, der Europa-Rollout ist gestartet. Erste Einschätzung?
+      Ich: Läuft gut an, Herr Müller. Kleinere technische Probleme gab es, aber die konnten wir schnell lösen.
+      Herr Müller: Sehr gut. Proaktives Management.
+      Ich: Danke.
+----------
+    [ID: 162] [Datetime: 2026-06-05 11:30]
+      Anna: Projekt Gamma scheint ja ein voller Erfolg zu werden.
+      Ich: Sieht gut aus. Die Verkaufszahlen im ersten Monat nach Rollout sind vielversprechend.
+      Anna: Super! Hast du dir verdient nach der vielen Arbeit.
+      Ich: Danke Anna!
+----------
+    [ID: 165] [Datetime: 2026-06-26 09:00]
+      Herr Müller: Frau Bauer, Projekt Gamma läuft ja hervorragend. Zeit für neue Herausforderungen?
+      Ich: Äh, wie meinen Sie das, Herr Müller?
+      Herr Müller: Wir planen Projekt Delta. Noch komplexer, strategischer. Ich würde Ihnen gerne die Gesamtprojektleitung anbieten.
+      Ich: Wow. Die Gesamtleitung? Das ist... eine große Ehre. Und Verantwortung.
+----------
+    [ID: 166] [Datetime: 2026-07-03 17:00]
+      Ich: Ich soll Projekt Delta leiten! Die Gesamtleitung!
+      Lena: Was? Das ist ja mega! Herzlichen Glückwunsch!
+      Ich: Danke! Ich bin total aufgeregt und hab auch ein bisschen Bammel.
+      Lena: Das packst du! Du bist doch super im Projektmanagement.
+----------
+    [ID: 172] [Datetime: 2026-08-14 11:00]
+      Herr Müller: Frau Bauer, ich habe die offizielle Ernennung zur Projektleiterin für Delta vorbereitet. Beginnen Sie schon mal mit der Grobplanung.
+      Ich: Ja, gerne. Ich habe mir schon erste Gedanken gemacht.
+      Herr Müller: Gut. Im September können wir dann detaillierter einsteigen.
+      Ich: Einverstanden.
+----------
+    [ID: 179] [Datetime: 2026-10-02 09:30]
+      Herr Müller: Frau Bauer, bereit für den Start von Projekt Delta nächste Woche?
+      Ich: Ja, Herr Müller. Die Grobplanung steht, das Kernteam ist definiert.
+      Herr Müller: Gut. Ich erwarte regelmäßige, transparente Updates. Dies ist ein Schlüsselprojekt.
+      Ich: Das ist mir bewusst. Sie werden auf dem Laufenden gehalten.
+----------
+    [ID: 180] [Datetime: 2026-10-09 11:00]
+      Ich: Das Kick-Off für Delta war gut. Viele neue Gesichter im Team.
+      Sarah: Ja, wird eine Herausforderung, alle unter einen Hut zu bekommen.
+      Ich: Stimmt. Aber ich habe ein gutes Gefühl. Wir haben die Rollen klar verteilt.
+      Sarah: Das ist schonmal die halbe Miete.
+----------
+    [ID: 181] [Datetime: 2026-10-16 17:00]
+      Max: Und, wie ist es, die große Projektleiterin zu sein?
+      Ich: Aufregend! Viel Verantwortung, viele Meetings. Aber auch sehr spannend.
+      Max: Glaub ich dir. Stressig?
+      Ich: Geht eigentlich. Ich versuche, die Methoden aus der Weiterbildung konsequent anzuwenden.
+----------
+    [ID: 184] [Datetime: 2026-11-06 10:00]
+      Herr Müller: Frau Bauer, erster Monatsreport für Delta?
+      Ich: Liegt auf Ihrem Tisch, Herr Müller.
+       Herr Müller: Danke. *blättert* Hm, die Risikobewertung hier... müssen wir das im Auge behalten?
+      Ich: Ja, das ist ein kritischer Punkt. Wir haben aber bereits Maßnahmen definiert.
+----------
+    [ID: 186] [Datetime: 2026-11-20 17:00]
+      Ich: Die Arbeit im Delta-Team läuft gut. Wir haben einen guten Rhythmus gefunden.
+      Sarah: Ja, finde ich auch. Die Daily Stand-ups helfen sehr.
+      Ich: Und die Kommunikation ist offen. Das ist wichtig bei so einem großen Projekt.
+      Sarah: Absolut.
+----------
+    [ID: 188] [Datetime: 2026-12-04 14:00]
+      Anna: Projekt Delta scheint ja richtig gut zu laufen unter deiner Leitung.
+      Ich: Danke! Es ist viel Arbeit, aber es macht auch Spaß, das Ganze zu gestalten.
+      Anna: Das glaube ich. Ganz andere Nummer als Alpha damals.
+      Ich: Oh ja. Kein Vergleich.
+----------
+    [ID: 189] [Datetime: 2026-12-11 10:30]
+      Herr Müller: Frau Bauer, die Fortschritte bei Delta sind beeindruckend. Ihr Managementstil scheint zu funktionieren.
+      Ich: Danke, Herr Müller. Das Team zieht auch sehr gut mit.
+      Herr Müller: Das ist Ihr Verdienst, die richtigen Leute zusammenzubringen und zu motivieren.
+----------
+    [ID: 194] [Datetime: 2027-01-15 11:00]
+      Herr Müller: Jahresgespräch, Frau Bauer. Setzen Sie sich.
+      Ich: Danke.
+      Herr Müller: 2026 war ein exzellentes Jahr für Sie. Erfolgreicher Abschluss Gamma, hervorragender Start bei Delta, Weiterbildungen gemeistert. Ich bin außerordentlich zufrieden.
+      Ich: Vielen Dank, Herr Müller. Das motiviert sehr.
+----------
+    [ID: 197] [Datetime: 2027-01-29 15:00]
+      Sarah: Die erste Projektphase von Delta schließen wir ja bald ab.
+      Ich: Ja, sieht gut aus. Die Meilenstein-Präsentation ist nächste Woche.
+      Sarah: Bist du nervös?
+      Ich: Ein bisschen. Ist die erste große Präsi für Delta vor dem Management.
+      Sarah: Wird schon! Die Ergebnisse stimmen ja.
+----------
+    [ID: 198] [Datetime: 2027-02-05 16:00]
+      Ich: Präsentation ist super gelaufen! Das Management war sehr angetan.
+      Anna: Klasse! Glückwunsch!
+      Ich: Danke! Bin echt erleichtert. Jetzt können wir in Phase 2 starten.
+      Anna: Weiter so!
+----------
+    [ID: 200] [Datetime: 2027-02-19 17:30]
+      Tom: Alles klar bei dir? Du wirkst so beschäftigt.
+      Ich: Ja, Projekt Delta fordert schon viel Zeit. Aber auf eine gute Art.
+      Tom: Das ist gut. Solange der Spaß nicht verloren geht.
+      Ich: Nein, absolut nicht. Es ist spannend.
+----------
+    [ID: 202] [Datetime: 2027-03-05 14:00]
+      Herr Müller: Frau Bauer, Phase 2 von Delta läuft? Gibt es Herausforderungen?
+      Ich: Läuft planmäßig an. Die Komplexität nimmt zu, aber das Team ist gut aufgestellt.
+      Herr Müller: Vertraue ich ganz auf Ihr Management.
+      Ich: Danke.
+----------
+    [ID: 208] [Datetime: 2027-04-09 15:00]
+      Ich: Die zweite Phase von Delta ist anspruchsvoll. Viele technische Abhängigkeiten.
+      Tom: Das klingt nach Koordinationsaufwand.
+      Ich: Und wie. Aber wir haben jetzt Spezialisten-Teams gebildet, das hilft.
+      Tom: Guter Ansatz.
+----------
+    [ID: 209] [Datetime: 2027-04-16 11:30]
+      Herr Müller: Frau Bauer, ich höre, Phase 2 von Delta fordert Sie heraus?
+      Ich: Es ist komplex, Herr Müller, aber wir sind auf einem guten Weg. Die Struktur mit den Spezialisten-Teams bewährt sich.
+      Herr Müller: Gut, dass Sie proaktiv agieren. Halten Sie mich auf dem Laufenden.
+----------
+    [ID: 376] [Datetime: 2026-06-01 11:00]
+      Ich: Die Übergabe von Projekt Gamma an den Betrieb läuft.
+      Lena: Gut. Dann hast du ja bald den Kopf frei für Delta.
+      Ich: Genau. Wobei die Vorplanung ja schon läuft.
+      Lena: Stimmt.
+----------
+    [ID: 378] [Datetime: 2026-11-30 15:00]
+      Ich: Die Zusammenarbeit im Delta-Team ist wirklich gut.
+      Sarah: Finde ich auch. Sehr konstruktiv und offen.
+      Ich: Das macht die Arbeit viel angenehmer.
+      Sarah: Absolut.
+----------
+    [ID: 394] [Datetime: 2027-03-30 18:00]
+      Tom: Was macht Projekt Delta?
+      Ich: Läuft. Phase 2 ist anspruchsvoll, aber wir kommen voran.
+      Tom: Gut zu hören.
+      Ich: Ja, das Team ist echt engagiert.
+----------
+    [ID: 436] [Datetime: 2027-04-28 14:00]
+      Ich: Phase 2 von Delta läuft an. Die technischen Details sind knifflig.
+      Sarah: Ja, da müssen wir echt aufpassen.
+      Ich: Aber die Experten, die wir hinzugezogen haben, sind gut.
+      Sarah: Das beruhigt.
+----------
+    [ID: 451] [Datetime: 2027-05-26 11:00]
+      Sarah: Die externen Experten für Delta sind echt gut.
+      Ich: Finde ich auch. Die bringen wichtiges Know-How rein.
+      Sarah: Das hilft uns bei den technischen Knackpunkten enorm.
+      Ich: Absolut.
+----------
+
+[Sample 6/20]
+  Query: Welches Feedback gab mir Herr Müller Anfang 2024, und wie entwickelte sich das bis Anfang 2027?
+  GT Answer: Anfang 2024 wünschte sich Herr Müller mehr Proaktivität von dir. Anfang 2025 lobte er deine verbesserte Proaktivität und Entwicklung. Anfang 2026 betonte er deine gute Koordination, und Anfang 2027 zeigte er sich außerordentlich zufrieden mit deiner Entwicklung und deinem Management.
+  Chunks:
+    [ID: 13] [Datetime: 2024-01-15 11:00]
+      Herr Müller: Frau Bauer, Ihr Einsatz im letzten Quartal war gut, aber ich wünsche mir etwas mehr Proaktivität bei der Kundenkommunikation.
+      Ich: Okay, danke für das Feedback. Das nehme ich mir zu Herzen.
+      Herr Müller: Gut. Ansonsten weiter so.
+----------
+    [ID: 82] [Datetime: 2025-01-15 11:00]
+      Herr Müller: Jahresgespräch, Frau Bauer. Nehmen Sie Platz.
+      Ich: Danke.
+      Herr Müller: Rückblickend auf 2024: Sie haben sich gut entwickelt. Projekt Alpha war eine Herausforderung, die Sie gemeistert haben. Beta läuft vorbildlich.
+      Ich: Das freut mich.
+----------
+    [ID: 83] [Datetime: 2025-01-15 11:15]
+      Herr Müller: Ihre Proaktivität und Struktur haben sich deutlich verbessert. Ich bin sehr zufrieden. Gibt es Wünsche Ihrerseits für 2025?
+      Ich: Ich würde mich gerne im Bereich Projektmanagement weiterbilden.
+      Herr Müller: Eine gute Idee. Reichen Sie mir Vorschläge ein, dann sehen wir, was möglich ist.
+----------
+    [ID: 140] [Datetime: 2026-01-16 11:00]
+      Herr Müller: Willkommen zurück, Frau Bauer. Jahresgespräch steht an. Wie sehen Sie das letzte Jahr?
+      Ich: Sehr positiv, Herr Müller. Projekt Beta lief gut, die Weiterbildung war wertvoll und Projekt Gamma ist auf einem guten Weg.
+      Herr Müller: Das sehe ich ähnlich. Ihre Entwicklung im Projektmanagement ist deutlich sichtbar.
+----------
+    [ID: 141] [Datetime: 2026-01-16 11:15]
+      Herr Müller: Ich bin sehr zufrieden mit Ihrer Arbeit, Frau Bauer. Auch wie Sie die internationalen Teams bei Gamma koordinieren.
+      Ich: Danke. Das freut mich sehr.
+      Herr Müller: Haben Sie Wünsche für das kommende Jahr? Weitere Entwicklungsziele?
+      Ich: Ich würde gerne meine Englischkenntnisse noch etwas verbessern, vielleicht durch einen Business English Kurs.
+----------
+    [ID: 194] [Datetime: 2027-01-15 11:00]
+      Herr Müller: Jahresgespräch, Frau Bauer. Setzen Sie sich.
+      Ich: Danke.
+      Herr Müller: 2026 war ein exzellentes Jahr für Sie. Erfolgreicher Abschluss Gamma, hervorragender Start bei Delta, Weiterbildungen gemeistert. Ich bin außerordentlich zufrieden.
+      Ich: Vielen Dank, Herr Müller. Das motiviert sehr.
+----------
+    [ID: 195] [Datetime: 2027-01-15 11:15]
+      Herr Müller: Ihre Entwicklung zur Projektleiterin ist bemerkenswert. Gibt es noch etwas, wo Sie Unterstützung brauchen?
+      Ich: Im Moment nicht direkt. Der Konversationskurs läuft gut. Ich fühle mich gut gerüstet für Delta.
+      Herr Müller: Ausgezeichnet. Dann machen Sie weiter so.
+----------
+
+[Sample 7/20]
+  Query: Welche Bücher habe ich gelesen, und wie habe ich sie bewertet?
+  GT Answer: Du hast u.a. gelesen: 'Der Schatten des Windes' (fantastisch), 'Die Mitternachtsbibliothek' (nachdenklich), 'Der Hundertjährige' (witzig), 'QualityLand' (skurril), 'Der Circle' (beklemmend), 'Rubinrot' (witzig), 'Eine kurze Geschichte der Menschheit' (faszinierend, lang), 'Gut gegen Nordwind' (nett), Nele Neuhaus Krimi (spannend).
+  Chunks:
+    [ID: 15] [Datetime: 2024-01-25 18:00]
+      Lena: Was liest du gerade Schönes?
+      Ich: Hab mit 'Der Schatten des Windes' angefangen. Ziemlich gut bisher.
+      Lena: Oh ja, das ist toll! Sag Bescheid, wie es dir gefallen hat.
+      Ich: Mach ich!
+----------
+    [ID: 21] [Datetime: 2024-02-20 19:30]
+      Luise: Und, wie läuft's mit den Vorsätzen?
+      Ich: Laufen ist zäh, aber ich bleibe dran. Lesen klappt super! Hab schon das zweite Buch durch für dieses Jahr.
+      Luise: Hey, immerhin etwas! Welches war's?
+      Ich: 'Die Mitternachtsbibliothek'. Sehr nachdenklich machend.
+----------
+    [ID: 32] [Datetime: 2024-04-15 19:00]
+      Lena: Und, Buch beendet?
+      Ich: Ja! 'Der Schatten des Windes' war fantastisch. Wirklich toll geschrieben.
+      Lena: Hab ich doch gesagt! Was liest du als nächstes?
+      Ich: Ich glaube, ich brauche erstmal was Leichteres nach diesem Wälzer.
+----------
+    [ID: 46] [Datetime: 2024-06-20 17:00]
+      Ich: Tom, hast du einen Tipp für ein gutes Buch? Eher was Leichtes.
+      Tom: Klar, wie wäre es mit 'Der Hundertjährige, der aus dem Fenster stieg und verschwand'?
+      Ich: Oh ja, davon habe ich gehört. Ist das lustig?
+      Tom: Sehr!
+----------
+    [ID: 50] [Datetime: 2024-07-10 16:00]
+      Ich: Ich hab den 'Hundertjährigen' angefangen zu lesen. Echt witzig!
+      Tom: Sag ich doch!
+      Ich: Gute Empfehlung, danke!
+      Tom: Gerne. Was macht das Laufen?
+      Ich: Pausiert immer noch. Der Knöchel zwickt ab und zu.
+----------
+    [ID: 61] [Datetime: 2024-09-25 18:30]
+      Luise: Na, was macht die Lese-Challenge?
+      Ich: Gut! Hab den 'Hundertjährigen' durch und noch zwei andere Bücher im Urlaub gelesen. Sind jetzt schon sechs dieses Jahr!
+      Luise: Wow! Mehr als ich.
+      Ich: Dafür läufst du Marathons.
+----------
+    [ID: 66] [Datetime: 2024-10-25 20:00]
+      Lena: Was liest du gerade?
+      Ich: Hab mit 'QualityLand' angefangen. Ziemlich skurril, aber gut.
+      Lena: Oh ja, das kenne ich. Bisschen düster, oder?
+      Ich: Ja, aber regt zum Nachdenken an.
+----------
+    [ID: 72] [Datetime: 2024-11-25 19:00]
+      Lena: 'QualityLand' schon durch?
+      Ich: Ja. Puh, das Ende war krass. Aber gut.
+      Lena: Ja, fand ich auch. Was kommt als nächstes?
+      Ich: Ich glaube, ich brauche was zum Lachen. Vielleicht den neuen Fitzek?
+      Lena: Haha, Fitzek zum Lachen? Sicher?
+----------
+    [ID: 124] [Datetime: 2025-09-26 11:00]
+      Ich: Ich lese gerade 'Der Circle'. Ziemlich beklemmend.
+      Lena: Oh ja, das kenne ich. Regt zum Nachdenken an über unsere digitale Welt.
+      Ich: Total. Manchmal lege ich es weg, weil es mir zu unheimlich wird.
+      Lena: Ging mir auch so.
+----------
+    [ID: 129] [Datetime: 2025-10-31 18:00]
+      Ich: 'Der Circle' hab ich durch. Puh. Jetzt brauche ich dringend was Leichtes.
+      Max: Schon wieder? Wie wäre es mit einem lustigen Roman?
+      Ich: Ja, gute Idee. Hast du einen Tipp?
+      Max: Ich hab letztens was von Kerstin Gier gelesen, das war ganz witzig.
+----------
+    [ID: 173] [Datetime: 2026-08-21 17:00]
+      Lena: Was liest du gerade Schönes?
+      Ich: Hab mir den Tipp von Max zu Herzen genommen und lese 'Rubinrot'. Echt witzig und unterhaltsam.
+      Lena: Oh ja, die Reihe ist super für zwischendurch.
+      Ich: Genau das Richtige gerade.
+----------
+    [ID: 196] [Datetime: 2027-01-22 18:00]
+      Ich: Hab mir fest vorgenommen, dieses Jahr wieder mehr zu lesen. Gleich mal ein neues Buch angefangen.
+      Max: Oh, was denn?
+      Ich: 'Eine kurze Geschichte der Menschheit'. Ziemlich dicker Schinken.
+      Max: Respekt! Das wollte ich auch immer mal lesen.
+----------
+    [ID: 205] [Datetime: 2027-03-19 17:00]
+      Ich: Ich lese immer noch an der 'Kurzen Geschichte der Menschheit'. Ist faszinierend, aber zieht sich.
+      Sarah: Haha, das glaube ich. Sachbücher können manchmal zäh sein.
+      Ich: Ja, aber ich will es durchziehen.
+      Sarah: Ehrgeizig!
+----------
+    [ID: 211] [Datetime: 2027-04-30 17:00]
+      Lena: Geschafft! 'Kurze Geschichte der Menschheit' ist durch!
+      Ich: Wow! Respekt! Und, hat es sich gelohnt?
+      Lena: Ja, schon. Viel gelernt, aber war auch anstrengend.
+      Ich: Das glaube ich.
+----------
+    [ID: 261] [Datetime: 2025-09-29 18:30]
+      Max: Was macht die Lektüre? Immer noch 'Der Circle'?
+      Ich: Nein, den hab ich durch. Lese jetzt was Lustiges zur Abwechslung.
+      Max: Gute Entscheidung!
+      Ich: Fand ich auch.
+----------
+    [ID: 275] [Datetime: 2026-04-13 18:00]
+      Ich: Ich brauche mal wieder ein gutes Buch. Hast du einen Tipp?
+      Luise: Was Leichtes oder was zum Nachdenken?
+      Ich: Eher was Leichtes, Unterhaltsames.
+      Luise: Lies mal 'Gut gegen Nordwind'. Ist nett.
+----------
+    [ID: 320] [Datetime: 2027-05-10 16:00]
+      Ich: Ich brauche einen neuen Roman. Hast du was Gutes gelesen?
+      Max: Ich lese gerade einen spannenden Krimi von Nele Neuhaus.
+      Ich: Oh, die mag ich! Welcher ist das?
+      Max: 'Monster'. Sehr fesselnd.
+----------
+    [ID: 359] [Datetime: 2025-09-22 18:00]
+      Ich: Ich habe 'Gut gegen Nordwind' gelesen. War echt nett.
+      Max: Hab ich doch gesagt!
+      Ich: Ja, danke für den Tipp! Genau das Richtige für zwischendurch.
+      Max: Gerne.
+----------
+    [ID: 380] [Datetime: 2027-05-24 17:00]
+      Ich: Ich habe den Krimi von Nele Neuhaus angefangen.
+      Luise: Und? Gut?
+      Ich: Ja, sehr spannend! Genau mein Geschmack.
+      Luise: Super!
+----------
+    [ID: 395] [Datetime: 2027-05-31 10:00]
+      Ich: Ich habe den Krimi durch. War super spannend!
+      Lena: Gut! Was liest du als nächstes?
+      Ich: Ich glaube, ich wage mich mal an einen Klassiker.
+      Lena: Oh, welchen denn?
+----------
+    [ID: 408] [Datetime: 2027-05-05 15:00]
+      Ich: Ich lese gerade 'Stolz und Vorurteil'.
+      Tom: Oh, ein Klassiker! Wie findest du es?
+      Ich: Etwas langatmig am Anfang, aber jetzt wird es interessant.
+      Tom: Ja, muss man sich drauf einlassen.
+----------
+    [ID: 422] [Datetime: 2027-04-14 19:00]
+      Max: Immer noch am Sachbuch?
+      Ich: Ja! Aber das Ende ist in Sicht!
+      Max: Halte durch!
+      Ich: Mach ich!
+----------
+    [ID: 432] [Datetime: 2026-04-21 19:00]
+      Ich: Ich habe 'Gut gegen Nordwind' gelesen. Sehr nett!
+      Lena: Sag ich doch! Und den zweiten Teil auch?
+      Ich: Noch nicht. Kommt aber noch!
+      Lena: Lohnt sich auch.
+----------
+    [ID: 481] [Datetime: 2024-04-16 10:00]
+      Tom: Dein Buch 'Der Schatten des Windes' ist durch?
+      Ich: Ja, endlich! War echt super.
+      Tom: Was liest du jetzt?
+      Ich: Brauche was Leichteres. Hab mir einen Krimi geholt.
+----------
+    [ID: 493] [Datetime: 2027-05-27 18:00]
+      Lena: 'Stolz und Vorurteil' durch?
+      Ich: Ja! Endlich! War aber echt gut.
+      Lena: Siehst du! Was kommt als Nächstes?
+      Ich: Keine Ahnung. Erstmal eine Lesepause.
+----------
+    Chunk ID 503 not found.
+----------
+
+[Sample 8/20]
+  Query: Wann habe ich Urlaube gemacht, und wohin ging es?
+  GT Answer: Du hast im August 2024 Urlaub in der Toskana (Italien) und im September 2026 in Portugal (Lissabon und Algarve) gemacht. Über Silvester 2025/2026 warst du in Prag.
+  Chunks:
+    [ID: 43] [Datetime: 2024-06-05 18:30]
+      Luise: Urlaub schon gebucht?
+      Ich: Ja! Es geht im August für zwei Wochen nach Italien. Ich freu mich so!
+      Luise: Oh wie schön! Wohin genau?
+      Ich: Toskana. Bisschen Kultur, bisschen Entspannung.
+----------
+    [ID: 53] [Datetime: 2024-07-25 18:00]
+      Max: Noch drei Wochen bis zum Urlaub!
+      Ich: Jaaa! Ich zähle schon die Stunden. Hab mir einen neuen Reiseführer für die Toskana gekauft.
+      Max: Sehr gut. Was willst du unbedingt sehen?
+      Ich: Florenz natürlich, und vielleicht Siena.
+----------
+    [ID: 54] [Datetime: 2024-08-01 12:00]
+      Anna: Na, aufgeregt wegen Italien?
+      Ich: Total! Ich packe gedanklich schon meinen Koffer.
+      Anna: Haha. Bring schönes Wetter mit!
+      Ich: Wird gemacht!
+----------
+    [ID: 55] [Datetime: 2024-08-15 10:00]
+      Ich: Ciao aus Florenz! Es ist wunderschön hier!
+      Luise: Oh wie toll! Genieß es!
+      Ich: Mach ich! Das Essen ist ein Traum.
+----------
+    [ID: 56] [Datetime: 2024-09-01 09:00]
+      Ich: Bin wieder da! Der Urlaub war fantastisch.
+      Tom: Willkommen zurück! Gut erholt?
+      Ich: Ja, total. Bereit für Projekt Beta.
+      Tom: Na dann los!
+----------
+    [ID: 58] [Datetime: 2024-09-10 19:00]
+      Lena: Erzähl mal vom Urlaub!
+      Ich: Hach, es war so schön. Die Landschaft, die Städte, das Essen... Ich hab unglaublich viel Pasta gegessen.
+      Lena: Haha, das klingt nach dir.
+      Ich: Absolut. Und ich hab ein tolles Kochbuch mitgebracht.
+----------
+    [ID: 134] [Datetime: 2025-12-05 18:30]
+      Ich: Anna und ich planen über Silvester nach Prag zu fahren! Hast du Lust mitzukommen, Luise?
+      Luise: Prag? Oh wow! Ja, klingt super! Muss ich kurz checken, aber prinzipiell gerne!
+      Ich: Super! Ich schick dir mal die Infos.
+----------
+    [ID: 138] [Datetime: 2026-01-02 11:00]
+      Ich: Happy New Year aus Prag!
+      Lena: Frohes Neues! Wie ist es?
+      Ich: Super! Tolle Stadt, nette Leute. Gestern ein Wahnsinns-Feuerwerk.
+      Lena: Beneidenswert! Feiert schön!
+----------
+    [ID: 139] [Datetime: 2026-01-09 09:30]
+      Anna: Zurück aus Prag. War das toll!
+      Ich: Ja, absolut! Das müssen wir wieder machen.
+      Luise: Definitiv! Danke nochmal fürs Organisieren, Ich.
+      Ich: Gerne! Hat Spaß gemacht.
+----------
+    [ID: 164] [Datetime: 2026-06-19 18:00]
+      Max: Sommerurlaub schon geplant?
+      Ich: Noch nicht fix. Vielleicht im August oder September. Ich dachte an Portugal.
+      Max: Oh, Portugal ist toll! Lissabon oder eher Algarve?
+      Ich: Beides vielleicht? Eine kleine Rundreise?
+----------
+    [ID: 170] [Datetime: 2026-07-31 18:30]
+      Ich: Hab den Portugal-Urlaub gebucht! Zwei Wochen im September, nach dem Halbmarathon.
+      Max: Perfekt getimt! Lissabon und Algarve?
+      Ich: Ja, erst ein paar Tage Lissabon, dann runter an die Küste.
+      Max: Sehr gut! Ich bin neidisch.
+----------
+    [ID: 177] [Datetime: 2026-09-15 10:00]
+      Ich: Grüße aus Lissabon!
+      Anna: Oh wie schön! Genieß den Urlaub!
+      Ich: Mach ich! Tolle Stadt, super Wetter.
+      Anna: Perfekt!
+----------
+    [ID: 178] [Datetime: 2026-09-25 18:00]
+      Ich: Zurück aus Portugal. Es war traumhaft!
+      Lena: Willkommen zurück! Gut erholt?
+      Ich: Ja, total. Bereit für Projekt Delta.
+      Lena: Na dann kann's ja losgehen.
+----------
+    [ID: 231] [Datetime: 2024-08-05 13:00]
+      Ich: Ich freu mich so auf den Urlaub. Einfach mal nichts tun.
+      Max: Kann ich verstehen. Wann geht's los?
+      Ich: Nächste Woche! Endlich!
+      Max: Schön! Genieß es!
+----------
+    [ID: 232] [Datetime: 2024-08-26 11:00]
+      Anna: Urlaub vorbei? Wie war's?
+      Ich: Traumhaft! Genau das, was ich gebraucht habe.
+      Anna: Das sieht man dir an. Schön braun geworden.
+      Ich: Haha, danke.
+----------
+    [ID: 283] [Datetime: 2026-08-03 17:00]
+      Ich: Hab Urlaub gebucht! Portugal im September!
+      Lena: Oh wie schön! Das hast du dir verdient!
+      Ich: Ja, freu mich schon riesig. Nach dem Halbmarathon.
+      Lena: Perfekte Belohnung!
+----------
+    [ID: 288] [Datetime: 2026-09-28 16:00]
+      Ich: Zurück aus Portugal und voller Tatendrang für Projekt Delta!
+      Lena: Haha, das klingt gut! War der Urlaub schön?
+      Ich: Ja, super! Genau die richtige Mischung aus Stadt und Strand.
+      Lena: Perfekt.
+----------
+    [ID: 348] [Datetime: 2026-09-21 11:00]
+      Sarah: Willkommen zurück aus Portugal!
+      Ich: Danke Sarah! War wunderschön.
+      Sarah: Das freut mich. Bereit für Delta?
+      Ich: Ja! Voller Energie.
+----------
+    [ID: 374] [Datetime: 2025-11-25 16:00]
+      Ich: Ich freue mich schon auf den Prag-Trip mit dir und Luise!
+      Anna: Ich mich auch! Wird bestimmt super.
+      Ich: Hab schon einen Reiseführer gekauft.
+      Anna: Sehr gut!
+----------
+    [ID: 389] [Datetime: 2025-12-29 14:00]
+      Ich: Ich bin wieder zurück von meinen Eltern.
+      Tom: Schön. Gut erholt?
+      Ich: Ja, war sehr entspannt. Bereit für Silvester in Prag!
+      Tom: Super! Viel Spaß!
+----------
+    [ID: 392] [Datetime: 2026-09-30 17:00]
+      Luise: Wie war Portugal?
+      Ich: Wunderschön! Lissabon ist toll und die Algarve hat traumhafte Strände.
+      Luise: Oh, da muss ich auch mal hin.
+      Ich: Unbedingt!
+----------
+    [ID: 403] [Datetime: 2026-01-07 16:00]
+      Luise: Wie war Prag?
+      Ich: Absolut toll! Eine wunderschöne Stadt.
+      Luise: Und Silvester dort?
+      Ich: War super! Tolle Stimmung.
+----------
+    [ID: 405] [Datetime: 2026-08-05 11:00]
+      Sarah: Portugal klingt traumhaft!
+      Ich: Ja, freue mich schon riesig drauf. Nach dem Lauf.
+      Sarah: Perfekte Belohnung.
+      Ich: Finde ich auch.
+----------
+    [ID: 426] [Datetime: 2024-08-27 17:00]
+      Ich: Der Urlaub war toll, aber jetzt hat mich der Alltag wieder.
+      Lena: Das geht schnell, oder?
+      Ich: Ja, leider. Aber Projekt Beta wartet.
+      Lena: Auf geht's!
+----------
+    [ID: 490] [Datetime: 2026-09-23 19:00]
+      Ich: Portugal war einfach traumhaft.
+      Max: Das glaube ich dir. Hast du viele Fotos gemacht?
+      Ich: Ja, unzählige! Muss ich dir mal zeigen.
+      Max: Gerne!
+----------
+
+[Sample 9/20]
+  Query: Wer war Ben Klein, wann haben wir zusammengearbeitet, und wann hat er die Abteilung gewechselt?
+  GT Answer: Ben Klein war ein Kollege, den du im Juli 2024 eingearbeitet hast. Ihr habt gut an Projekt Beta (Sept 2024 - Jan 2025) zusammengearbeitet. Er wechselte Anfang April 2025 ins Controlling.
+  Chunks:
+    [ID: 47] [Datetime: 2024-06-25 10:00]
+      Frau Schmidt: Frau Bauer, könnten Sie die Einarbeitung von Herrn Klein übernehmen? Er fängt nächste Woche an.
+      Ich: Äh ja, klar. Gerne. In welchem Bereich wird er arbeiten?
+      Frau Schmidt: Er unterstützt uns im Marketing, auch bei Projekt Beta dann.
+      Ich: Alles klar.
+----------
+    [ID: 49] [Datetime: 2024-07-05 14:00]
+      Ich: Hi Ben, ich bin übrigens Ich. Ich soll dich einarbeiten.
+      Ben: Hallo Ich, freut mich. Ben Klein.
+      Ich: Willkommen im Team! Lass uns erstmal einen Kaffee trinken, dann zeig ich dir alles.
+      Ben: Super, danke!
+----------
+    [ID: 57] [Datetime: 2024-09-05 10:30]
+      Ich: So Ben, lass uns mit Projekt Beta starten. Hier ist der erste Entwurf des Projektplans.
+      Ben: Sieht gut aus. Übersichtlich.
+      Ich: Danke. Ich lege Wert darauf, dass wir von Anfang an strukturiert vorgehen.
+      Ben: Find ich gut.
+----------
+    [ID: 60] [Datetime: 2024-09-20 14:00]
+      Herr Müller: Frau Bauer, erster Zwischenstand zu Beta?
+      Ich: Ja, Herr Müller. Der Plan steht, die ersten Aufgaben sind verteilt. Ben Klein ist gut eingearbeitet und unterstützt tatkräftig.
+      Herr Müller: Sehr gut. Weiter so.
+      Ich: Danke.
+----------
+    [ID: 65] [Datetime: 2024-10-20 17:00]
+      Ben: Brauchst du Hilfe bei den Beta-Reportings?
+      Ich: Nein danke, Ben. Ich komme gut zurecht. Aber danke der Nachfrage.
+      Ben: Okay. Sag Bescheid, wenn was ist.
+      Ich: Mach ich.
+----------
+    [ID: 73] [Datetime: 2024-12-01 14:00]
+      Ben: Die Präsentation für die Beta-Zwischenergebnisse steht. Willst du nochmal drüberschauen?
+      Ich: Ja, gerne. Schick mal rüber.
+      Ben: Erledigt.
+      Ich: Danke Ben, schaue ich mir heute Abend an.
+----------
+    [ID: 74] [Datetime: 2024-12-05 09:00]
+      Herr Müller: Frau Bauer, die Zwischenpräsentation zu Beta war sehr überzeugend. Gute Arbeit, auch von Herrn Klein.
+      Ich: Danke Herr Müller. Das Teamwork funktioniert wirklich gut.
+      Herr Müller: Das sehe ich auch so.
+----------
+    [ID: 86] [Datetime: 2025-01-30 09:30]
+      Ben: Projekt Beta läuft ja super nach Plan.
+      Ich: Ja, das stimmt. Danke nochmal für deine tolle Mitarbeit!
+      Ben: Gerne! Hat Spaß gemacht mit dir.
+      Ich: Fand ich auch. Jetzt müssen wir nur noch den Abschlussbericht fertig machen.
+----------
+    [ID: 98] [Datetime: 2025-04-01 14:00]
+      Ben: Hey Ich, ich wechsle die Abteilung. Wollte mich nur kurz verabschieden.
+      Ich: Oh, okay. Wohin geht's?
+      Ben: Ins Controlling. War schön, mit dir an Beta zu arbeiten.
+      Ich: Fand ich auch. Alles Gute dir!
+      Ben: Danke, dir auch!
+----------
+    [ID: 230] [Datetime: 2024-07-22 17:00]
+      Luise: Wie war die Einarbeitung von Ben?
+      Ich: Ganz gut. Netter Kerl, scheint motiviert zu sein.
+      Luise: Das ist doch super.
+      Ich: Ja, hoffe er lebt sich gut ein.
+----------
+    [ID: 234] [Datetime: 2024-09-23 09:45]
+      Tom: Projekt Beta scheint ja gut zu laufen mit dir und Ben.
+      Ich: Ja, die Zusammenarbeit klappt echt gut. Er bringt gute Ideen ein.
+      Tom: Freut mich zu hören.
+      Ich: Mich auch.
+----------
+    [ID: 307] [Datetime: 2024-07-19 09:30]
+      Ben: Kannst du mir kurz bei dieser Excel-Formel helfen?
+      Ich: Klar, zeig mal her.
+      Ben: Danke! Ich steh da gerade total auf dem Schlauch.
+      Ich: Kein Problem.
+----------
+    [ID: 325] [Datetime: 2024-08-12 09:30]
+      Ich: Ist Frau Schmidt heute im Haus?
+      Ben: Ich glaube ja. Hab sie vorhin gesehen.
+      Ich: Gut, danke. Muss ihr noch Unterlagen geben.
+      Ben: Kein Problem.
+----------
+    [ID: 371] [Datetime: 2025-01-27 14:00]
+      Ben: Der Abschlussbericht für Beta ist fertig. Willst du drüberschauen?
+      Ich: Ja, super, danke Ben! Schick mir den Link.
+      Ben: Erledigt.
+      Ich: Perfekt, danke!
+----------
+    [ID: 398] [Datetime: 2024-07-02 11:00]
+      Ich: Ben braucht noch etwas Unterstützung bei den Marketing-Tools.
+      Luise: Kannst du ihm das zeigen?
+      Ich: Ja, mache ich heute Nachmittag.
+      Luise: Super.
+----------
+    [ID: 411] [Datetime: 2024-07-11 14:00]
+      Ich: Ben hat sich schon gut eingearbeitet.
+      Max: Das ist doch super.
+      Ich: Ja, er ist eine gute Unterstützung für Projekt Beta.
+      Max: Freut mich für dich.
+----------
+    [ID: 440] [Datetime: 2024-07-24 10:00]
+      Ich: Ich muss Ben nochmal erklären, wie unser Reportingsystem funktioniert.
+      Tom: Ja, das ist am Anfang etwas unübersichtlich.
+      Ich: Finde ich auch. Ich mache ihm eine kurze Anleitung.
+      Tom: Super.
+----------
+    [ID: 496] [Datetime: 2024-08-08 16:00]
+      Ich: Ich muss Ben noch zeigen, wie die Urlaubsanträge funktionieren.
+      Anna: Ja, das System ist etwas umständlich.
+      Ich: Finde ich auch. Ich setz mich gleich mal mit ihm hin.
+      Anna: Super.
+----------
+
+[Sample 10/20]
+  Query: Ich wollte mich beruflich weiterbilden. Welche Kurse habe ich besucht, und wann?
+  GT Answer: Du hast eine Weiterbildung in Agilem Projektmanagement (Mai-Aug 2025), einen Business-English-Kurs (März-Juni 2026) und einen Englisch-Konversationskurs (Nov 2026 - Feb 2027) besucht.
+  Chunks:
+    [ID: 83] [Datetime: 2025-01-15 11:15]
+      Herr Müller: Ihre Proaktivität und Struktur haben sich deutlich verbessert. Ich bin sehr zufrieden. Gibt es Wünsche Ihrerseits für 2025?
+      Ich: Ich würde mich gerne im Bereich Projektmanagement weiterbilden.
+      Herr Müller: Eine gute Idee. Reichen Sie mir Vorschläge ein, dann sehen wir, was möglich ist.
+----------
+    [ID: 88] [Datetime: 2025-02-10 14:00]
+      Ich: Herr Müller, hier sind die Vorschläge für Projektmanagement-Weiterbildungen.
+      Herr Müller: Danke Frau Bauer. Ich schaue es mir an und gebe Ihnen bis Ende nächster Woche Bescheid.
+      Ich: Vielen Dank.
+----------
+    [ID: 92] [Datetime: 2025-02-25 11:30]
+      Herr Müller: Frau Bauer, ich habe mir die Weiterbildungen angesehen. Der Kurs 'Agiles Projektmanagement für Fortgeschrittene' scheint mir passend. Wir übernehmen die Kosten.
+      Ich: Oh, super! Vielen Dank, Herr Müller!
+      Herr Müller: Melden Sie sich an. Beginn ist im Mai.
+----------
+    [ID: 96] [Datetime: 2025-03-20 09:00]
+      Anna: Na, wie war die Geburtstagsfeier?
+      Ich: Sehr schön! Das Essen ist gut angekommen.
+      Anna: Das glaube ich. Wann fängt deine Weiterbildung an?
+      Ich: Im Mai. Ich freu mich schon drauf.
+----------
+    [ID: 103] [Datetime: 2025-05-02 09:00]
+      Herr Müller: Frau Bauer, Ihr Projektmanagement-Kurs beginnt ja diesen Monat, richtig?
+      Ich: Ja, genau. Nächste Woche geht es los.
+      Herr Müller: Gut. Ich erwarte, dass Sie das Gelernte dann auch in zukünftigen Projekten anwenden.
+      Ich: Selbstverständlich.
+----------
+    [ID: 104] [Datetime: 2025-05-09 17:00]
+      Ich: Der erste Tag der Weiterbildung war interessant. Viel Theorie, aber gut erklärt.
+      Lena: Klingt doch gut. Ist das anstrengend neben der Arbeit?
+      Ich: Geht eigentlich. Ist nur einmal die Woche nachmittags.
+      Lena: Das ist machbar.
+----------
+    [ID: 106] [Datetime: 2025-05-22 17:30]
+      Ich: Die Weiterbildung macht Spaß. Heute ging es um Scrum.
+      Tom: Ah, agiles Arbeiten. Machen wir ja teilweise auch schon.
+      Ich: Ja, aber hier geht es tiefer rein. Finde ich spannend.
+      Tom: Kann ich mir vorstellen.
+----------
+    [ID: 110] [Datetime: 2025-06-20 17:00]
+      Ich: Die Projektmanagement-Weiterbildung ist echt hilfreich. Viele praktische Tools.
+      Lena: Super! Kannst du das direkt anwenden?
+      Ich: Ich denke schon. Gerade für Projekt Gamma, das ja bald startet.
+      Lena: Na siehst du.
+----------
+    [ID: 117] [Datetime: 2025-08-08 17:00]
+      Ich: Die PM-Weiterbildung ist jetzt vorbei. War echt gut.
+      Lena: Super. Gab's ein Zertifikat?
+      Ich: Ja, hab ich bestanden.
+      Lena: Glückwunsch! Das kannst du ja gut für Projekt Gamma gebrauchen.
+----------
+    [ID: 141] [Datetime: 2026-01-16 11:15]
+      Herr Müller: Ich bin sehr zufrieden mit Ihrer Arbeit, Frau Bauer. Auch wie Sie die internationalen Teams bei Gamma koordinieren.
+      Ich: Danke. Das freut mich sehr.
+      Herr Müller: Haben Sie Wünsche für das kommende Jahr? Weitere Entwicklungsziele?
+      Ich: Ich würde gerne meine Englischkenntnisse noch etwas verbessern, vielleicht durch einen Business English Kurs.
+----------
+    [ID: 143] [Datetime: 2026-01-30 18:00]
+      Ich: Ich hab mich über Business English Kurse informiert.
+      Max: Oh ja? Und, was gefunden?
+      Ich: Ja, es gibt da einen Online-Kurs, der ganz gut aussieht. Flexibel neben der Arbeit.
+      Max: Klingt doch praktisch.
+----------
+    [ID: 145] [Datetime: 2026-02-13 10:00]
+      Herr Müller: Frau Bauer, bezüglich des Englischkurses: Reichen Sie mir die Details ein. Das sollten wir unterstützen können.
+      Ich: Wirklich? Das wäre toll! Vielen Dank!
+      Herr Müller: Sie engagieren sich, das fördern wir gerne.
+----------
+    [ID: 151] [Datetime: 2026-03-20 16:00]
+      Ich: Der Englischkurs hat angefangen. Ist gut, aber auch anspruchsvoll.
+      Sarah: Business English? Ja, das kann knifflig sein. Aber super nützlich für unsere Calls.
+      Ich: Das hoffe ich. Ich merke schon, wo meine Schwächen liegen.
+      Sarah: Übung macht den Meister.
+----------
+    [ID: 155] [Datetime: 2026-04-17 12:00]
+      Anna: Mittag? Ich hab gehört, dein Englisch wird immer besser.
+      Ich: Haha, wer sagt das? Ja, der Kurs hilft. Es ist weniger äh stockend in den Calls.
+      Anna: Super! Vielleicht sollte ich auch mal...
+      Ich: Mach das!
+----------
+    [ID: 163] [Datetime: 2026-06-12 14:30]
+      Ich: Der Englischkurs ist bald vorbei. Ich überlege, danach einen Konversationskurs zu machen.
+      Sarah: Gute Idee. Das hilft am meisten, um flüssiger zu werden.
+      Ich: Ja, das denke ich auch. Muss mal schauen, was angeboten wird.
+      Sarah: Gibt sicher was Passendes.
+----------
+    [ID: 183] [Datetime: 2026-10-30 15:00]
+      Ich: Ich habe einen Englisch-Konversationskurs gefunden. Der startet im November.
+      Tom: Super! Bleibst du ja dran.
+      Ich: Ja, ich will wirklich flüssiger werden. Gerade für Projekt Delta wichtig.
+      Tom: Stimmt. Viel Erfolg dabei!
+----------
+    [ID: 185] [Datetime: 2026-11-13 18:00]
+      Lena: Na, Projektleiterin, noch Zeit zum Leben?
+      Ich: Haha, ja doch. Der Konversationskurs macht Spaß. Und am Wochenende hab ich Apfelkuchen gebacken.
+      Lena: Mmmh, Apfelkuchen. Bringst du was mit?
+      Ich: Wenn noch was da ist!
+----------
+    [ID: 201] [Datetime: 2027-02-26 18:00]
+      Ich: Der Englisch-Konversationskurs ist jetzt zu Ende. Hat echt was gebracht.
+      Lena: Super! Fühlst du dich sicherer?
+      Ich: Ja, deutlich. Ich plaudere einfach mehr drauf los.
+      Lena: Klasse!
+----------
+    [ID: 247] [Datetime: 2025-03-21 17:00]
+      Ich: Ich bin schon ganz aufgeregt wegen der Projektmanagement-Weiterbildung.
+      Anna: Das glaube ich. Ist bestimmt super interessant.
+      Ich: Ja, und hoffentlich hilft es mir auch im Job weiter.
+      Anna: Bestimmt!
+----------
+    [ID: 251] [Datetime: 2025-05-12 14:00]
+      Sarah: Hi Ich, ich habe gehört du machst die PM Weiterbildung? Wie ist sie so?
+      Ich: Hi Sarah! Ja, genau. Sie ist wirklich gut, sehr praxisnah. Kann ich empfehlen.
+      Sarah: Super, danke! Vielleicht mache ich die nächstes Jahr auch.
+      Ich: Gute Idee!
+----------
+    [ID: 270] [Datetime: 2026-02-02 18:00]
+      Ich: Ich habe mich für einen Business English Kurs angemeldet.
+      Luise: Oh, cool! Wann geht der los?
+      Ich: Nächsten Monat. Bin gespannt.
+      Luise: Viel Erfolg!
+----------
+    [ID: 274] [Datetime: 2026-03-30 09:00]
+      Tom: Der Englischkurs läuft?
+      Ich: Ja, erste Stunde war letzte Woche. Gut, aber viel Grammatik.
+      Tom: Das muss wohl sein.
+      Ich: Leider ja.
+----------
+    [ID: 280] [Datetime: 2026-06-22 18:00]
+      Ich: Ich überlege, nach dem Englischkurs noch einen Konversationskurs dranzuhängen.
+      Luise: Macht Sinn, oder? Damit das Sprechen lockerer wird.
+      Ich: Genau. Nur Theorie bringt ja nichts.
+      Luise: Stimmt.
+----------
+    [ID: 290] [Datetime: 2026-10-26 18:00]
+      Ich: Ich fange jetzt den Englisch-Konversationskurs an.
+      Luise: Super! Berichte mal, wie es ist.
+      Ich: Mach ich! Ist online, ganz praktisch.
+      Luise: Ja, das ist flexibel.
+----------
+    [ID: 299] [Datetime: 2027-03-01 09:00]
+      Tom: Der Konversationskurs ist vorbei?
+      Ich: Ja, letzte Woche. War echt gut, hat viel gebracht.
+      Tom: Super! Dann kann ja international nichts mehr schiefgehen.
+      Ich: Haha, hoffentlich!
+----------
+    [ID: 316] [Datetime: 2026-10-05 17:00]
+      Lena: Dein Englisch ist ja richtig gut geworden!
+      Ich: Danke! Der Konversationskurs hilft echt.
+      Lena: Das merkt man. Sprichst viel flüssiger.
+      Ich: Freut mich zu hören!
+----------
+    [ID: 334] [Datetime: 2026-11-16 10:00]
+      Ich: Der Englisch-Konversationskurs ist super. Wir diskutieren viel.
+      Anna: Das ist doch gut fürs Sprechen.
+      Ich: Ja, genau das wollte ich. Weniger Hemmungen haben.
+      Anna: Super!
+----------
+    [ID: 343] [Datetime: 2025-05-27 10:00]
+      Ich: Die PM-Weiterbildung bringt echt neue Perspektiven.
+      Tom: Ja? Inwiefern?
+      Ich: Man hinterfragt die eigenen Prozesse mehr und lernt neue Tools kennen.
+      Tom: Klingt gut.
+----------
+    [ID: 346] [Datetime: 2026-03-23 19:00]
+      Lena: Wie läuft der Englischkurs?
+      Ich: Gut! Ich merke schon Fortschritte. Die Grammatik sitzt besser.
+      Lena: Super! Bleib dran!
+      Ich: Mach ich.
+----------
+    [ID: 360] [Datetime: 2026-01-26 10:30]
+      Ich: Der Business English Kurs fordert mich ganz schön.
+      Tom: Ja? Ist es schwer?
+      Ich: Nicht direkt schwer, aber ungewohnt, nur Englisch zu sprechen.
+      Tom: Übungssache!
+----------
+    [ID: 372] [Datetime: 2025-05-05 17:00]
+      Ich: Die PM-Weiterbildung ist echt intensiv.
+      Luise: Glaub ich. Aber bestimmt nützlich.
+      Ich: Ja, sehr. Man lernt viel über verschiedene Methoden.
+      Luise: Das kannst du sicher gut brauchen.
+----------
+    [ID: 390] [Datetime: 2026-04-14 16:00]
+      Lena: Der Englischkurs ist bald vorbei?
+      Ich: Ja, noch zwei Wochen. War echt gut.
+      Lena: Und danach der Konversationskurs?
+      Ich: Genau. Damit es auch praktisch wird.
+----------
+    [ID: 406] [Datetime: 2026-11-02 17:00]
+      Ich: Der Konversationskurs ist echt gut. Man überwindet die Sprechangst.
+      Anna: Das ist doch das Wichtigste.
+      Ich: Ja, finde ich auch. Wird von Woche zu Woche besser.
+      Anna: Super!
+----------
+    [ID: 417] [Datetime: 2026-02-10 15:00]
+      Ich: Der Englischkurs ist gut, aber die Hausaufgaben...
+      Tom: Haha, wie in der Schule?
+      Ich: Fast! Aber hilft ja beim Lernen.
+      Tom: Stimmt.
+----------
+    [ID: 431] [Datetime: 2026-01-21 18:00]
+      Anna: Business English? Respekt!
+      Ich: Ja, mal sehen, ob es was bringt. Gerade für Gamma wichtig.
+      Anna: Bestimmt! Viel Erfolg!
+      Ich: Danke!
+----------
+    [ID: 460] [Datetime: 2026-02-17 16:00]
+      Ich: Der Englischkurs hilft mir auch, Fachartikel besser zu verstehen.
+      Anna: Das ist ja praktisch!
+      Ich: Ja, das Vokabular erweitert sich doch merklich.
+      Anna: Super Nebeneffekt.
+----------
+    [ID: 471] [Datetime: 2025-05-14 10:00]
+      Tom: Die PM-Weiterbildung läuft gut?
+      Ich: Ja, sehr. Heute geht's um Risikomanagement.
+      Tom: Wichtiges Thema.
+      Ich: Absolut.
+----------
+    [ID: 474] [Datetime: 2026-03-10 14:00]
+      Ich: Der Englischkurs macht Fortschritte. Ich verstehe viel mehr in den Calls.
+      Sarah: Das ist doch super! Und das Sprechen?
+      Ich: Wird auch besser. Noch nicht perfekt, aber lockerer.
+      Sarah: Weiter so!
+----------
+    [ID: 485] [Datetime: 2025-05-28 11:00]
+      Max: Die Weiterbildung läuft?
+      Ich: Ja, ist echt interessant. Viele neue Ansätze.
+      Max: Bringt dir das was für die Arbeit?
+      Ich: Ich denke schon. Gerade für die Projektplanung.
+----------
+    [ID: 488] [Datetime: 2026-03-24 10:00]
+      Ich: Der Englischkurs bringt echt was. Ich fühle mich sicherer.
+      Lena: Das ist doch super!
+      Ich: Ja, gerade wenn ich mit den internationalen Kollegen spreche.
+      Lena: Klasse!
+----------
+
+[Sample 11/20]
+  Query: Wann habe ich Geburtstag, und wie habe ich ihn in den letzten Jahren gefeiert?
+  GT Answer: Du hast am 15. März Geburtstag. Du feiertest 2024 klein mit Lena und Luise, 2025 mit einem Essen mit Luise und Max (das du gekocht hast), 2026 gemütlich zu Hause und 2027 klein mit Max und Lena beim Essen.
+  Chunks:
+    [ID: 23] [Datetime: 2024-03-01 12:00]
+      Max: Alles Gute zum Geburtstag nachträglich! War doch letzte Woche, oder?
+      Ich: Danke! Ja, am 15. März.
+      Max: Oh, dann war's ja vorgestern erst! Sorry! Wie hast du gefeiert?
+      Ich: Nur klein mit Lena und Luise. War sehr nett.
+----------
+    [ID: 26] [Datetime: 2024-03-15 19:00]
+      Lena: Happy Birthday!!
+      Ich: Danke Lena!
+      Luise: Alles Liebe auch von mir!
+      Ich: Danke Mädels! Schön, dass ihr da seid. Lasst uns anstossen!
+----------
+    [ID: 95] [Datetime: 2025-03-15 20:00]
+      Luise: Alles Liebe zum Geburtstag!
+      Ich: Danke Luise!
+      Max: Von mir auch Happy Birthday!
+      Ich: Danke euch! Schön, dass ihr gekommen seid zum Essen.
+      Luise: Selbstgekocht?
+      Ich: Na klar! Italienisch, frisch aus dem Kochkurs.
+----------
+    [ID: 149] [Datetime: 2026-03-13 18:00]
+      Max: Bald ist dein Geburtstag! Schon Pläne?
+      Ich: Ja, ich mache eine kleine Feier am Samstagabend. Einfach gemütlich bei mir.
+      Max: Klingt gut! Bin dabei!
+      Ich: Super!
+----------
+    [ID: 150] [Datetime: 2026-03-15 20:00]
+      Tom: Happy Birthday!
+      Ich: Danke Tom!
+      Lena: Alles Liebe auch von mir!
+      Ich: Danke euch! Schön, dass ihr da seid!
+----------
+    [ID: 203] [Datetime: 2027-03-12 19:30]
+      Max: Bald Geburtstag! Feierst du wieder?
+      Ich: Ich denke, dieses Jahr nur ganz klein. Vielleicht essen gehen mit dir und Lena?
+      Max: Sehr gerne!
+      Ich: Ich kläre das mal mit Lena.
+----------
+    [ID: 204] [Datetime: 2027-03-15 20:00]
+      Ich: Danke für den schönen Abend zum Geburtstag!
+      Lena: Sehr gerne! War total lecker.
+      Max: Fand ich auch. Alles Gute nochmal!
+      Ich: Danke euch!
+----------
+    [ID: 273] [Datetime: 2026-03-16 11:00]
+      Lena: Nachträglich alles Gute zum Geburtstag!
+      Ich: Danke Lena! War ein schöner Abend gestern.
+      Lena: Das freut mich.
+      Ich: Ja, gemütlich mit Max.
+----------
+    [ID: 310] [Datetime: 2025-03-11 20:00]
+      Ich: Der Kochkurs ist vorbei. War echt toll.
+      Mama: Das freut mich, mein Schatz. Hast du viel gelernt?
+      Ich: Ja, Mama. Ich kann jetzt richtig gute Pasta machen.
+      Mama: Oh, dann musst du uns ja bald bekochen!
+----------
+    [ID: 357] [Datetime: 2025-03-17 16:00]
+      Ich: Mein Geburtstag gestern war sehr nett.
+      Anna: Das freut mich! Gut gegessen?
+      Ich: Ja, das italienische Essen war super lecker.
+      Anna: Mmmh!
+----------
+    [ID: 466] [Datetime: 2023-12-19 16:00]
+      Ich: Ich brauche noch Geschenkpapier.
+      Tom: Ich auch! Lass uns nachher zusammen losgehen?
+      Ich: Ja, gute Idee! Nach Feierabend?
+      Tom: Passt.
+----------
+
+[Sample 12/20]
+  Query: Wie entwickelte sich meine Laufdistanz von Anfang 2024 bis zum Halbmarathon?
+  GT Answer: Du startetest Anfang 2024 mit 3km, steigertest dich bis Mai auf fast 8km, musstest pausieren, begannst im Herbst wieder mit 5km, schafftest 10km im Dez 2024, trainiertest für einen Stadtlauf (April 2025) bis 12-14km und steigertest dich für den Halbmarathon (Sept 2026) auf bis zu 20km.
+  Chunks:
+    [ID: 14] [Datetime: 2024-01-20 10:00]
+      Max: Hey, wie läuft das Lauftraining?
+      Ich: Puh, anstrengend. War gestern das erste Mal seit Ewigkeiten wieder joggen. Nur 3km geschafft.
+      Max: Aller Anfang ist schwer! Dranbleiben!
+      Ich: Ja, Motivation ist da!
+----------
+    [ID: 19] [Datetime: 2024-02-10 11:00]
+      Ich: Hi Tom, wie schaffst du es eigentlich, beim Laufen so dranzubleiben?
+      Tom: Feste Termine im Kalender und eine gute Playlist helfen mir.
+      Ich: Gute Idee. Ich laufe immer so unregelmäßig. Gestern wieder nur 4km.
+      Tom: Setz dir kleine Ziele, das motiviert.
+----------
+    [ID: 25] [Datetime: 2024-03-10 15:00]
+      Ich: Geschafft! 5km am Stück gelaufen!
+      Tom: Super! Siehst du, geht doch!
+      Ich: Ja, ich bin total stolz. Langsam steigere ich mich.
+      Tom: Weiter so!
+----------
+    [ID: 33] [Datetime: 2024-04-20 11:30]
+      Ich: Ich bin dieses Wochenende 7km gelaufen!
+      Max: Wow, super! Die 10km sind ja fast in Reichweite!
+      Ich: Ja, ich bin total motiviert jetzt. Das Laufen tut mir richtig gut, merke ich.
+      Max: Das ist die Hauptsache.
+----------
+    [ID: 36] [Datetime: 2024-05-05 15:00]
+      Ich: Heute war ich wieder laufen. Fast 8km! Aber mein Knöchel tut jetzt weh.
+      Luise: Oh je, überanstrengt?
+      Ich: Ich hoffe nicht. Ich mach mal ein paar Tage Pause.
+      Luise: Gute Idee. Nicht dass du dich verletzt vor deinem 10km Ziel.
+----------
+    [ID: 59] [Datetime: 2024-09-15 16:00]
+      Ich: Hab heute versucht wieder zu laufen. Ganz langsam.
+      Max: Und?
+      Ich: Ging so. Der Knöchel hat nicht wehgetan, aber die Kondition ist komplett weg.
+      Max: Die kommt wieder. Nicht aufgeben.
+----------
+    [ID: 64] [Datetime: 2024-10-15 15:00]
+      Tom: Laufeinheit heute?
+      Ich: Ja, hab 5km geschafft ohne Probleme.
+      Tom: Super! Die Form kommt zurück.
+      Ich: Langsam, aber sicher. Fühlt sich gut an.
+----------
+    [ID: 69] [Datetime: 2024-11-10 11:00]
+      Max: Na, Lauf-Update?
+      Ich: War gestern wieder unterwegs. 7km diesmal. Es läuft!
+      Max: Stark! Die 10km rücken näher.
+      Ich: Ja, vielleicht schaffe ich es ja doch noch dieses Jahr.
+----------
+    [ID: 75] [Datetime: 2024-12-10 18:00]
+      Ich: Ich hab's getan! Ich hab 10km geschafft!
+      Max: Was? Echt jetzt? Großartig! Glückwunsch!
+      Ich: Danke! Bin total platt, aber glücklich. Am Ende war es hart, aber ich hab durchgezogen.
+      Max: Super Leistung! Dein Vorsatz für 2024 ist erreicht!
+----------
+    [ID: 81] [Datetime: 2025-01-12 15:00]
+      Max: Schon wieder am Trainieren für den Stadtlauf?
+      Ich: Ja, man muss ja dranbleiben. Heute lockere 5km.
+      Max: Respekt. Ich bin schon froh, wenn ich zum Sport komme.
+      Ich: Das Laufen ist echt zu meiner Routine geworden.
+----------
+    [ID: 91] [Datetime: 2025-02-20 16:00]
+      Tom: Trainingsplan für den Stadtlauf steht?
+      Ich: Ja, so ungefähr. Ich versuche, dreimal die Woche zu laufen. Ein langer Lauf am Wochenende.
+      Tom: Klingt vernünftig. Wie weit bist du jetzt?
+      Ich: Letzten Sonntag 12km. Langsam steigern.
+----------
+    [ID: 99] [Datetime: 2025-04-05 17:00]
+      Ich: Ich bin so nervös wegen des Laufs nächste Woche.
+      Lena: Ach was. Das wird super! Denk dran, wie weit du gekommen bist.
+      Ich: Ja, stimmt schon. Von 3km letztes Jahr auf jetzt 12-14km im Training.
+      Lena: Siehst du! Einfach laufen und genießen.
+----------
+    [ID: 101] [Datetime: 2025-04-18 18:00]
+      Ich: Muskelkater vom Stadtlauf ist endlich weg.
+      Tom: Haha, das gehört dazu. Schon das nächste Ziel im Blick?
+      Ich: Puh, erstmal nicht. Vielleicht im Herbst ein weiterer 10km Lauf, aber jetzt genieße ich mal die Pause.
+      Tom: Vernünftig.
+----------
+    [ID: 114] [Datetime: 2025-07-18 18:30]
+      Luise: Was steht am Wochenende an? Laufen?
+      Ich: Ja, ich will wieder regelmäßiger werden. Eine lockere Runde im Park.
+      Luise: Gut so. Ich gehe morgen schwimmen.
+      Ich: Auch schön!
+----------
+    [ID: 121] [Datetime: 2025-09-05 18:00]
+      Luise: Hast du den Lauf im Herbst jetzt fest eingeplant?
+      Ich: Ich habe mich für einen 10km-Lauf Mitte Oktober angemeldet.
+      Luise: Super! Dann geht das Training ja wieder richtig los.
+      Ich: Ja, ich versuche jetzt wieder drei Läufe pro Woche zu schaffen.
+----------
+    [ID: 125] [Datetime: 2025-10-03 14:00]
+      Anna: Läuft das Training für den Herbstlauf?
+      Ich: Ja, ganz gut. Bin jetzt wieder bei 8-9km. Fühlt sich gut an.
+      Anna: Super. Du bist echt diszipliniert geworden.
+      Ich: Haha, danke. Macht aber auch Spaß.
+----------
+    [ID: 147] [Datetime: 2026-02-27 17:00]
+      Ich: Ich fange jetzt mit dem Halbmarathon-Training an. Ganz langsam.
+      Luise: Wow, du ziehst das durch! Respekt!
+      Ich: Mal sehen, wie es läuft. Der erste lange Lauf über 12km steht am Wochenende an.
+      Luise: Viel Erfolg! Du schaffst das.
+----------
+    [ID: 153] [Datetime: 2026-04-03 17:30]
+      Ich: Das Halbmarathon-Training ist echt hart. Die langen Läufe am Wochenende schlauchen ganz schön.
+      Tom: Das ist normal. Aber du steigerst dich doch sicher, oder?
+      Ich: Ja, schon. Bin jetzt bei 15km. Aber 21km... Puh.
+      Tom: Das packst du! Wann ist der Lauf?
+----------
+    [ID: 161] [Datetime: 2026-05-29 16:00]
+      Tom: Wie läuft das HM-Training?
+      Ich: Gut, aber intensiv. Hab gestern 17km geschafft.
+      Tom: Super! Das ist schon eine Hausnummer.
+      Ich: Ja, ich merke es heute in den Beinen. Aber das Gefühl danach ist toll.
+----------
+    [ID: 171] [Datetime: 2026-08-07 16:00]
+      Ich: Nur noch 6 Wochen bis zum Halbmarathon.
+      Sarah: Und, wie läuft's? Nervös?
+      Ich: Geht so. Das Training ist hart, aber ich bin im Plan. Längster Lauf war jetzt 19km.
+      Sarah: Wow! Das schaffst du locker!
+      Ich: Ich hoffe es!
+----------
+    [ID: 174] [Datetime: 2026-08-28 19:00]
+      Ich: Der letzte lange Lauf vor dem Halbmarathon ist geschafft! 20km!
+      Luise: Wahnsinn! Du bist eine Maschine!
+      Ich: Haha, danke. Bin aber auch echt platt jetzt.
+      Luise: Kann ich verstehen. Jetzt nur noch die Beine hochlegen bis zum Lauf.
+----------
+    [ID: 347] [Datetime: 2026-06-15 15:00]
+      Ich: Ich bin am Wochenende 18km gelaufen!
+      Max: Wahnsinn! Halbmarathon-Training läuft!
+      Ich: Ja! War hart, aber ich hab's geschafft.
+      Max: Starke Leistung!
+----------
+    [ID: 375] [Datetime: 2026-02-23 19:00]
+      Tom: Was macht das HM-Training?
+      Ich: Läuft. Bin jetzt bei 14km. Es wird langsam.
+      Tom: Das ist doch super! Weiter so!
+      Ich: Danke!
+----------
+    [ID: 446] [Datetime: 2026-02-25 17:00]
+      Ich: Ich merke richtig, wie das HM-Training anzieht.
+      Luise: Ja? Wirst du schneller?
+      Ich: Nicht unbedingt schneller, aber die Ausdauer wird besser.
+      Luise: Das ist doch das Wichtigste!
+----------
+    [ID: 453] [Datetime: 2024-03-11 10:00]
+      Max: 5km geschafft! Super!
+      Ich: Danke! Fühlt sich gut an, die Fortschritte zu sehen.
+      Max: Weiter so! Die 10km schaffst du locker bis Jahresende.
+      Ich: Das ist der Plan!
+----------
+
+[Sample 13/20]
+  Query: Welche Gespräche führte ich mit Frau Schmidt, und worum ging es hauptsächlich?
+  GT Answer: Du sprachst mit Frau Schmidt über Projekt Drache (Zielgruppe, Unterlagen), die Einarbeitung von Herrn Klein, und sie lobte einmal eine Präsentation von dir.
+  Chunks:
+    [ID: 2] [Datetime: 2023-11-20 09:10]
+      Tom: Morgen! Kaffee?
+      Ich: Morgen Tom. Ja gerne, dringend nötig.
+      Tom: Projekt Drache macht dir zu schaffen?
+      Ich: Und wie. Frau Schmidt erwartet bis Freitag Ergebnisse, ich weiss noch gar nicht wie.
+----------
+    [ID: 12] [Datetime: 2024-01-10 09:30]
+      Ich: Morgen Frau Schmidt. Haben Sie kurz Zeit wegen Projekt Drache?
+      Frau Schmidt: Ja, aber nur fünf Minuten. Was gibt's?
+      Ich: Ich bräuchte noch Input bezüglich der Zielgruppe. Da bin ich etwas unsicher.
+      Frau Schmidt: Schicken Sie mir Ihre Fragen per Mail, ich antworte später.
+----------
+    [ID: 31] [Datetime: 2024-04-10 16:00]
+      Ich: Frau Schmidt, die Unterlagen für Projekt Drache sind fertig. Soll ich sie Ihnen vorbeibringen?
+      Frau Schmidt: Legen Sie sie einfach auf meinen Schreibtisch, danke.
+      Ich: Okay. Ist das Projekt damit für mich abgeschlossen?
+      Frau Schmidt: Vorerst ja. Gut gemacht.
+----------
+    [ID: 47] [Datetime: 2024-06-25 10:00]
+      Frau Schmidt: Frau Bauer, könnten Sie die Einarbeitung von Herrn Klein übernehmen? Er fängt nächste Woche an.
+      Ich: Äh ja, klar. Gerne. In welchem Bereich wird er arbeiten?
+      Frau Schmidt: Er unterstützt uns im Marketing, auch bei Projekt Beta dann.
+      Ich: Alles klar.
+----------
+    [ID: 325] [Datetime: 2024-08-12 09:30]
+      Ich: Ist Frau Schmidt heute im Haus?
+      Ben: Ich glaube ja. Hab sie vorhin gesehen.
+      Ich: Gut, danke. Muss ihr noch Unterlagen geben.
+      Ben: Kein Problem.
+----------
+    [ID: 352] [Datetime: 2023-12-13 10:30]
+      Frau Schmidt: Frau Bauer, die Präsentation gestern war gut strukturiert.
+      Ich: Oh, danke Frau Schmidt.
+      Frau Schmidt: Weiter so.
+      Ich: Danke.
+----------
+    [ID: 366] [Datetime: 2023-11-24 11:00]
+      Ich: Ich muss Frau Schmidt noch wegen der Budgetplanung für Projekt Drache ansprechen.
+      Tom: Mach das lieber bald. Sie mag keine Last-Minute-Aktionen.
+      Ich: Ich weiss. Gehe gleich mal rüber.
+      Tom: Viel Erfolg.
+----------
+
+[Sample 14/20]
+  Query: Welche Weiterbildungen habe ich gemacht, und wie haben sie meine Arbeit beeinflusst?
+  GT Answer: Die PM-Weiterbildung (2025) half dir, dich sicherer zu fühlen und Methoden anzuwenden (positives Feedback von H. Müller). Der Englischkurs (2026/27) half dir, flüssiger zu sprechen und dich in Calls wohler zu fühlen.
+  Chunks:
+    [ID: 92] [Datetime: 2025-02-25 11:30]
+      Herr Müller: Frau Bauer, ich habe mir die Weiterbildungen angesehen. Der Kurs 'Agiles Projektmanagement für Fortgeschrittene' scheint mir passend. Wir übernehmen die Kosten.
+      Ich: Oh, super! Vielen Dank, Herr Müller!
+      Herr Müller: Melden Sie sich an. Beginn ist im Mai.
+----------
+    [ID: 103] [Datetime: 2025-05-02 09:00]
+      Herr Müller: Frau Bauer, Ihr Projektmanagement-Kurs beginnt ja diesen Monat, richtig?
+      Ich: Ja, genau. Nächste Woche geht es los.
+      Herr Müller: Gut. Ich erwarte, dass Sie das Gelernte dann auch in zukünftigen Projekten anwenden.
+      Ich: Selbstverständlich.
+----------
+    [ID: 104] [Datetime: 2025-05-09 17:00]
+      Ich: Der erste Tag der Weiterbildung war interessant. Viel Theorie, aber gut erklärt.
+      Lena: Klingt doch gut. Ist das anstrengend neben der Arbeit?
+      Ich: Geht eigentlich. Ist nur einmal die Woche nachmittags.
+      Lena: Das ist machbar.
+----------
+    [ID: 106] [Datetime: 2025-05-22 17:30]
+      Ich: Die Weiterbildung macht Spaß. Heute ging es um Scrum.
+      Tom: Ah, agiles Arbeiten. Machen wir ja teilweise auch schon.
+      Ich: Ja, aber hier geht es tiefer rein. Finde ich spannend.
+      Tom: Kann ich mir vorstellen.
+----------
+    [ID: 109] [Datetime: 2025-06-13 09:15]
+      Anna: Projekt Gamma klingt spannend, oder? Internationalisierung!
+      Ich: Ja, schon. Aber auch sicher wieder viel Arbeit. Und äh hoffentlich läuft die Abstimmung mit den internationalen Kollegen besser als bei Alpha damals mit der Agentur.
+      Anna: Das wird schon. Du hast ja jetzt mehr Erfahrung.
+      Ich: Hm ja. Und die PM-Weiterbildung hilft vielleicht auch.
+----------
+    [ID: 110] [Datetime: 2025-06-20 17:00]
+      Ich: Die Projektmanagement-Weiterbildung ist echt hilfreich. Viele praktische Tools.
+      Lena: Super! Kannst du das direkt anwenden?
+      Ich: Ich denke schon. Gerade für Projekt Gamma, das ja bald startet.
+      Lena: Na siehst du.
+----------
+    [ID: 113] [Datetime: 2025-07-11 11:30]
+      Tom: Und, wie war das Gamma Kick-Off?
+      Ich: Gut, sehr informativ. Das Team ist international, wird spannend. Aber ich glaube, ich kann die Methoden aus der Weiterbildung gut einsetzen.
+      Tom: Das ist doch super. Klingt viel besser als damals bei Alpha.
+      Ich: Ja, ich fühle mich diesmal äh sicherer.
+----------
+    [ID: 117] [Datetime: 2025-08-08 17:00]
+      Ich: Die PM-Weiterbildung ist jetzt vorbei. War echt gut.
+      Lena: Super. Gab's ein Zertifikat?
+      Ich: Ja, hab ich bestanden.
+      Lena: Glückwunsch! Das kannst du ja gut für Projekt Gamma gebrauchen.
+----------
+    [ID: 118] [Datetime: 2025-08-15 10:30]
+      Ich: Das Gamma-Projekt läuft gut an. Die Zusammenarbeit mit Sarah klappt super.
+      Tom: Das ist doch die Hauptsache. Ein gutes Team ist Gold wert.
+      Ich: Absolut. Wir nutzen jetzt auch einige agile Methoden, das hilft.
+      Tom: Siehst du, die Weiterbildung zahlt sich aus.
+----------
+    [ID: 120] [Datetime: 2025-08-29 15:00]
+      Herr Müller: Frau Bauer, wie ist der Status bei Gamma? Sind die internationalen Teams an Bord?
+      Ich: Ja, Herr Müller. Die ersten Workshops waren produktiv. Wir haben einen gemeinsamen Planungsansatz gefunden.
+       Herr Müller: Sehr gut. Ihre neuen Methoden scheinen zu fruchten.
+      Ich: Ja, das agile Vorgehen hilft bei der Koordination.
+----------
+    [ID: 140] [Datetime: 2026-01-16 11:00]
+      Herr Müller: Willkommen zurück, Frau Bauer. Jahresgespräch steht an. Wie sehen Sie das letzte Jahr?
+      Ich: Sehr positiv, Herr Müller. Projekt Beta lief gut, die Weiterbildung war wertvoll und Projekt Gamma ist auf einem guten Weg.
+      Herr Müller: Das sehe ich ähnlich. Ihre Entwicklung im Projektmanagement ist deutlich sichtbar.
+----------
+    [ID: 141] [Datetime: 2026-01-16 11:15]
+      Herr Müller: Ich bin sehr zufrieden mit Ihrer Arbeit, Frau Bauer. Auch wie Sie die internationalen Teams bei Gamma koordinieren.
+      Ich: Danke. Das freut mich sehr.
+      Herr Müller: Haben Sie Wünsche für das kommende Jahr? Weitere Entwicklungsziele?
+      Ich: Ich würde gerne meine Englischkenntnisse noch etwas verbessern, vielleicht durch einen Business English Kurs.
+----------
+    [ID: 145] [Datetime: 2026-02-13 10:00]
+      Herr Müller: Frau Bauer, bezüglich des Englischkurses: Reichen Sie mir die Details ein. Das sollten wir unterstützen können.
+      Ich: Wirklich? Das wäre toll! Vielen Dank!
+      Herr Müller: Sie engagieren sich, das fördern wir gerne.
+----------
+    [ID: 151] [Datetime: 2026-03-20 16:00]
+      Ich: Der Englischkurs hat angefangen. Ist gut, aber auch anspruchsvoll.
+      Sarah: Business English? Ja, das kann knifflig sein. Aber super nützlich für unsere Calls.
+      Ich: Das hoffe ich. Ich merke schon, wo meine Schwächen liegen.
+      Sarah: Übung macht den Meister.
+----------
+    [ID: 155] [Datetime: 2026-04-17 12:00]
+      Anna: Mittag? Ich hab gehört, dein Englisch wird immer besser.
+      Ich: Haha, wer sagt das? Ja, der Kurs hilft. Es ist weniger äh stockend in den Calls.
+      Anna: Super! Vielleicht sollte ich auch mal...
+      Ich: Mach das!
+----------
+    [ID: 163] [Datetime: 2026-06-12 14:30]
+      Ich: Der Englischkurs ist bald vorbei. Ich überlege, danach einen Konversationskurs zu machen.
+      Sarah: Gute Idee. Das hilft am meisten, um flüssiger zu werden.
+      Ich: Ja, das denke ich auch. Muss mal schauen, was angeboten wird.
+      Sarah: Gibt sicher was Passendes.
+----------
+    [ID: 181] [Datetime: 2026-10-16 17:00]
+      Max: Und, wie ist es, die große Projektleiterin zu sein?
+      Ich: Aufregend! Viel Verantwortung, viele Meetings. Aber auch sehr spannend.
+      Max: Glaub ich dir. Stressig?
+      Ich: Geht eigentlich. Ich versuche, die Methoden aus der Weiterbildung konsequent anzuwenden.
+----------
+    [ID: 183] [Datetime: 2026-10-30 15:00]
+      Ich: Ich habe einen Englisch-Konversationskurs gefunden. Der startet im November.
+      Tom: Super! Bleibst du ja dran.
+      Ich: Ja, ich will wirklich flüssiger werden. Gerade für Projekt Delta wichtig.
+      Tom: Stimmt. Viel Erfolg dabei!
+----------
+    [ID: 194] [Datetime: 2027-01-15 11:00]
+      Herr Müller: Jahresgespräch, Frau Bauer. Setzen Sie sich.
+      Ich: Danke.
+      Herr Müller: 2026 war ein exzellentes Jahr für Sie. Erfolgreicher Abschluss Gamma, hervorragender Start bei Delta, Weiterbildungen gemeistert. Ich bin außerordentlich zufrieden.
+      Ich: Vielen Dank, Herr Müller. Das motiviert sehr.
+----------
+    [ID: 195] [Datetime: 2027-01-15 11:15]
+      Herr Müller: Ihre Entwicklung zur Projektleiterin ist bemerkenswert. Gibt es noch etwas, wo Sie Unterstützung brauchen?
+      Ich: Im Moment nicht direkt. Der Konversationskurs läuft gut. Ich fühle mich gut gerüstet für Delta.
+      Herr Müller: Ausgezeichnet. Dann machen Sie weiter so.
+----------
+    [ID: 201] [Datetime: 2027-02-26 18:00]
+      Ich: Der Englisch-Konversationskurs ist jetzt zu Ende. Hat echt was gebracht.
+      Lena: Super! Fühlst du dich sicherer?
+      Ich: Ja, deutlich. Ich plaudere einfach mehr drauf los.
+      Lena: Klasse!
+----------
+    [ID: 316] [Datetime: 2026-10-05 17:00]
+      Lena: Dein Englisch ist ja richtig gut geworden!
+      Ich: Danke! Der Konversationskurs hilft echt.
+      Lena: Das merkt man. Sprichst viel flüssiger.
+      Ich: Freut mich zu hören!
+----------
+    [ID: 334] [Datetime: 2026-11-16 10:00]
+      Ich: Der Englisch-Konversationskurs ist super. Wir diskutieren viel.
+      Anna: Das ist doch gut fürs Sprechen.
+      Ich: Ja, genau das wollte ich. Weniger Hemmungen haben.
+      Anna: Super!
+----------
+    [ID: 343] [Datetime: 2025-05-27 10:00]
+      Ich: Die PM-Weiterbildung bringt echt neue Perspektiven.
+      Tom: Ja? Inwiefern?
+      Ich: Man hinterfragt die eigenen Prozesse mehr und lernt neue Tools kennen.
+      Tom: Klingt gut.
+----------
+    [ID: 346] [Datetime: 2026-03-23 19:00]
+      Lena: Wie läuft der Englischkurs?
+      Ich: Gut! Ich merke schon Fortschritte. Die Grammatik sitzt besser.
+      Lena: Super! Bleib dran!
+      Ich: Mach ich.
+----------
+    [ID: 360] [Datetime: 2026-01-26 10:30]
+      Ich: Der Business English Kurs fordert mich ganz schön.
+      Tom: Ja? Ist es schwer?
+      Ich: Nicht direkt schwer, aber ungewohnt, nur Englisch zu sprechen.
+      Tom: Übungssache!
+----------
+    [ID: 406] [Datetime: 2026-11-02 17:00]
+      Ich: Der Konversationskurs ist echt gut. Man überwindet die Sprechangst.
+      Anna: Das ist doch das Wichtigste.
+      Ich: Ja, finde ich auch. Wird von Woche zu Woche besser.
+      Anna: Super!
+----------
+    [ID: 417] [Datetime: 2026-02-10 15:00]
+      Ich: Der Englischkurs ist gut, aber die Hausaufgaben...
+      Tom: Haha, wie in der Schule?
+      Ich: Fast! Aber hilft ja beim Lernen.
+      Tom: Stimmt.
+----------
+    [ID: 460] [Datetime: 2026-02-17 16:00]
+      Ich: Der Englischkurs hilft mir auch, Fachartikel besser zu verstehen.
+      Anna: Das ist ja praktisch!
+      Ich: Ja, das Vokabular erweitert sich doch merklich.
+      Anna: Super Nebeneffekt.
+----------
+    [ID: 474] [Datetime: 2026-03-10 14:00]
+      Ich: Der Englischkurs macht Fortschritte. Ich verstehe viel mehr in den Calls.
+      Sarah: Das ist doch super! Und das Sprechen?
+      Ich: Wird auch besser. Noch nicht perfekt, aber lockerer.
+      Sarah: Weiter so!
+----------
+    [ID: 488] [Datetime: 2026-03-24 10:00]
+      Ich: Der Englischkurs bringt echt was. Ich fühle mich sicherer.
+      Lena: Das ist doch super!
+      Ich: Ja, gerade wenn ich mit den internationalen Kollegen spreche.
+      Lena: Klasse!
+----------
+
+[Sample 15/20]
+  Query: Wann startete Projekt Alpha und wann Projekt Delta, und wie unterschied sich mein Empfinden bei beiden Starts?
+  GT Answer: Projekt Alpha startete am 1. Feb 2024 (du fühltest dich unsicher), Projekt Delta im Okt 2026 (du warst aufgeregt, aber sicherer und freudiger).
+  Chunks:
+    [ID: 16] [Datetime: 2024-02-01 08:45]
+      Ich: Guten Morgen Herr Müller.
+      Herr Müller: Morgen Frau Bauer. Kurze Info: Ab heute startet offiziell das Projekt Alpha. Sie übernehmen die Teilprojektleitung Marketing.
+      Ich: Oh, okay. Das ist... eine Herausforderung.
+      Herr Müller: Ich zähle auf Sie. Details gibt's im Kick-Off um 10.
+----------
+    [ID: 17] [Datetime: 2024-02-01 10:30]
+      Anna: Und, wie war das Kick-Off für Projekt Alpha?
+      Ich: Intensiv. Viel Verantwortung. Ähm, ich hoffe, ich pack das.
+      Anna: Klar packst du das! Du bist doch super organisiert.
+      Ich: Na ja, mal sehen. Die Erwartungen sind hoch.
+----------
+    [ID: 42] [Datetime: 2024-06-01 09:00]
+      Herr Müller: Frau Bauer, gute Arbeit bei Projekt Alpha. Das Ergebnis war überzeugend.
+      Ich: Danke Herr Müller. Das freut mich sehr.
+      Herr Müller: Als nächstes wartet Projekt Beta auf Sie. Das wird aber entspannter. Start ist im September.
+      Ich: Okay, danke für die Info.
+----------
+    [ID: 165] [Datetime: 2026-06-26 09:00]
+      Herr Müller: Frau Bauer, Projekt Gamma läuft ja hervorragend. Zeit für neue Herausforderungen?
+      Ich: Äh, wie meinen Sie das, Herr Müller?
+      Herr Müller: Wir planen Projekt Delta. Noch komplexer, strategischer. Ich würde Ihnen gerne die Gesamtprojektleitung anbieten.
+      Ich: Wow. Die Gesamtleitung? Das ist... eine große Ehre. Und Verantwortung.
+----------
+    [ID: 166] [Datetime: 2026-07-03 17:00]
+      Ich: Ich soll Projekt Delta leiten! Die Gesamtleitung!
+      Lena: Was? Das ist ja mega! Herzlichen Glückwunsch!
+      Ich: Danke! Ich bin total aufgeregt und hab auch ein bisschen Bammel.
+      Lena: Das packst du! Du bist doch super im Projektmanagement.
+----------
+    [ID: 167] [Datetime: 2026-07-10 12:30]
+      Anna: Gesamtprojektleitung für Delta! Wow, Ich! Das ist ein Riesenschritt!
+      Ich: Ja, ich kann es selbst kaum glauben. Hoffentlich wachse ich da rein.
+      Anna: Sicher! Wann geht's los?
+      Ich: Nach dem Sommer, im Oktober soll der Start sein.
+----------
+    [ID: 169] [Datetime: 2026-07-24 15:00]
+      Tom: Projekt Delta also. Große Nummer! Was ist das genau?
+      Ich: Es geht um die Entwicklung einer neuen Software-Plattform für unsere Kernprodukte. Sehr strategisch.
+      Tom: Klingt spannend! Da kannst du ja alles anwenden, was du gelernt hast.
+      Ich: Das hoffe ich!
+----------
+    [ID: 172] [Datetime: 2026-08-14 11:00]
+      Herr Müller: Frau Bauer, ich habe die offizielle Ernennung zur Projektleiterin für Delta vorbereitet. Beginnen Sie schon mal mit der Grobplanung.
+      Ich: Ja, gerne. Ich habe mir schon erste Gedanken gemacht.
+      Herr Müller: Gut. Im September können wir dann detaillierter einsteigen.
+      Ich: Einverstanden.
+----------
+    [ID: 179] [Datetime: 2026-10-02 09:30]
+      Herr Müller: Frau Bauer, bereit für den Start von Projekt Delta nächste Woche?
+      Ich: Ja, Herr Müller. Die Grobplanung steht, das Kernteam ist definiert.
+      Herr Müller: Gut. Ich erwarte regelmäßige, transparente Updates. Dies ist ein Schlüsselprojekt.
+      Ich: Das ist mir bewusst. Sie werden auf dem Laufenden gehalten.
+----------
+    [ID: 180] [Datetime: 2026-10-09 11:00]
+      Ich: Das Kick-Off für Delta war gut. Viele neue Gesichter im Team.
+      Sarah: Ja, wird eine Herausforderung, alle unter einen Hut zu bekommen.
+      Ich: Stimmt. Aber ich habe ein gutes Gefühl. Wir haben die Rollen klar verteilt.
+      Sarah: Das ist schonmal die halbe Miete.
+----------
+    [ID: 181] [Datetime: 2026-10-16 17:00]
+      Max: Und, wie ist es, die große Projektleiterin zu sein?
+      Ich: Aufregend! Viel Verantwortung, viele Meetings. Aber auch sehr spannend.
+      Max: Glaub ich dir. Stressig?
+      Ich: Geht eigentlich. Ich versuche, die Methoden aus der Weiterbildung konsequent anzuwenden.
+----------
+    [ID: 391] [Datetime: 2026-07-01 12:00]
+      Ich: Projekt Delta wird eine riesige Herausforderung.
+      Max: Aber auch eine riesige Chance!
+      Ich: Stimmt auch wieder. Ich freue mich drauf, auch wenn ich Respekt habe.
+      Max: Das ist gesund!
+----------
+
+[Sample 16/20]
+  Query: Ich nahm an einem Kochkurs teil. Wann fand dieser statt, und was habe ich dort gelernt?
+  GT Answer: Der italienische Kochkurs fand von Februar bis März 2025 statt. Du hast dort gelernt, Gnocchi, Risotto, frische Pasta, Saucen-Grundlagen und Antipasti zuzubereiten.
+  Chunks:
+    [ID: 84] [Datetime: 2025-01-20 18:00]
+      Ich: Ich hab mich für einen italienischen Kochkurs angemeldet!
+      Luise: Oh wie cool! Wann geht der los?
+      Ich: Nächsten Monat, immer dienstags abends.
+      Luise: Toll! Da musst du uns ja bald bekochen.
+      Ich: Mal sehen, was ich lerne!
+----------
+    [ID: 87] [Datetime: 2025-02-04 21:00]
+      Ich: Der erste Abend vom Kochkurs war super!
+      Max: Erzähl!
+      Ich: Wir haben Gnocchi selbst gemacht. War einfacher als gedacht und sehr lecker.
+      Max: Klingt gut! Ich will auch Gnocchi!
+----------
+    [ID: 89] [Datetime: 2025-02-15 10:00]
+      Anna: Was macht der Keller?
+      Ich: Ähm... der Keller? Der ist... noch auf der To-Do-Liste.
+      Anna: Haha, war ja klar.
+      Ich: Der Kochkurs war wichtiger! Und das Laufen!
+----------
+    [ID: 90] [Datetime: 2025-02-18 21:30]
+      Luise: Na, Koch-Profi?
+      Ich: Haha, noch nicht. Aber gestern haben wir Risotto gemacht. War auch sehr lecker.
+      Luise: Mmmh, Risotto.
+      Ich: Ich merke richtig, wie ich da immer mehr Spaß dran finde. Das ist so kreativ.
+----------
+    [ID: 93] [Datetime: 2025-03-03 19:00]
+      Lena: Bald ist der Kochkurs vorbei, oder?
+      Ich: Ja, leider. Nur noch zwei Abende. Ich hab echt viel gelernt.
+      Lena: Was war das Beste?
+      Ich: Puh, schwer zu sagen. Die frische Pasta war toll, aber auch die Saucen-Grundlagen.
+----------
+    [ID: 95] [Datetime: 2025-03-15 20:00]
+      Luise: Alles Liebe zum Geburtstag!
+      Ich: Danke Luise!
+      Max: Von mir auch Happy Birthday!
+      Ich: Danke euch! Schön, dass ihr gekommen seid zum Essen.
+      Luise: Selbstgekocht?
+      Ich: Na klar! Italienisch, frisch aus dem Kochkurs.
+----------
+    [ID: 245] [Datetime: 2025-02-24 18:00]
+      Ich: Der Kochkurs macht so Spaß! Ich lerne echt viel.
+      Luise: Das ist toll! Was gab's gestern?
+      Ich: Wir haben verschiedene Antipasti gemacht. Lecker!
+      Luise: Mmmh!
+----------
+    [ID: 310] [Datetime: 2025-03-11 20:00]
+      Ich: Der Kochkurs ist vorbei. War echt toll.
+      Mama: Das freut mich, mein Schatz. Hast du viel gelernt?
+      Ich: Ja, Mama. Ich kann jetzt richtig gute Pasta machen.
+      Mama: Oh, dann musst du uns ja bald bekochen!
+----------
+    [ID: 342] [Datetime: 2025-02-07 17:00]
+      Max: Der Gnocchi-Abend war super!
+      Ich: Fand ich auch! War lecker, was wir im Kochkurs gelernt haben.
+      Max: Musst du unbedingt öfter machen!
+      Ich: Haha, mal sehen.
+----------
+    [ID: 400] [Datetime: 2025-02-03 15:00]
+      Ich: Ich freue mich schon auf den Kochkurs heute Abend.
+      Anna: Was macht ihr denn heute?
+      Ich: Gnocchi! Hab ich noch nie selbst gemacht.
+      Anna: Oh, lecker! Berichte mal!
+----------
+    [ID: 428] [Datetime: 2025-03-04 20:00]
+      Ich: Der Kochkurs war heute wieder super. Haben Risotto gemacht.
+      Max: Mmmh, Risotto! Mein Lieblingsessen.
+      Ich: War auch sehr lecker.
+      Max: Musst du für mich kochen!
+----------
+
+[Sample 17/20]
+  Query: Habe ich meine Laufziele für 2024 trotz der Verletzung erreicht, und was waren meine nächsten Laufziele?
+  GT Answer: Ja, du hast das 10km-Ziel im Dez 2024 erreicht. Deine nächsten Ziele waren der Stadtlauf (April 2025), ein weiterer 10km-Lauf (Herbst 2025) und der Halbmarathon (Sept 2026).
+  Chunks:
+    [ID: 10] [Datetime: 2024-01-02 20:00]
+      Luise: Na, gute Vorsätze fürs neue Jahr?
+      Ich: Jaa, die Klassiker. Ich will versuchen endlich mal einen 10km Lauf zu schaffen und mehr Bücher zu lesen, nicht nur Arbeitssachen.
+      Luise: Ehrgeizig! Viel Erfolg dabei!
+----------
+    [ID: 36] [Datetime: 2024-05-05 15:00]
+      Ich: Heute war ich wieder laufen. Fast 8km! Aber mein Knöchel tut jetzt weh.
+      Luise: Oh je, überanstrengt?
+      Ich: Ich hoffe nicht. Ich mach mal ein paar Tage Pause.
+      Luise: Gute Idee. Nicht dass du dich verletzt vor deinem 10km Ziel.
+----------
+    [ID: 41] [Datetime: 2024-05-25 11:00]
+      Max: Was macht der Knöchel?
+      Ich: Besser, danke. Ich hab aber immer noch Laufpause.
+      Max: Ärgerlich. Und das 10km Ziel?
+      Ich: Das muss ich wohl verschieben. Gesundheit geht vor.
+----------
+    [ID: 44] [Datetime: 2024-06-10 19:00]
+      Max: Und, wie war der 10km Lauf? Geschafft?
+      Ich: Leider nein. Ich hab zwar trainiert, aber kurz vorher hab ich mir den Knöchel verstaucht. Lesen klappt aber ganz gut, schon drei Romane dieses Jahr!
+      Max: Oh nein, gute Besserung! Aber immerhin das mit dem Lesen!
+----------
+    [ID: 71] [Datetime: 2024-11-20 17:30]
+      Ich: Tom, ich überlege, mich für einen 10km-Lauf anzumelden. Nächstes Frühjahr vielleicht.
+      Tom: Super Idee! Das gibt nochmal extra Motivation.
+      Ich: Ja, das dachte ich auch. Muss nur einen passenden finden.
+      Tom: Kann dir gerne welche raussuchen.
+----------
+    [ID: 75] [Datetime: 2024-12-10 18:00]
+      Ich: Ich hab's getan! Ich hab 10km geschafft!
+      Max: Was? Echt jetzt? Großartig! Glückwunsch!
+      Ich: Danke! Bin total platt, aber glücklich. Am Ende war es hart, aber ich hab durchgezogen.
+      Max: Super Leistung! Dein Vorsatz für 2024 ist erreicht!
+----------
+    [ID: 77] [Datetime: 2024-12-20 17:00]
+      Tom: Hey, super Sache mit den 10km!
+      Ich: Danke Tom! Deine Tipps haben echt geholfen.
+      Tom: Gerne! Und, schon einen Lauf für nächstes Jahr ausgesucht?
+      Ich: Ja, im April gibt es hier einen Stadtlauf. Da will ich mitmachen.
+----------
+    [ID: 100] [Datetime: 2025-04-12 13:00]
+      Max: Und? Wie war der Stadtlauf?
+      Ich: Geschafft! Es war toll! Super Atmosphäre und ich bin gut durchgekommen.
+      Max: Klasse! Herzlichen Glückwunsch!
+      Ich: Danke! Jetzt erstmal die Beine hochlegen.
+----------
+    [ID: 101] [Datetime: 2025-04-18 18:00]
+      Ich: Muskelkater vom Stadtlauf ist endlich weg.
+      Tom: Haha, das gehört dazu. Schon das nächste Ziel im Blick?
+      Ich: Puh, erstmal nicht. Vielleicht im Herbst ein weiterer 10km Lauf, aber jetzt genieße ich mal die Pause.
+      Tom: Vernünftig.
+----------
+    [ID: 121] [Datetime: 2025-09-05 18:00]
+      Luise: Hast du den Lauf im Herbst jetzt fest eingeplant?
+      Ich: Ich habe mich für einen 10km-Lauf Mitte Oktober angemeldet.
+      Luise: Super! Dann geht das Training ja wieder richtig los.
+      Ich: Ja, ich versuche jetzt wieder drei Läufe pro Woche zu schaffen.
+----------
+    [ID: 127] [Datetime: 2025-10-17 15:00]
+      Ich: Hab den Lauf geschafft! Sogar etwas schneller als letztes Mal.
+      Luise: Wow, herzlichen Glückwunsch! Super!
+      Ich: Danke! War ein tolles Gefühl im Ziel.
+      Luise: Das glaube ich dir!
+----------
+    [ID: 142] [Datetime: 2026-01-23 17:00]
+      Tom: Na, neue Vorsätze für 2026?
+      Ich: Nicht wirklich. Laufen beibehalten, vielleicht mal einen Halbmarathon anvisieren? Und mehr Yoga machen.
+      Tom: Halbmarathon? Respekt!
+      Ich: Mal sehen. Ist nur so eine Idee.
+----------
+    [ID: 154] [Datetime: 2026-04-10 19:00]
+      Ich: Ich überlege, im Herbst den Halbmarathon zu laufen. Es gibt einen schönen im September.
+      Luise: Oh, das passt ja gut. Dann hast du noch genug Zeit zum Trainieren.
+      Ich: Ja, das dachte ich auch. Muss mich nur bald anmelden.
+      Luise: Mach das!
+----------
+    [ID: 159] [Datetime: 2026-05-15 17:00]
+      Ich: Bin für den Halbmarathon im September angemeldet!
+      Lena: Yeah! Glückwunsch zur Entscheidung!
+      Ich: Danke! Jetzt gibt's kein Zurück mehr. Das Training wird jetzt ernst.
+      Lena: Du schaffst das!
+----------
+    [ID: 176] [Datetime: 2026-09-11 14:00]
+      Ich: Halbmarathon geschafft! Es war unglaublich!
+      Tom: YES! Herzlichen Glückwunsch! Wie war die Zeit?
+      Ich: Zeit ist Nebensache. Ich bin einfach nur stolz, es durchgezogen zu haben. Die Atmosphäre war der Hammer.
+      Tom: Mega Leistung!
+----------
+
+[Sample 18/20]
+  Query: Wann wurde Tom befördert, und wann habe ich ihm dazu gratuliert?
+  GT Answer: Tom wurde kurz vor dem 5. Dez 2023 befördert. Du hast ihm am 16. Dez 2023 gratuliert.
+  Chunks:
+    [ID: 5] [Datetime: 2023-12-05 12:30]
+      Anna: Mittagspause? Ich wollte zur neuen Salatbar.
+      Ich: Oh ja, gute Idee. Ich komme mit.
+      Anna: Super! Hast du gehört, dass Tom befördert wurde?
+      Ich: Echt? Nein, das ist ja toll für ihn!
+----------
+    [ID: 6] [Datetime: 2023-12-10 18:30]
+      Ich: Hey Tom, hast du über Weihnachten Zeit? Ich dachte wir könnten uns vielleicht zwei Wochen vor Heiligabend treffen?
+      Tom: Klar, das klingt gut! Wie wäre es mit dem Samstag in einer Woche?
+      Ich: Perfekt, machen wir. Also am 16. Dezember.
+      Tom: Abgemacht.
+----------
+    [ID: 7] [Datetime: 2023-12-16 19:00]
+      Tom: Schön dich zu sehen!
+      Ich: Dich auch! Lange her. Wie läuft's?
+      Tom: Gut, gut. Beförderung bekommen, wie du vielleicht gehört hast.
+      Ich: Ja, Glückwunsch nochmal! Verdient hast du es dir.
+----------
+
+[Sample 19/20]
+  Query: Welche Weiterbildung hat Herr Müller genehmigt, und wann sollte sie stattfinden?
+  GT Answer: Herr Müller genehmigte den Kurs 'Agiles Projektmanagement' (Beginn Mai 2025) und einen Business-English-Kurs (Beginn März 2026).
+  Chunks:
+    [ID: 83] [Datetime: 2025-01-15 11:15]
+      Herr Müller: Ihre Proaktivität und Struktur haben sich deutlich verbessert. Ich bin sehr zufrieden. Gibt es Wünsche Ihrerseits für 2025?
+      Ich: Ich würde mich gerne im Bereich Projektmanagement weiterbilden.
+      Herr Müller: Eine gute Idee. Reichen Sie mir Vorschläge ein, dann sehen wir, was möglich ist.
+----------
+    [ID: 88] [Datetime: 2025-02-10 14:00]
+      Ich: Herr Müller, hier sind die Vorschläge für Projektmanagement-Weiterbildungen.
+      Herr Müller: Danke Frau Bauer. Ich schaue es mir an und gebe Ihnen bis Ende nächster Woche Bescheid.
+      Ich: Vielen Dank.
+----------
+    [ID: 92] [Datetime: 2025-02-25 11:30]
+      Herr Müller: Frau Bauer, ich habe mir die Weiterbildungen angesehen. Der Kurs 'Agiles Projektmanagement für Fortgeschrittene' scheint mir passend. Wir übernehmen die Kosten.
+      Ich: Oh, super! Vielen Dank, Herr Müller!
+      Herr Müller: Melden Sie sich an. Beginn ist im Mai.
+----------
+    [ID: 96] [Datetime: 2025-03-20 09:00]
+      Anna: Na, wie war die Geburtstagsfeier?
+      Ich: Sehr schön! Das Essen ist gut angekommen.
+      Anna: Das glaube ich. Wann fängt deine Weiterbildung an?
+      Ich: Im Mai. Ich freu mich schon drauf.
+----------
+    [ID: 103] [Datetime: 2025-05-02 09:00]
+      Herr Müller: Frau Bauer, Ihr Projektmanagement-Kurs beginnt ja diesen Monat, richtig?
+      Ich: Ja, genau. Nächste Woche geht es los.
+      Herr Müller: Gut. Ich erwarte, dass Sie das Gelernte dann auch in zukünftigen Projekten anwenden.
+      Ich: Selbstverständlich.
+----------
+    [ID: 141] [Datetime: 2026-01-16 11:15]
+      Herr Müller: Ich bin sehr zufrieden mit Ihrer Arbeit, Frau Bauer. Auch wie Sie die internationalen Teams bei Gamma koordinieren.
+      Ich: Danke. Das freut mich sehr.
+      Herr Müller: Haben Sie Wünsche für das kommende Jahr? Weitere Entwicklungsziele?
+      Ich: Ich würde gerne meine Englischkenntnisse noch etwas verbessern, vielleicht durch einen Business English Kurs.
+----------
+    [ID: 145] [Datetime: 2026-02-13 10:00]
+      Herr Müller: Frau Bauer, bezüglich des Englischkurses: Reichen Sie mir die Details ein. Das sollten wir unterstützen können.
+      Ich: Wirklich? Das wäre toll! Vielen Dank!
+      Herr Müller: Sie engagieren sich, das fördern wir gerne.
+----------
+    [ID: 151] [Datetime: 2026-03-20 16:00]
+      Ich: Der Englischkurs hat angefangen. Ist gut, aber auch anspruchsvoll.
+      Sarah: Business English? Ja, das kann knifflig sein. Aber super nützlich für unsere Calls.
+      Ich: Das hoffe ich. Ich merke schon, wo meine Schwächen liegen.
+      Sarah: Übung macht den Meister.
+----------
+
+[Sample 20/20]
+  Query: Wann wollte ich meinen Keller aufräumen, und habe ich es bis Februar 2025 getan?
+  GT Answer: Du wolltest deinen Keller im Februar 2025 aufräumen, hattest es aber bis dahin noch nicht getan (und auch bis Februar 2026 nicht).
+  Chunks:
+    [ID: 85] [Datetime: 2025-01-25 18:00]
+      Lena: Was steht bei dir so an in nächster Zeit?
+      Ich: Och, nicht viel. Nächsten Monat will ich endlich mal meinen Keller aufräumen. Das schiebe ich schon ewig vor mir her.
+      Lena: Haha, der Klassiker!
+----------
+    [ID: 89] [Datetime: 2025-02-15 10:00]
+      Anna: Was macht der Keller?
+      Ich: Ähm... der Keller? Der ist... noch auf der To-Do-Liste.
+      Anna: Haha, war ja klar.
+      Ich: Der Kochkurs war wichtiger! Und das Laufen!
+----------
+    [ID: 386] [Datetime: 2025-02-27 15:00]
+      Max: Hast du den Keller schon aufgeräumt?
+      Ich: Ähm... nein. Irgendwie kam immer was dazwischen.
+      Max: Haha, kenn ich. Irgendwann dann.
+      Ich: Genau. Irgendwann.
+----------
+ 
