@@ -29,7 +29,7 @@
  **********************************/
 #define RECORDINGS_DIR "/recordings"     // Directory for audio recordings
 #define UPLOAD_QUEUE_FILE "/upload_queue.txt"  // File that stores the upload queue
-#define SD_SPEED 20000000       // SD card SPI frequency (20 MHz)
+#define SD_SPEED 16000000       // SD card SPI frequency (16 MHz) default is 4MHz
 #define LOG_FILE "/device.log"  // System log file path
 #define TIME_FILE "/time.txt"   // Stored time file path
 

@@ -71,6 +71,18 @@ check_transcription_service() {
     fi
 }
 
+# Function to check if Docker Compose services are running
+check_docker_services() {
+    # Check if any containers are running (docker compose ps -q returns container IDs if they exist)
+    if [ -n "$(docker compose ps -q 2>/dev/null)" ]; then
+        echo "✅ Docker services are running"
+        return 0
+    else
+        echo "ℹ️ No Docker services are currently running"
+        return 1
+    fi
+}
+
 # Function to wait for application startup
 wait_for_startup() {
     local max_attempts=30
@@ -201,59 +213,69 @@ cd "$(dirname "$0")" || { echo "❌ Failed to navigate to script directory"; exi
 # -------------------------------------------------------------
 
 echo "🔍 Checking transcription service status..."
+transcription_running=false
 if check_transcription_service; then
-    echo "ℹ️ Transcription service is already running. No action needed."
-    exit 0
-fi
-
-echo "🚀 Setting up transcription service..."
-
-# Check if virtual environment exists
-if [ -d "$VENV_DIR" ]; then
-    echo "📁 Virtual environment already exists at $VENV_DIR"
-    venv_created=false
+    echo "ℹ️ Transcription service is already running."
+    transcription_running=true
 else
-    echo "🔧 Creating virtual environment at $VENV_DIR"
-    python3 -m venv "$VENV_DIR" || { echo "❌ Failed to create virtual environment"; exit 1; }
-    echo "✅ Virtual environment created successfully"
-    venv_created=true
+    echo "🚀 Setting up transcription service..."
+
+    # Check if virtual environment exists
+    if [ -d "$VENV_DIR" ]; then
+        echo "📁 Virtual environment already exists at $VENV_DIR"
+        venv_created=false
+    else
+        echo "🔧 Creating virtual environment at $VENV_DIR"
+        python3 -m venv "$VENV_DIR" || { echo "❌ Failed to create virtual environment"; exit 1; }
+        echo "✅ Virtual environment created successfully"
+        venv_created=true
+    fi
+
+    # Activate virtual environment
+    echo "🔌 Activating virtual environment"
+    source "$VENV_DIR/bin/activate" || { echo "❌ Failed to activate virtual environment"; exit 1; }
+
+    # Install requirements only if virtual environment was newly created
+    if [ "$venv_created" = true ] && [ -f "$TRANSCRIPTION_DIR/requirements.txt" ]; then
+        echo "📦 Installing requirements from $TRANSCRIPTION_DIR/requirements.txt"
+        pip install -r "$TRANSCRIPTION_DIR/requirements.txt" -q || { echo "❌ Failed to install requirements"; exit 1; }
+        echo "✅ Requirements installed successfully"
+    elif [ "$venv_created" = true ] && [ ! -f "$TRANSCRIPTION_DIR/requirements.txt" ]; then
+        echo "⚠️ No requirements.txt found in $TRANSCRIPTION_DIR"
+    else
+        echo "ℹ️ Using existing virtual environment, skipping requirements installation"
+    fi
+
+    cd "$TRANSCRIPTION_DIR" || { echo "❌ Failed to navigate to $TRANSCRIPTION_DIR"; exit 1; }
+
+    # Start the transcription service
+    echo "🚀 Starting transcription service..."
+    nohup python3 -m uvicorn $APP_MODULE --host 0.0.0.0 --port 8000 --reload --log-level debug > "$LOG_FILE" 2>&1 &
+
+    # Save the PID
+    echo $! > "$PID_FILE"
+    echo "📝 Transcription service started with PID $!"
+
+    # Wait for application startup
+    wait_for_startup
+
+    # Deactivate virtual environment
+    deactivate
+    echo "🔌 Virtual environment deactivated"
+
+    cd "$(dirname "$0")" || { echo "❌ Failed to navigate to script directory"; exit 1; }
 fi
 
-# Activate virtual environment
-echo "🔌 Activating virtual environment"
-source "$VENV_DIR/bin/activate" || { echo "❌ Failed to activate virtual environment"; exit 1; }
-
-# Install requirements only if virtual environment was newly created
-if [ "$venv_created" = true ] && [ -f "$TRANSCRIPTION_DIR/requirements.txt" ]; then
-    echo "📦 Installing requirements from $TRANSCRIPTION_DIR/requirements.txt"
-    pip install -r "$TRANSCRIPTION_DIR/requirements.txt" -q || { echo "❌ Failed to install requirements"; exit 1; }
-    echo "✅ Requirements installed successfully"
-elif [ "$venv_created" = true ] && [ ! -f "$TRANSCRIPTION_DIR/requirements.txt" ]; then
-    echo "⚠️ No requirements.txt found in $TRANSCRIPTION_DIR"
+# Check and start Docker services if needed
+echo "🔍 Checking Docker services status..."
+if check_docker_services; then
+    echo "ℹ️ Docker services are already running. No action needed."
 else
-    echo "ℹ️ Using existing virtual environment, skipping requirements installation"
+    # Start Docker services
+    echo "🐳 Starting Docker services..."
+    docker compose up -d --wait || { echo "❌ Failed to start Docker services"; exit 1; }
+    echo "✅ Docker services started. Please check whether the services are running healthy."
 fi
 
-cd "$TRANSCRIPTION_DIR" || { echo "❌ Failed to navigate to $TRANSCRIPTION_DIR"; exit 1; }
-
-# Start the transcription service
-echo "🚀 Starting transcription service..."
-nohup python3 -m uvicorn $APP_MODULE --host 0.0.0.0 --port 8000 --reload --log-level debug > "$LOG_FILE" 2>&1 &
-
-# Save the PID
-echo $! > "$PID_FILE"
-echo "📝 Transcription service started with PID $!"
-
-# Wait for application startup
-wait_for_startup
-
-# Deactivate virtual environment
-deactivate
-echo "🔌 Virtual environment deactivated"
-
-cd "$(dirname "$0")" || { echo "❌ Failed to navigate to script directory"; exit 1; }
-
-# Start Docker services
-echo "🐳 Starting Docker services..."
-docker compose up -d --wait || { echo "❌ Failed to start Docker services"; exit 1; }
-echo "✅ Docker services started. Please check whether the services are running healthy."
+echo "✅ All services checked and running!"
+exit 0
