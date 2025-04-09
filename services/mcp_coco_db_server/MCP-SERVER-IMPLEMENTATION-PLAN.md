@@ -456,71 +456,242 @@ Based on the requirements, reference implementations, Coco SDK structure, and MC
     *   [x] Verify the server connects and the `execute_pgvector_query` tool appears.
     *   [x] Test executing both standard SQL and semantic vector queries via Claude chat.
 
-## Phase 5: Integration with Coco Agents and Production Deployment
+## Phase 5: Implement Structured Persistent Logging
 
-1.  **Implement MCP Client for Coco Agents:**
-    
-    **What:** Develop a client that allows Coco agents to access the MCP server's database query capabilities.
-    * Create a new client module in the Coco SDK that can connect to the MCP server.
-    * Implement methods to discover and use the tools exposed by the MCP server.
-    * Add functionality to translate between the agent's requests and the MCP protocol.
-    * Integrate with the existing agent framework to provide these tools via an OpenAI-compatible endpoint.
-    
-    **Why:** This will enable Coco agents to efficiently query the database using the same tools that are available to Claude Desktop, providing consistent capabilities across different interfaces.
-    
-    *   [ ] Create a new MCP client module in the Coco SDK.
-    *   [ ] Implement tool discovery and invocation mechanisms.
-    *   [ ] Add translation layer between agent requests and MCP protocol.
-    *   [ ] Integrate with the existing agent framework.
-    *   [ ] Test that agents can successfully query the database via the MCP server.
+**Goal:** Implement a robust, structured, persistent logging system using Python's standard `logging` library, outputting JSON logs to rotating files for easier analysis, debugging, and potential integration with log analysis tools or databases.
 
-2.  **Add MCP Server to Docker Compose:**
+1.  **Add Logging Dependencies:**
+    *   **What:** Add `python-json-logger` to the dependencies in `services/mcp_coco_db_server/pyproject.toml`.
+    *   **Why:** Provides a standard way to format log records as JSON strings.
+    *   **Action:**
+        *   [ ] Edit `pyproject.toml`.
+        *   [ ] Add `"python-json-logger"` under `[project.dependencies]`.
+        *   [ ] Note: Docker build will need to be re-run to include this dependency via `uv sync`.
+
+2.  **Configure Logging Setup:**
+    *   **What:** Replace the basic `logging.basicConfig` call with `logging.dictConfig`. Define a configuration dictionary that sets up a root logger, a JSON formatter, and a rotating file handler. Ensure console logging (to stderr) is still available for basic runtime feedback, perhaps with a simpler format.
+    *   **Why:** `dictConfig` provides a more structured and flexible way to configure logging compared to basicConfig. Separating file and console handlers allows for different formatting and levels. JSON formatting makes logs machine-readable. Rotating files prevent logs from consuming excessive disk space.
+    *   **Action:**
+        *   [ ] In `coco_db_mcp_server.py`, remove the `logging.basicConfig` call.
+        *   [ ] Import `logging.config`, `logging.handlers`.
+        *   [ ] Define a `LOGGING_CONFIG` dictionary.
+            *   Define `version: 1`.
+            *   Define `disable_existing_loggers: False`.
+            *   Define a `formatters` section:
+                *   `json_formatter`: Uses `pythonjsonlogger.jsonlogger.JsonFormatter`, defining the desired standard fields (e.g., `%(asctime)s %(levelname)s %(name)s %(message)s %(pathname)s %(lineno)d %(funcName)s`) and potentially custom fields if needed later. Use ISO 8601 format for timestamps (`datefmt='iso8601'`).
+                *   `simple_formatter`: A standard `logging.Formatter` for console output (e.g., `%(asctime)s - %(levelname)s - %(name)s - %(message)s`).
+            *   Define a `handlers` section:
+                *   `stderr_handler`: A `logging.StreamHandler` using `sys.stderr` and `simple_formatter`. Set level (e.g., `INFO` or `ERROR`).
+                *   `rotating_file_handler`: A `logging.handlers.RotatingFileHandler`. Configure `filename` (e.g., `/app/logs/mcp_server.log` - ensure the directory exists or is created), `maxBytes`, `backupCount`, `encoding='utf-8'`, and use `json_formatter`. Set level (e.g., `INFO` or `DEBUG`).
+            *   Define a `loggers` section for specific loggers if needed (e.g., `asyncpg`), setting their levels.
+            *   Define the `root` logger configuration: Set `level` (e.g., `INFO`), add both `stderr_handler` and `rotating_file_handler` to `handlers`.
+        *   [ ] Call `logging.config.dictConfig(LOGGING_CONFIG)` early in the script's execution (e.g., near the top).
+        *   [ ] Ensure the log directory (e.g., `/app/logs`) is created in the Dockerfile or handled appropriately.
+
+3.  **Update Logging Calls:**
+    *   **What:** Review all existing `logger.error(...)` calls. Change them to use appropriate levels (`logger.info`, `logger.warning`, `logger.error`, `logger.debug`). Pass structured data using the `extra` dictionary parameter where appropriate.
+    *   **Why:** Using correct log levels improves filtering and understanding. Passing data via `extra` allows the JSON formatter to automatically include custom fields defined in the format string.
+    *   **Action:**
+        *   [ ] Review every `logger.*` call in `coco_db_mcp_server.py`.
+        *   [ ] Change levels where appropriate (e.g., successful operations become `INFO`, potential issues `WARNING`, actual errors `ERROR`).
+        *   [ ] For key events (tool start/end, DB query start/end, embedding start/end), add structured information via `extra`.
+            *   Example Tool Start: `logger.info("Starting tool execution", extra={"event_type": "tool_call_start", "tool_name": "execute_pgvector_query", "tool_input": {"sql_query": sql_query, "semantic_string_present": bool(semantic_string)}})`
+            *   Example Tool Error: `logger.error("Tool execution failed", extra={"event_type": "tool_call_error", "tool_name": "execute_pgvector_query", "error_details": {"type": type(e).__name__, "message": str(e)}, "tool_input": {...}})`
+            *   Example Tool Success: `logger.info("Tool execution successful", extra={"event_type": "tool_call_success", "tool_name": "execute_pgvector_query", "result_summary": {"row_count": len(formatted_results)}, "duration_ms": ...})` (Calculate duration).
+        *   [ ] Add `try...except...finally` blocks around key operations (like the main tool execution logic) to capture start time, calculate duration, and log success/failure consistently.
+
+4.  **Refine Logged Information:**
+    *   **What:** Ensure sensitive information (like full API keys, potentially sensitive data in query results) is not logged directly in plain text. Log summaries or indicators instead where appropriate (e.g., log `"api_key_present": True` instead of the key itself). Ensure the structured error details captured (especially for SQL errors) include the necessary components (error message, query, hints) for the RAG use case.
+    *   **Why:** Prevents accidental exposure of sensitive data in logs while still providing enough context for debugging and analysis. Ensures the logs fulfill the requirements for the error analysis use case.
+    *   **Action:**
+        *   [ ] Review all data being passed to `logger.*` calls and the `extra` dictionary.
+        *   [ ] Mask or summarize sensitive data (API keys, potentially large query results).
+        *   [ ] Verify that the `error_details` structure for SQL errors includes `type`, `message`, `query`, and `hints`.
+        *   [ ] Ensure inputs (`tool_input`) are logged comprehensively on error.
+
+5.  **Docker Volume for Logs:**
+    *   **What:** Document the need for users to mount a volume to the log directory (e.g., `-v /path/to/host/logs:/app/logs`) when running the container if they want logs to persist outside the container lifecycle. Update the example `docker run` command in the documentation/README.
+    *   **Why:** Allows logs to be collected and analyzed even after the container stops.
+    *   **Action:**
+        *   [ ] Add documentation explaining the log file location (`/app/logs/mcp_server.log`) inside the container.
+        *   [ ] Add instructions and an example for mounting a host directory to `/app/logs` using `docker run -v ...`.
+        *   [ ] Update the example `claude_desktop_config.json` snippet to include the volume mount for logs.
+
+6.  **Testing:**
+    *   **What:** Rebuild the Docker image. Run the container integrated with Claude Desktop. Trigger various scenarios: successful queries (SQL and semantic), schema requests, queries with syntax errors, queries causing other database errors, configuration errors (if possible). Check both `stderr` output and the content/structure of the JSON log file(s) created in the mounted volume.
+    *   **Why:** Verifies that the logging configuration works as expected, captures the necessary information in the correct format, rotates files, and handles errors correctly.
+    *   **Action:**
+        *   [ ] Rebuild the Docker image (`docker build ...`).
+        *   [ ] Run the container using the updated `docker run` command (or Claude Desktop config) including the log volume mount.
+        *   [ ] Perform test interactions using Claude Desktop.
+        *   [ ] Verify `stderr` output shows simplified logs.
+        *   [ ] Inspect the JSON log file(s) in the host directory.
+        *   [ ] Validate the JSON structure, content, log levels, and file rotation.
+
+## Phase 6: Integration with Coco Agents and Production Deployment
+
+1.  **Create MCPToolsAdapter Class:**
     
-    **What:** Integrate the MCP server container into the Coco services docker-compose setup.
-    * Add a new service definition to the `docker-compose.yml` file.
-    * Configure appropriate environment variables, dependencies, and volume mounts.
-    * Ensure the MCP server starts automatically with other Coco services.
-    * Add health checks and appropriate restart policies.
+    **What:** Create a new file `python_sdk/src/coco/mcp_client.py` that implements an adapter between MCP servers and the Coco tools system. This adapter should provide:
+    * An `MCPConnection` class to manage connections to MCP servers (supporting both stdio and HTTP/SSE transports)
+    * An `MCPToolsAdapter` class to discover and convert MCP tools into Coco-compatible tools
+    * A tool execution proxy that routes tool calls from `ToolsClient` to the appropriate MCP server
     
-    **Why:** This ensures the MCP server is always available when the Coco services are running, providing consistent access to database query capabilities for both human users and automated agents.
+    **Why:** This adapter allows the Coco agent system to seamlessly use tools provided by MCP servers. By abstracting the connection and protocol details, we can provide a unified interface for local and MCP-based tools.
+    
+    *   [x] Create `python_sdk/src/coco/mcp_client.py` file.
+    *   [x] Implement `MCPConnection` class with support for stdio and HTTP/SSE transports.
+    *   [x] Implement connection error handling with automatic reconnection.
+    *   [x] Implement `MCPToolsAdapter` class with tool discovery and conversion.
+    *   [x] Add tool execution proxy with proper error propagation.
+    *   [x] Add configurable connection timeouts and retry settings.
+    *   [x] Add proper resource cleanup on shutdown.
+
+2.  **Extend ToolsClient to Support MCP Tools:**
+    
+    **What:** Modify `python_sdk/src/coco/tools.py` to integrate with the MCPToolsAdapter. This involves:
+    * Updating the `ToolsClient` constructor to accept an optional `mcp_adapter` parameter
+    * Adding a new `_register_mcp_tools()` method to discover and register MCP tools
+    * Extending `get_tools()` to combine locally defined tools with MCP-provided tools
+    * Modifying `execute_tool()` to route calls to either local methods or the MCP adapter based on the tool's origin
+    
+    **Why:** By extending the existing `ToolsClient` class, we maintain backward compatibility while adding MCP capabilities. This provides a unified interface for tool discovery and execution, abstracting the source of the tools from the agent.
+    
+    *   [ ] Update `ToolsClient.__init__()` to accept an optional `mcp_adapter` parameter.
+    *   [ ] Implement `_register_mcp_tools()` method for tool discovery and registration.
+    *   [ ] Extend `get_tools()` to include both local and MCP tools.
+    *   [ ] Update `execute_tool()` to route calls to the appropriate handler.
+    *   [ ] Add tool conversion logic to transform between MCP and Coco formats.
+    *   [ ] Implement tool priority/conflict resolution when tools with the same name exist.
+
+3.  **Implement Comprehensive Error Handling:**
+    
+    **What:** Create robust error handling for MCP tool execution, focusing on reliability and informative error messages. This involves:
+    * Creating a configurable `RetryPolicy` class that implements exponential backoff
+    * Adding proper exception hierarchies for different types of failures (connection, execution, timeout)
+    * Implementing detailed error logging with context about the failed operation
+    * Adding retry logic for recoverable errors like network timeouts or rate limits
+    
+    **Why:** Robust error handling is essential for production use, especially when dealing with network operations and external API calls. By properly categorizing and handling different error types, we can improve reliability and provide better diagnostics.
+    
+    *   [ ] Create a configurable `RetryPolicy` class with exponential backoff.
+    *   [ ] Define exception hierarchies for different error categories.
+    *   [ ] Implement error handling with context-specific error messages.
+    *   [ ] Add retry logic for transient failures (network, rate limits).
+    *   [ ] Integrate error handling with the existing logging system.
+    *   [ ] Add error details propagation to agents for better diagnostics.
+
+4.  **Implement Asynchronous Execution Support:**
+    
+    **What:** Add proper asynchronous execution support to both the MCPToolsAdapter and ToolsClient. This includes:
+    * Implementing an `async_execute_tool()` method in ToolsClient that mirrors `execute_tool()`
+    * Adding concurrent execution capabilities to handle multiple tool calls
+    * Ensuring proper error propagation in asynchronous contexts
+    * Integrating with `async_chat()` in AgentClient for seamless async operation
+    
+    **Why:** Asynchronous execution is crucial for maintaining responsiveness, especially when dealing with potentially slow operations like embedding generation. Proper async support allows the agent to work efficiently with long-running tool calls.
+    
+    *   [ ] Add `async_execute_tool()` method to `ToolsClient`.
+    *   [ ] Implement proper async/await patterns throughout the execution path.
+    *   [ ] Add timeout handling for async operations.
+    *   [ ] Ensure compatibility with `AgentClient.async_chat()`.
+    *   [ ] Add error handling specific to asynchronous execution.
+
+5.  **Implement Concurrency Control:**
+    
+    **What:** Create concurrency control mechanisms to manage parallel tool executions. This involves:
+    * Implementing a `SemaphoreManager` class to limit concurrent operations
+    * Adding a configurable global limit for all concurrent requests
+    * Supporting per-service limits for different types of operations (API calls, database queries)
+    * Integrating with the existing batched parallel execution system
+    
+    **Why:** Controlled concurrency is essential for reliable operation, preventing resource exhaustion and API rate limit violations. A well-designed concurrency system allows efficient parallel execution while maintaining system stability.
+    
+    *   [ ] Create a `SemaphoreManager` class for concurrency control.
+    *   [ ] Add global and per-service concurrency limits.
+    *   [ ] Integrate with `batched_parallel()` in `async_utils.py`.
+    *   [ ] Implement proper queuing for requests that exceed concurrency limits.
+    *   [ ] Add monitoring of active/pending requests.
+
+6.  **Add Configuration Framework:**
+    
+    **What:** Create a unified configuration system for all MCP and agent-related settings. This includes:
+    * Implementing a central configuration module that handles various setting sources
+    * Supporting environment variables, config files, and programmatic settings
+    * Adding type validation for all configuration settings
+    * Providing sensible defaults and documentation for all options
+    
+    **Why:** A centralized configuration system ensures consistent settings across components, simplifies deployment, and makes it easier to customize behavior. Proper validation prevents misconfiguration and improves reliability.
+    
+    *   [ ] Create a centralized configuration module.
+    *   [ ] Define settings schemas with proper type annotations.
+    *   [ ] Add support for multiple configuration sources.
+    *   [ ] Implement validation and helpful error messages.
+    *   [ ] Add documentation for all configuration options.
+
+7.  **Integrate MCP Tools with AgentClient:**
+    
+    **What:** Update `AgentClient` to seamlessly work with MCP-provided tools. This involves:
+    * Modifying `AgentClient.__init__()` to accept MCP configuration options
+    * Adding initialization logic to set up MCP connections when needed
+    * Ensuring compatibility between MCP tools and the language model's tool-calling capabilities
+    * Supporting batch execution of MCP tools in `chat_multiple()`
+    
+    **Why:** Seamless integration with AgentClient ensures that MCP tools can be used in any agent-based workflow without requiring special handling. This maintains the simplicity of the API while adding powerful capabilities.
+    
+    *   [ ] Update `AgentClient.__init__()` to support MCP options.
+    *   [ ] Add initialization logic for MCP connections.
+    *   [ ] Ensure MCP tools work with `chat()`, `async_chat()`, and tool-calling.
+    *   [ ] Support batch execution of MCP tools in `chat_multiple()`.
+    *   [ ] Add proper cleanup of MCP resources in the agent lifecycle.
+
+8.  **Add MCP Server to Docker Compose:**
+    
+    **What:** Integrate the MCP server container into the Coco services docker-compose setup to make it available for both human users and automated agents.
+    * Add a new service definition to the `docker-compose.yml` file
+    * Configure environment variables, dependencies, and volume mounts
+    * Add health checks and appropriate restart policies
+    * Configure networking to allow the container to communicate with both external clients and internal services
+    
+    **Why:** Including the MCP server in the standard docker-compose setup ensures it's always available when Coco services are running, simplifying deployment and ensuring consistent availability.
     
     *   [ ] Add MCP server service to `docker-compose.yml`.
     *   [ ] Configure environment variables and dependencies.
     *   [ ] Set up volume mounts for the Python SDK.
     *   [ ] Add health checks and restart policies.
-    *   [ ] Test that the MCP server starts correctly with other Coco services.
+    *   [ ] Configure networking for both external and internal access.
 
-3.  **Implement Service Discovery for MCP Tools:**
+9.  **Create Integration Tests:**
     
-    **What:** Create a mechanism for Coco agents to automatically discover and use the tools provided by the MCP server.
-    * Add service discovery logic to the agent initialization process.
-    * Implement tool registration with the agent's tool registry.
-    * Ensure proper authorization and access control for tool usage.
-    * Add configuration options to enable/disable specific tools.
+    **What:** Develop comprehensive tests to verify the integration between Coco agents and the MCP server.
+    * Write unit tests for MCPToolsAdapter and extended ToolsClient
+    * Create integration tests that verify end-to-end operation
+    * Add tests for error handling, retries, and connection recovery
+    * Create performance tests to validate concurrency controls
     
-    **Why:** Automatic discovery ensures that tools are made available to agents without manual configuration, simplifying deployment and ensuring consistent capabilities.
+    **Why:** Thorough testing ensures the reliability of the integration, verifies error handling mechanisms, and establishes performance characteristics. This is essential for confident production deployment.
     
-    *   [ ] Implement service discovery logic for MCP tools.
-    *   [ ] Add tool registration with the agent's tool registry.
-    *   [ ] Implement authorization and access control.
-    *   [ ] Add configuration options for tool availability.
-    *   [ ] Test automatic discovery and registration of tools.
+    *   [ ] Write unit tests for `MCPToolsAdapter` and updated `ToolsClient`.
+    *   [ ] Create integration tests for end-to-end operation.
+    *   [ ] Add specific tests for error handling and recovery.
+    *   [ ] Implement performance tests for concurrent execution.
+    *   [ ] Add tests for configuration validation.
 
-4.  **Production Deployment and Documentation:**
+10. **Create Documentation and Examples:**
     
-    **What:** Prepare the MCP server for production deployment and document its usage.
-    * Create comprehensive documentation for server configuration and deployment.
-    * Add monitoring and observability features (metrics, logging, etc.).
-    * Implement security best practices (minimal permissions, secure connections, etc.).
-    * Create user and developer guides for working with the MCP server.
+    **What:** Prepare comprehensive documentation and examples for using the MCP integration.
+    * Update the SDK documentation to describe MCP integration
+    * Create example scripts demonstrating common usage patterns
+    * Document all configuration options and their effects
+    * Provide troubleshooting guides for common issues
     
-    **Why:** Proper documentation and production-ready features ensure the MCP server can be reliably deployed and maintained in a production environment.
+    **Why:** Good documentation is essential for adoption, helping users understand how to effectively use the MCP integration. Examples demonstrate best practices and common patterns, accelerating development.
     
-    *   [ ] Write comprehensive deployment documentation.
-    *   [ ] Implement monitoring and observability features.
-    *   [ ] Add security hardening measures.
-    *   [ ] Create user and developer guides.
-    *   [ ] Perform security review of the implementation.
+    *   [ ] Update SDK documentation with MCP integration details.
+    *   [ ] Create example scripts for common usage patterns.
+    *   [ ] Document configuration options and their effects.
+    *   [ ] Provide troubleshooting guides for common issues.
+    *   [ ] Add API reference documentation for all new classes and methods.
 
 ## Implementation Findings and Challenges
 

@@ -12,6 +12,7 @@ dependencies = [
     "ollama>=0.4.7",     # Ollama client for Coco SDK
     "openai>=1.70.0",    # OpenAI client for Coco SDK
     "numpy>=1.26.4",     # For handling embedding vectors
+    "python-json-logger>=3.3.0", # For structured logging
 ]
 
 [build-system]
