@@ -5,6 +5,3 @@
 # .vscode/launch.json
 # .vscode/ipch
 secrets.h
-
-# Ignore logs
-*.log

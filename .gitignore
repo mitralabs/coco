@@ -56,7 +56,6 @@ cover/
 *.pot
 
 # Django stuff:
-*.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
@@ -167,6 +166,9 @@ services/whisper.cpp/
 
 # Ignore all files that end with .wav
 *.wav
+
+# Ignore all files that end with .log
+*.log
 
 # Ignore .DS_Store files
 .DS_Store
