@@ -29,15 +29,26 @@ The server requires the following environment variables:
 | `COCO_EMBEDDING_MODEL` | Model to use for embeddings | Recommended | `BAAI/bge-m3` |
 | `COCO_API_KEY` | API key for Coco services | Optional | |
 
-### Volume Mount
+### Volume Mounts
 
-The server requires the Coco Python SDK to be mounted to the `/python_sdk` directory in the container. When running with Docker, use the `-v` flag:
+Two volume mounts are typically required:
 
-```bash
--v /path/to/host/python_sdk:/python_sdk
-```
+1.  **Python SDK:** The server requires the Coco Python SDK to be mounted to the `/python_sdk` directory in the container. Use the `-v` flag with the absolute path to the SDK on your host machine:
+    ```bash
+    -v /path/to/host/python_sdk:/python_sdk
+    ```
 
-Where `/path/to/host/python_sdk` is the absolute path to the Python SDK on your host machine.
+2.  **Persistent Logs:** The server writes JSON logs to `/app/logs` inside the container. To persist these logs after the container stops, you must mount a volume to this directory. Using a Docker named volume is recommended for easier management and integration with other tools.
+
+    *   **Create the volume (once):**
+        ```bash
+        docker volume create coco_mcp_logs
+        ```
+    *   **Mount the volume:** Add the following flag to your `docker run` command or configuration:
+        ```bash
+        -v coco_mcp_logs:/app/logs
+        ```
+    This ensures log files (e.g., `/app/logs/mcp_server.log` and its rotated backups) are stored persistently in the `coco_mcp_logs` Docker volume.
 
 ## Usage with Claude Desktop
 
@@ -57,6 +68,7 @@ To configure Claude Desktop to use this MCP server, add the following to your `c
     "-e", "OPENAI_API_KEY=your_openai_api_key",
     "-e", "COCO_EMBEDDING_MODEL=BAAI/bge-m3",
     "-v", "/absolute/path/to/python_sdk:/python_sdk",
+    "-v", "coco_mcp_logs:/app/logs",
     "coco/mcp-coco-db-server:latest"
   ]
 }
@@ -79,6 +91,7 @@ If you're using Ollama for embeddings instead of OpenAI, adjust your configurati
     "-e", "COCO_OLLAMA_URL_BASE=http://host.docker.internal:11434",
     "-e", "COCO_EMBEDDING_MODEL=BAAI/bge-m3",
     "-v", "/absolute/path/to/python_sdk:/python_sdk",
+    "-v", "coco_mcp_logs:/app/logs",
     "coco/mcp-coco-db-server:latest"
   ]
 }

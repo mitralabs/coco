@@ -460,33 +460,33 @@ Based on the requirements, reference implementations, Coco SDK structure, and MC
 
 **Goal:** Implement a robust, structured, persistent logging system using Python's standard `logging` library, outputting JSON logs to rotating files for easier analysis, debugging, and potential integration with log analysis tools or databases.
 
-1.  **Add Logging Dependencies:**
+1.  **✓ Add Logging Dependencies:**
     *   **What:** Add `python-json-logger` to the dependencies in `services/mcp_coco_db_server/pyproject.toml`.
     *   **Why:** Provides a standard way to format log records as JSON strings.
     *   **Action:**
-        *   [ ] Edit `pyproject.toml`.
-        *   [ ] Add `"python-json-logger"` under `[project.dependencies]`.
-        *   [ ] Note: Docker build will need to be re-run to include this dependency via `uv sync`.
+        *   [x] Edit `pyproject.toml`.
+        *   [x] Add `"python-json-logger"` under `[project.dependencies]`.
+        *   [x] Note: Docker build will need to be re-run to include this dependency via `uv sync`.
 
-2.  **Configure Logging Setup:**
+2.  **✓ Configure Logging Setup:**
     *   **What:** Replace the basic `logging.basicConfig` call with `logging.dictConfig`. Define a configuration dictionary that sets up a root logger, a JSON formatter, and a rotating file handler. Ensure console logging (to stderr) is still available for basic runtime feedback, perhaps with a simpler format.
     *   **Why:** `dictConfig` provides a more structured and flexible way to configure logging compared to basicConfig. Separating file and console handlers allows for different formatting and levels. JSON formatting makes logs machine-readable. Rotating files prevent logs from consuming excessive disk space.
     *   **Action:**
-        *   [ ] In `coco_db_mcp_server.py`, remove the `logging.basicConfig` call.
-        *   [ ] Import `logging.config`, `logging.handlers`.
-        *   [ ] Define a `LOGGING_CONFIG` dictionary.
-            *   Define `version: 1`.
-            *   Define `disable_existing_loggers: False`.
-            *   Define a `formatters` section:
-                *   `json_formatter`: Uses `pythonjsonlogger.jsonlogger.JsonFormatter`, defining the desired standard fields (e.g., `%(asctime)s %(levelname)s %(name)s %(message)s %(pathname)s %(lineno)d %(funcName)s`) and potentially custom fields if needed later. Use ISO 8601 format for timestamps (`datefmt='iso8601'`).
-                *   `simple_formatter`: A standard `logging.Formatter` for console output (e.g., `%(asctime)s - %(levelname)s - %(name)s - %(message)s`).
-            *   Define a `handlers` section:
-                *   `stderr_handler`: A `logging.StreamHandler` using `sys.stderr` and `simple_formatter`. Set level (e.g., `INFO` or `ERROR`).
-                *   `rotating_file_handler`: A `logging.handlers.RotatingFileHandler`. Configure `filename` (e.g., `/app/logs/mcp_server.log` - ensure the directory exists or is created), `maxBytes`, `backupCount`, `encoding='utf-8'`, and use `json_formatter`. Set level (e.g., `INFO` or `DEBUG`).
-            *   Define a `loggers` section for specific loggers if needed (e.g., `asyncpg`), setting their levels.
-            *   Define the `root` logger configuration: Set `level` (e.g., `INFO`), add both `stderr_handler` and `rotating_file_handler` to `handlers`.
-        *   [ ] Call `logging.config.dictConfig(LOGGING_CONFIG)` early in the script's execution (e.g., near the top).
-        *   [ ] Ensure the log directory (e.g., `/app/logs`) is created in the Dockerfile or handled appropriately.
+        *   [x] In `coco_db_mcp_server.py`, remove the `logging.basicConfig` call.
+        *   [x] Import `logging.config`, `logging.handlers`.
+        *   [x] Define a `LOGGING_CONFIG` dictionary.
+            *   [x] Define `version: 1`.
+            *   [x] Define `disable_existing_loggers: False`.
+            *   [x] Define a `formatters` section:
+                *   [x] `json_formatter`: Uses `pythonjsonlogger.jsonlogger.JsonFormatter`, defining the desired standard fields (e.g., `%(asctime)s %(levelname)s %(name)s %(message)s %(pathname)s %(lineno)d %(funcName)s`) and potentially custom fields if needed later. Use ISO 8601 format for timestamps (`datefmt='iso8601'`).
+                *   [x] `simple_formatter`: A standard `logging.Formatter` for console output (e.g., `%(asctime)s - %(levelname)s - %(name)s - %(message)s`).
+            *   [x] Define a `handlers` section:
+                *   [x] `stderr_handler`: A `logging.StreamHandler` using `sys.stderr` and `simple_formatter`. Set level (e.g., `INFO` or `ERROR`).
+                *   [x] `rotating_file_handler`: A `logging.handlers.TimedRotatingFileHandler`. Configure `filename` (e.g., `/app/logs/mcp_server.log` - ensure the directory exists or is created), `maxBytes`, `backupCount`, `encoding='utf-8'`, and use `json_formatter`. Set level (e.g., `INFO` or `DEBUG`).
+            *   [x] Define a `loggers` section for specific loggers if needed (e.g., `asyncpg`), setting their levels.
+            *   [x] Define the `root` logger configuration: Set `level` (e.g., `INFO`), add both `stderr_handler` and `rotating_file_handler` to `handlers`.
+        *   [x] Call `logging.config.dictConfig(LOGGING_CONFIG)` early in the script's execution (e.g., near the top).
+        *   [x] Ensure the log directory (e.g., `/app/logs`) is created in the Dockerfile or handled appropriately.
 
 3.  **Update Logging Calls:**
     *   **What:** Review all existing `logger.error(...)` calls. Change them to use appropriate levels (`logger.info`, `logger.warning`, `logger.error`, `logger.debug`). Pass structured data using the `extra` dictionary parameter where appropriate.
@@ -498,7 +498,8 @@ Based on the requirements, reference implementations, Coco SDK structure, and MC
             *   Example Tool Start: `logger.info("Starting tool execution", extra={"event_type": "tool_call_start", "tool_name": "execute_pgvector_query", "tool_input": {"sql_query": sql_query, "semantic_string_present": bool(semantic_string)}})`
             *   Example Tool Error: `logger.error("Tool execution failed", extra={"event_type": "tool_call_error", "tool_name": "execute_pgvector_query", "error_details": {"type": type(e).__name__, "message": str(e)}, "tool_input": {...}})`
             *   Example Tool Success: `logger.info("Tool execution successful", extra={"event_type": "tool_call_success", "tool_name": "execute_pgvector_query", "result_summary": {"row_count": len(formatted_results)}, "duration_ms": ...})` (Calculate duration).
-        *   [ ] Add `try...except...finally` blocks around key operations (like the main tool execution logic) to capture start time, calculate duration, and log success/failure consistently.
+        *   [x] Add `try...except...finally` blocks around key operations (like the main tool execution logic) to capture start time, calculate duration, and log success/failure consistently.
+        *   **Progress:** Logging updated for `handle_terminate`, `db_lifespan`, `get_table_schema`, and `execute_pgvector_query`.
 
 4.  **Refine Logged Information:**
     *   **What:** Ensure sensitive information (like full API keys, potentially sensitive data in query results) is not logged directly in plain text. Log summaries or indicators instead where appropriate (e.g., log `"api_key_present": True` instead of the key itself). Ensure the structured error details captured (especially for SQL errors) include the necessary components (error message, query, hints) for the RAG use case.
