@@ -1,0 +1,8 @@
+mcp[cli]>=1.6.0
+asyncpg>=0.30.0
+python-dotenv>=1.0.1
+tqdm>=4.67.1
+ollama>=0.4.7
+openai>=1.70.0
+numpy>=1.26.4
+python-json-logger>=3.3.0

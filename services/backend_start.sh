@@ -12,6 +12,11 @@ PID_FILE="$TRANSCRIPTION_DIR/transcription_server.pid"
 LOG_FILE="$TRANSCRIPTION_DIR/uvicorn.log"
 APP_MODULE="app.main:app"
 
+# Data directory constants
+DATA_DIR="$(pwd)/_data"
+AUDIO_DIR="$DATA_DIR/audio_files"
+LOGS_DIR="$DATA_DIR/mcp_logs"
+
 # Function to check if the model name is valid
 is_valid_model() {
     local model=$1
@@ -57,6 +62,38 @@ parse_env_file() {
     else
         echo "⚠️ No $env_file file found, will use default model if WHISPER_MODEL is not set"
     fi
+}
+
+# Function to check and create required directories
+setup_data_directories() {
+    echo "🔍 Checking data directories..."
+    
+    # Check/create main data directory
+    if [ ! -d "$DATA_DIR" ]; then
+        echo "📁 Creating data directory: $DATA_DIR"
+        mkdir -p "$DATA_DIR" || { echo "❌ Failed to create data directory"; return 1; }
+    else
+        # echo "✅ Data directory exists: $DATA_DIR"
+    fi
+    
+    # Check/create audio files directory
+    if [ ! -d "$AUDIO_DIR" ]; then
+        echo "📁 Creating audio files directory: $AUDIO_DIR"
+        mkdir -p "$AUDIO_DIR" || { echo "❌ Failed to create audio files directory"; return 1; }
+    else
+        # echo "✅ Audio files directory exists: $AUDIO_DIR"
+    fi
+    
+    # Check/create logs directory
+    if [ ! -d "$LOGS_DIR" ]; then
+        echo "📁 Creating logs directory: $LOGS_DIR"
+        mkdir -p "$LOGS_DIR" || { echo "❌ Failed to create logs directory"; return 1; }
+    else
+        # echo "✅ Logs directory exists: $LOGS_DIR"
+    fi
+    
+    # echo "✅ All data directories are ready!"
+    return 0
 }
 
 # Function to check if transcription service is running
@@ -128,6 +165,9 @@ check_model_exists() {
 # Load environment variables
 echo "🔍 Loading environment variables..."
 parse_env_file ".env"
+
+# Setup data directories
+setup_data_directories || { echo "❌ Failed to setup data directories"; exit 1; }
 
 # Set default model if not defined
 if [ -z "$WHISPER_MODEL" ]; then
