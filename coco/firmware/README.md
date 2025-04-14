@@ -10,30 +10,14 @@
     - Click on `Upload and Monitor`. <br>-> Make sure to not open the Arduino IDE in parallel, since it might result in VS Code not being able to connect to the device. <br>(You can also manually `Build`, `Upload` and `Monitor` the ESP output.)
 
 
-## Some Notes on the current blinking pattern (regarding v1.0)
-- If coco blinks rapidly, this indicates an error.
-	- If occurs directly after turning on, the most probable cause is a missing SD card, or one that is badly plugged in.
-- During recording, the LED will be solid on.
+## Some Notes on the Firmware and the LED
+When Coco is not running, it is in Deepsleep. The button can be used to wake the device from deepsleep. It needs to be pressed and hold until the LED either goes on, or goes off. When the device was off (LED is off) it starts with a short blinking pattern, which either indicates the Battery Status, or an Error state. The latter is indicated through a rapid blinking pattern which runs for ~30s, afterwards the device goes back to deepsleep. If there is no error, the device will blink 1 to 4 times, and then stay on. The blinks indicate the battery level. 1 blink is equivalent to 25% charge. The device will record and upload data on it's own. While on, the LED will slowly fade, according to the battery state.
 
-### Task Priority Guidelines
-IDLE Task: Priority 0
-Your Background Tasks: 1-3
-Your Time-Critical Tasks: 4-5
-System Critical Tasks: 18-24
-Never use priority 25 (reserved for system tasks)
+*Note: The batterylifetime is bad at the moment. It's a serious area for improvement. I'd guess that task management is the place to start.*
+*Note 2: The knowledge of embedded systems design + c++ are sub optimal within our team. So don't panic when you see the code.*
 
 ## ToDo
-- [ ] Überarbeite Setup and Init (maybe find a routine for initial boot or boot from complete power loss).
-- [ ] Check if there is a possibility that audio queue get's lost on the SD card. E.g. when the new one is being written and the device loses power.
-- [ ] Move persistent time saving to SD and away from flash (since the latter degrades)
-- [ ] Integrate /test endpoint to check whether coco backend is online. (inkluding backoff)
-- [ ] Reintegrate DeepSleep. And integrate Routine which brings device to deepsleep, when Voltage below a certain threshold.
-- [ ] Find a handle for SD Card Error to reset device utilizing the button. Factory Reset Button will mostlikely not be reachable, since inside of case.
-- [ ] Rewrite logging. It's currently pretty wild.
-- [ ] Include WiFiMulti, so that multiple Networks are known. Secondly, Scan for known Location, by checking SSIDs, and connect then.
-- [ ] Integrate WiFi, Timezone, and Timestamp optionally on SD Card (although this poses security risks, if device is lost, and card inspected.)
+- [ ] Reintegrate learnings from testing.
 
----
-
-### Misc
-- [Further Information](https://wiki.seeedstudio.com/xiao_esp32s3_getting_started/)
+### Links
+- [Further Information on the ESP32S3](https://wiki.seeedstudio.com/xiao_esp32s3_getting_started/)

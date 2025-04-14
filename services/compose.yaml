@@ -119,7 +119,7 @@ services:
       - ".env"
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
+      test: ["CMD-SHELL", "curl -f -X GET -H 'X-API-Key: test' http://localhost:8000/test && curl -f -X GET -H 'X-API-Key: test' http://host.docker.internal:8000/test"]
       interval: 30s
       timeout: 10s
       retries: 3
