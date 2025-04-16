@@ -55,3 +55,17 @@ API documentation for FastAPI services is available at `http://localhost:<port>/
 ## Final Notes:
 - It is currently not implemented, that transcription is not done locally. But it's definitely possible to change that, since our approach follows the openai transcription standard.
 - If you want to see if the transcription process is running in the background use the command `ps aux | grep uvicorn`, which will show the uvicorn processes on your machine. If you further want to kill a process, use `kill <PID>` where <PID> is the Process ID.
+
+
+**The compose.yaml requires the following:**
+
+| Environment Variable | Description | Required | Example |
+|---------------------|-------------|----------|---------|
+| `DATABASE_URL` | PostgreSQL connection string | Yes | `postgresql://user:pass@host:5432/dbname` |
+| `COCO_EMBEDDING_API` | Which embedding API to use (`ollama` or `openai`) | Yes | `openai` |
+| `COCO_LLM_API` | Which LLM API to use (`ollama` or `openai`) | Yes | `openai` |
+| `COCO_OLLAMA_URL_BASE` | Base URL for Ollama API | Only if using Ollama | `http://host.docker.internal:11434` |
+| `COCO_OPENAI_URL_BASE` | Base URL for OpenAI API | Only if using OpenAI | `https://api.openai.com/v1` |
+| `OPENAI_API_KEY` | API key for OpenAI | Only if using OpenAI | `sk-...` |
+| `COCO_EMBEDDING_MODEL` | Model to use for embeddings | Recommended | `BAAI/bge-m3` |
+| `COCO_API_KEY` | API key for Coco services | Optional | |

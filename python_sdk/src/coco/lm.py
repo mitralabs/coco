@@ -129,7 +129,7 @@ class LanguageModelClient:
             if model is None:
                 model = "nomic-embed-text"
             response = self.ollama.embed(model=model, input=chunk)
-            return response.embeddings
+            return response.embeddings[0]
         elif self.embedding_api == "openai":
             if model is None:
                 model = "BAAI/bge-m3"
