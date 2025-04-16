@@ -72,24 +72,18 @@ setup_data_directories() {
     if [ ! -d "$DATA_DIR" ]; then
         echo "📁 Creating data directory: $DATA_DIR"
         mkdir -p "$DATA_DIR" || { echo "❌ Failed to create data directory"; return 1; }
-    else
-        # echo "✅ Data directory exists: $DATA_DIR"
     fi
     
     # Check/create audio files directory
     if [ ! -d "$AUDIO_DIR" ]; then
         echo "📁 Creating audio files directory: $AUDIO_DIR"
         mkdir -p "$AUDIO_DIR" || { echo "❌ Failed to create audio files directory"; return 1; }
-    else
-        # echo "✅ Audio files directory exists: $AUDIO_DIR"
     fi
     
     # Check/create logs directory
     if [ ! -d "$LOGS_DIR" ]; then
         echo "📁 Creating logs directory: $LOGS_DIR"
         mkdir -p "$LOGS_DIR" || { echo "❌ Failed to create logs directory"; return 1; }
-    else
-        # echo "✅ Logs directory exists: $LOGS_DIR"
     fi
     
     # echo "✅ All data directories are ready!"

@@ -142,16 +142,6 @@ def kick_off_processing(audio_path: str, store_in_db: bool = True):
             logger.error(f"Error processing session: {str(e)}")
             return False
 
-        # Saves the transcription
-        PathManager.save_transcription(text, audio_path)
-
-        if store_in_db:
-            cc.chunk_and_store(text, language, audio_path, date)
-            logger.info("Transcription saved successfully and stored in database.")
-        else:
-            logger.info("Transcription saved successfully.")
-        return True
-
     except Exception as e:
         logger.error(f"Error processing session: {str(e)}")
         return False
