@@ -1,15 +1,8 @@
 # coco
 
-This is the coco Repository. <br>
-The project was funded by [hessian.ai](https://hessian.ai) and developed by a small team (see [our website](www.mitra-labs.ai) for more information.)
+This is the coco Repository. It was developed with fun by a small team (see [our website](www.mitra-labs.ai) for more information).<br>
 
-You will need to have some/basic knowledge in the latter domains, to get this Repo up and running (or the motivation to learn them).
-
-1. The command line / terminal. You don't need any Coding Environment, although it's helpful.
-2. Github and `.git`
-3. Docker
-
--> We plan on recording a video on how to set this project up. So stay tuned for that.
+A substantial part of the development was funded by [hessian.ai](https://hessian.ai), thank you!
 
 ## Step by Step Guide to run coco on a **Mac**:
 >Note: We developed on Mac OS. So you might run into troubles on different OSes. Feel free to [contact us](mailto:coco@mitra-labs.ai), and we try to help as much as possible.
@@ -24,6 +17,7 @@ You will need to have some/basic knowledge in the latter domains, to get this Re
 5. Install [VS Code](https://code.visualstudio.com). It makes most easier, and is needed for the coco firmware. (For convenience, add it to path by using the `>shell command` within vs code)
 
 ### Middleware Setup:
+>Note: You can use this repo in combination with an OpenAI (like) Endpoint as well. You don't need to set up Ollama in that case. Just make sure to configure the .env file accordingly (see the Readme in the services directory).
 
 1. Install [Ollama](https://ollama.com)
 2. Download a chat model from [ollama](https://www.ollama.com), make sure that it supports *tool use* or *function calling*. We strongly suggest testing different models to find one that best suits your hardware.
@@ -37,3 +31,7 @@ You will need to have some/basic knowledge in the latter domains, to get this Re
 4. Follow [this ReadMe](/services/README.md) to install the additional services.
 
 Well done. Now and lastly, to set up your coco device, follow [this ReadMe](/coco/firmware/README.md)
+
+## Final Notes:
+1. [Nico Stellwag](https://nicolasstellwag.com) wrote a paper on the RAG pipeline. The final code before submisson can be found on the *hack-nico* Branch in the [RAG](test/rag/)-Folder.
+2. All the code that was developed during the hessian.ai funding period is on the *hessian-ai* branch.

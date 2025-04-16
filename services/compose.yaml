@@ -9,11 +9,11 @@ services:
     volumes:
       - ./chunking/app:/app
       - ./_data:/data
-    environment:
-      - API_KEY=test
+    env_file:
+      - ".env"
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
+      test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: local", "http://localhost:8000/test" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -28,16 +28,11 @@ services:
     volumes:
       - ./db_api/app:/app
       - ./_data:/data
-    environment:
-      - API_KEY=test
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_DB=coco
-      - POSTGRES_HOST=db
-      - EMBEDDING_DIM=1024
+    env_file:
+      - ".env"
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: test", "http://localhost:8000/test" ]
+      test: [ "CMD", "curl", "-f", "-X", "GET", "-H", "X-API-Key: local", "http://localhost:8000/test" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -52,10 +47,8 @@ services:
       - ./_data/db:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-    environment:
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_DB=coco
+    env_file:
+      - ".env"
     restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
@@ -81,13 +74,6 @@ services:
       - COCO_CHUNK_URL_BASE=http://chunking:8000
       - COCO_DB_API_URL_BASE=http://db-api:8000
       - COCO_TRANSCRIPTION_URL_BASE=http://host.docker.internal:8000
-      - COCO_OLLAMA_URL_BASE=http://host.docker.internal:11434
-      - COCO_OPENAI_URL_BASE=https://openai.inference.de-txl.ionos.com/v1
-      - COCO_EMBEDDING_API=openai
-      - COCO_LLM_API=openai
-      - COCO_API_KEY=test
-      - COCO_EMBEDDING_MODEL=BAAI/bge-m3
-      - COCO_DEFAULT_LLM_MODEL=meta-llama/Llama-3.3-70B-Instruct
     restart: unless-stopped
     depends_on:
       chunking:
@@ -109,17 +95,11 @@ services:
       - COCO_CHUNK_URL_BASE=http://chunking:8000
       - COCO_DB_API_URL_BASE=http://db-api:8000
       - COCO_TRANSCRIPTION_URL_BASE=http://host.docker.internal:8000
-      - COCO_OLLAMA_URL_BASE=http://host.docker.internal:11434
-      - COCO_OPENAI_URL_BASE=https://openai.inference.de-txl.ionos.com/v1
-      - COCO_EMBEDDING_API=openai
-      - COCO_LLM_API=openai
-      - COCO_API_KEY=test
-      - COCO_EMBEDDING_MODEL=BAAI/bge-m3
     env_file:
       - ".env"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f -X GET -H 'X-API-Key: test' http://localhost:8000/test && curl -f -X GET -H 'X-API-Key: test' http://host.docker.internal:8000/test"]
+      test: ["CMD-SHELL", "curl -f -X GET -H 'X-API-Key: local' http://localhost:8000/test && curl -f -X GET -H 'X-API-Key: local' http://host.docker.internal:8000/test"]
       interval: 30s
       timeout: 10s
       retries: 3

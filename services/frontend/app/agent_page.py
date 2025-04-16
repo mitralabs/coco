@@ -2,30 +2,22 @@ import gradio as gr
 import json
 from shared import (
     cc,
-    DEFAULT_LLM_MODEL,
-    update_available_models,
     get_available_models,
-    ollama,
-    openai,
 )
 
 default_agent_system_message = """
-You are Coco, a helpful assistant who provides the best possible help to users. You use tools that you have access to. You speak German, unless the user explicitly starts talking in another language.
+You are Coco, a helpful assistant who provides the best possible help to users. You have access to tools, use them. You speak German, unless the user explicitly starts talking in another language.
 
 # Tools
 - You can always execute tools before responding.
 - You never ask if you should execute a tool, you just do it.
 - You never mention that you will use a tool, you just do it.
-- IMPORTANT: You write tool calls to the appropriate property of your response, never in the actual message for the user.
 - IMPORTANT: Your answers should always reference the results of the tools when you have used them!
 
 # Your Knowledge
-- Your knowledge is stored in the database, which you can access through tools.
 - When the user asks for any information, use the database tools to find the answer.
-- If you set certain filters on the database, you don't mention them in the query string as well.
 - You interpret all document content with respect to the document's metadata.
 - Your knowledge is in German, so you should make database queries in German as well.
-- IMPORTANT: You act as if you simply remember your knowledge. You never mention the database itself to the user. (But you obviously reference its content.)
 """
 
 
@@ -139,27 +131,25 @@ def update_agent_user_message(msg):
     return msg
 
 
-from chat_page import clear
-
 # Agent page interface
 with gr.Blocks() as demo:
     with gr.Sidebar(open=False):
         gr.Markdown("# ")
         gr.Markdown("# Set agent options")
-        agent_provider_dropdown = gr.Dropdown(
-            choices=["ollama", "openai"],
-            value=cc.lm.llm_api,
-            label="Select Provider",
-            interactive=True,
-        )
+
+        # Get available models and any error message
+        available_models, model_error = get_available_models()
 
         # Add model selection dropdown
         agent_model_dropdown = gr.Dropdown(
-            choices=get_available_models(),
-            value=DEFAULT_LLM_MODEL,
-            label="Select Model",
+            choices=available_models,
+            label=f"Select Model (Using {cc.lm.llm_api} provider)",
             interactive=True,
         )
+
+        # Display error message if models couldn't be loaded
+        if model_error:
+            gr.Markdown(f"**Error:** {model_error}", elem_classes=["error-message"])
 
         agent_system_message = gr.Textbox(
             label="System Message",
@@ -178,10 +168,6 @@ with gr.Blocks() as demo:
             value=10,
             step=1,
             label="Max Tool Calls",
-        )
-
-        agent_provider_dropdown.input(
-            update_available_models, [agent_provider_dropdown], [agent_model_dropdown]
         )
 
     # Current agent conversation state

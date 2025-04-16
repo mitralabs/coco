@@ -4,28 +4,24 @@ import datetime
 from datetime import date
 from coco import CocoClient
 
-# Can be removed, only until functions are in SDK
-from ollama import AsyncClient
-from openai import AsyncOpenAI
-
 # Environment variables configuration
+API_KEY = os.getenv("API_KEY", "")
 CHUNKING_BASE = os.getenv("COCO_CHUNK_URL_BASE")
 DB_API_BASE = os.getenv("COCO_DB_API_URL_BASE")
 TRANSCRIPTION_BASE = os.getenv("COCO_TRANSCRIPTION_URL_BASE")
-OLLAMA_BASE = os.getenv("COCO_OLLAMA_URL_BASE")
-OPENAI_BASE = os.getenv("COCO_OPENAI_URL_BASE")
-EMBEDDING_API = os.getenv("COCO_EMBEDDING_API")
-LLM_API = os.getenv("COCO_LLM_API")
-API_KEY = os.getenv("COCO_API_KEY")
-# Default models
-EMBEDDING_MODEL = os.getenv("COCO_EMBEDDING_MODEL", "nomic-embed-text")
-DEFAULT_LLM_MODEL = os.getenv(
-    "COCO_DEFAULT_LLM_MODEL", "meta-llama/Llama-3.3-70B-Instruct"
-)
+EMBEDDING_MODEL = os.getenv("COCO_EMBEDDING_MODEL")
 
-# Initialize clients
-openai = AsyncOpenAI(base_url="https://openai.inference.de-txl.ionos.com/v1")
-ollama = AsyncClient(host="http://host.docker.internal:11434")
+if not all([API_KEY, CHUNKING_BASE, DB_API_BASE, TRANSCRIPTION_BASE, EMBEDDING_MODEL]):
+    raise ValueError(
+        "API_KEY, CHUNKING_BASE, DB_API_BASE, TRANSCRIPTION_BASE, and EMBEDDING_MODEL must all be set"
+    )
+
+# With Defaults
+OPENAI_BASE = os.getenv("COCO_OPENAI_URL_BASE", "")
+OLLAMA_BASE = os.getenv("COCO_OLLAMA_URL_BASE", "http://host.docker.internal:11434")
+EMBEDDING_API = os.getenv("COCO_EMBEDDING_API", "ollama")
+LLM_API = os.getenv("COCO_LLM_API", "ollama")
+
 
 # Shared theme
 theme = gr.themes.Ocean(
@@ -61,50 +57,58 @@ CONTEXT_FORMAT = """
 
 # Utility functions
 def get_available_models():
-    available_models = cc.lm.list_llm_models()
-    embedding_models_ollama = [
-        "nomic-embed-text:latest",
-        "mxbai-embed-large:latest",
-        "snowflake-arctic-embed:latest",
-        "bge-m3:latest",
-        "all-minilm:latest",
-        "bge-large:latest",
-        "snowflake-arctic-embed2:latest",
-        "paraphrase-multilingual:latest",
-        "granite-embedding:latest",
-    ]
-    non_llms_ionos = [
-        "meta-llama/CodeLlama-13b-Instruct-hf",
-        "black-forest-labs/FLUX.1-schnell",
-        "BAAI/bge-large-en-v1.5",
-        "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
-        "BAAI/bge-m3",
-        "stabilityai/stable-diffusion-xl-base-1.0",
-    ]
+    try:
+        available_models = cc.lm.list_llm_models()
+        embedding_models_ollama = [
+            "nomic-embed-text:latest",
+            "mxbai-embed-large:latest",
+            "snowflake-arctic-embed:latest",
+            "bge-m3:latest",
+            "all-minilm:latest",
+            "bge-large:latest",
+            "snowflake-arctic-embed2:latest",
+            "paraphrase-multilingual:latest",
+            "granite-embedding:latest",
+        ]
+        non_llms_ionos = [
+            "meta-llama/CodeLlama-13b-Instruct-hf",
+            "black-forest-labs/FLUX.1-schnell",
+            "BAAI/bge-large-en-v1.5",
+            "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+            "BAAI/bge-m3",
+            "stabilityai/stable-diffusion-xl-base-1.0",
+        ]
 
-    blacklisted_models = embedding_models_ollama + non_llms_ionos
-    available_models = [
-        model for model in available_models if model not in blacklisted_models
-    ]
+        blacklisted_models = embedding_models_ollama + non_llms_ionos
+        available_models = [
+            model for model in available_models if model not in blacklisted_models
+        ]
 
-    if not available_models:
-        available_models = [DEFAULT_LLM_MODEL]
+        if not available_models:
+            return [], "No compatible LLM models found. Using default model."
 
-    if cc.lm.llm_api == "openai":
-        try:
-            available_models = [
-                (model.split("/")[-1], model) for model in available_models
-            ]
-        except:
-            pass
+        if cc.lm.llm_api == "openai":
+            try:
+                available_models = [
+                    (model.split("/")[-1], model) for model in available_models
+                ]
+            except:
+                pass
 
-    return available_models
+        return available_models, None
+    except Exception as e:
+        # Return empty list and error message
+        error_msg = (
+            f"Failed to load models: {str(e)}. Check your connection and API key."
+        )
+        return [], error_msg
 
 
+# Remove the update_available_models function as it's no longer needed
 def update_available_models(llmapi):
     cc.lm.llm_api = llmapi
-    available_models = get_available_models()
-    return gr.Dropdown(choices=available_models, interactive=True)
+    models, error_msg = get_available_models()
+    return gr.Dropdown(choices=models, interactive=True), error_msg
 
 
 def parse_datetime(date_value):

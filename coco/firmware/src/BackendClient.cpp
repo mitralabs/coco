@@ -403,9 +403,17 @@ bool BackendClient::uploadFileFromBuffer(size_t size, const String& filename) {
     } else {
         app->log("Error on HTTP request: " + String(client.errorToString(httpResponseCode).c_str()));
         client.end();
-        // Network error, mark backend as unavailable
-        app->setBackendReachable(false);
-        setNextBackendCheckTime(millis()); // Trigger an immediate recheck
+        
+        // Increment failure counter
+        incrementConsecutiveUploadFailures();
+        
+        // Only mark backend as unreachable after reaching max failures
+        if (getConsecutiveUploadFailures() >= MAX_CONSECUTIVE_UPLOAD_FAILURES) {
+            // Network error, mark backend as unavailable
+            app->setBackendReachable(false);
+            setNextBackendCheckTime(millis()); // Trigger an immediate recheck
+        }
+        
         xSemaphoreGive(httpMutex);
         return false;
     }
