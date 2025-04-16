@@ -180,6 +180,9 @@ services/whisper.cpp/
 venv*/
 .vscode/
 
+# Ignore the mcp-materials folder
+mcp-materials/
+
 # Ignore the file with the name "ollama_api.md"
 ollama_api.md
 test/llm/napkin_export.json

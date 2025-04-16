@@ -1,3 +1,6 @@
+>**This Repo is under major refactoring. It will develop from a "full" repo, with self developed (Gradio) Frontend to a MCP Server which can be connected to different frontends. This decision was made due to the fact that the core value within this repo lies in coco, a wearable recording device and it's corresponding backend.**
+
+
 # coco
 
 This is the coco Repository. It was developed with fun by a small team (see [our website](www.mitra-labs.ai) for more information).<br>
