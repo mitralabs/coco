@@ -115,12 +115,17 @@ services:
     build:
       context: .
       dockerfile: mcp_server/Dockerfile
+    ports:
+      - "8004:8000"
     stdin_open: true  # This is equivalent to docker run's -i flag
     volumes:
       - ../python_sdk:/python_sdk
       - ./mcp_server/app:/app
       - ./_data/mcp_logs:/logs
     environment:
+      - MCP_PROTOCOL=sse
+      - MCP_SSE_HOST=0.0.0.0
+      - MCP_SSE_PORT=8000
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/coco
       - COCO_EMBEDDING_API=ollama
       - COCO_LLM_API=ollama

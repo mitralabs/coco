@@ -887,8 +887,6 @@ async def execute_pgvector_query(
         )
 
 
-# Run the server when executed directly
-if __name__ == "__main__":
-    logger.error(
-        "MCP Coco Database Server starting up"
-    )  # Use error level to ensure it goes to stderr
+
+# Export mcp for runners
+__all__ = ['mcp']
