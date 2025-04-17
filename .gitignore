@@ -166,6 +166,8 @@ services/whisper.cpp/
 
 # Ignore all files that end with .wav
 *.wav
+# but keep the ones in the following directories
+!test/audio_upload/samples/*.wav
 
 # Ignore all files that end with .log
 *.log
