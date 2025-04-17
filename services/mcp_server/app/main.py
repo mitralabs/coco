@@ -95,6 +95,73 @@ logger = logging.getLogger(__name__)
 shutdown_event = asyncio.Event()
 
 
+# Read required environment variables
+postgres_db = os.getenv("POSTGRES_DB")
+postgres_user = os.getenv("POSTGRES_USER")
+postgres_password = os.getenv("POSTGRES_PASSWORD")
+postgres_host = os.getenv("POSTGRES_HOST")
+
+# Build database URL
+if postgres_db and postgres_user and postgres_password and postgres_host:
+    database_url = f"postgresql://{postgres_user}:{postgres_password}@{postgres_host}/{postgres_db}"
+else:
+    # logger.error("Missing required environment variables for database connection") # Old logging
+    logger.critical(
+        "Missing required environment variables for database connection",
+        extra={
+            "event_type": "config_error",
+            "variables": [
+                "POSTGRES_DB",
+                "POSTGRES_USER",
+                "POSTGRES_PASSWORD",
+                "POSTGRES_HOST",
+            ],
+        },
+    )
+    sys.exit(1)
+
+if not database_url:
+    # logger.error("DATABASE_URL environment variable is not set") # Old logging
+    logger.critical(
+        "DATABASE_URL environment variable is not set",
+        extra={"event_type": "config_error", "variable": "DATABASE_URL"},
+    )
+    sys.exit(1)
+
+# Read Coco SDK configuration variables
+ollama_base_url = os.getenv("COCO_OLLAMA_URL_BASE")
+openai_base_url = os.getenv("COCO_OPENAI_URL_BASE")
+embedding_api = os.getenv("COCO_EMBEDDING_API")
+llm_api = os.getenv("COCO_LLM_API")
+embedding_model = os.getenv("COCO_EMBEDDING_MODEL")
+
+# Validate configuration
+if embedding_api not in ["ollama", "openai"]:
+    # logger.error(f"Invalid COCO_EMBEDDING_API: {embedding_api}. Must be 'ollama' or 'openai'") # Old logging
+    logger.critical(
+        f"Invalid COCO_EMBEDDING_API: {embedding_api}",
+        extra={
+            "event_type": "config_error",
+            "variable": "COCO_EMBEDDING_API",
+            "value": embedding_api,
+            "allowed_values": ["ollama", "openai"],
+        },
+    )
+    sys.exit(1)
+
+if embedding_api == "openai" and not os.getenv("OPENAI_API_KEY"):
+    # logger.error("OPENAI_API_KEY environment variable is required when COCO_EMBEDDING_API=openai") # Old logging
+    logger.critical(
+        "OPENAI_API_KEY environment variable is required when COCO_EMBEDDING_API=openai",
+        extra={
+            "event_type": "config_error",
+            "variable": "OPENAI_API_KEY",
+            "condition": "COCO_EMBEDDING_API=openai",
+        },
+    )
+    sys.exit(1)
+
+
 # Signal handler for graceful shutdown
 def handle_terminate(sig, frame):
     """Handle termination signals by setting the shutdown event."""
@@ -110,9 +177,6 @@ def handle_terminate(sig, frame):
 signal.signal(signal.SIGTERM, handle_terminate)
 signal.signal(signal.SIGINT, handle_terminate)
 
-# Main server instance
-mcp = None  # Will be initialized in lifespan manager
-
 
 @asynccontextmanager
 async def db_lifespan(server: FastMCP):
@@ -122,48 +186,6 @@ async def db_lifespan(server: FastMCP):
     This sets up database connections and Coco clients on server startup
     and cleans up resources on shutdown.
     """
-    # Read required environment variables
-    database_url = os.getenv("DATABASE_URL")
-    if not database_url:
-        # logger.error("DATABASE_URL environment variable is not set") # Old logging
-        logger.critical(
-            "DATABASE_URL environment variable is not set",
-            extra={"event_type": "config_error", "variable": "DATABASE_URL"},
-        )
-        sys.exit(1)
-
-    # Read Coco SDK configuration variables
-    ollama_base_url = os.getenv("COCO_OLLAMA_URL_BASE")
-    openai_base_url = os.getenv("COCO_OPENAI_URL_BASE")
-    embedding_api = os.getenv("COCO_EMBEDDING_API")
-    llm_api = os.getenv("COCO_LLM_API")
-    embedding_model = os.getenv("COCO_EMBEDDING_MODEL")
-
-    # Validate configuration
-    if embedding_api not in ["ollama", "openai"]:
-        # logger.error(f"Invalid COCO_EMBEDDING_API: {embedding_api}. Must be 'ollama' or 'openai'") # Old logging
-        logger.critical(
-            f"Invalid COCO_EMBEDDING_API: {embedding_api}",
-            extra={
-                "event_type": "config_error",
-                "variable": "COCO_EMBEDDING_API",
-                "value": embedding_api,
-                "allowed_values": ["ollama", "openai"],
-            },
-        )
-        sys.exit(1)
-
-    if embedding_api == "openai" and not os.getenv("OPENAI_API_KEY"):
-        # logger.error("OPENAI_API_KEY environment variable is required when COCO_EMBEDDING_API=openai") # Old logging
-        logger.critical(
-            "OPENAI_API_KEY environment variable is required when COCO_EMBEDDING_API=openai",
-            extra={
-                "event_type": "config_error",
-                "variable": "OPENAI_API_KEY",
-                "condition": "COCO_EMBEDDING_API=openai",
-            },
-        )
-        sys.exit(1)
 
     # Create a watchdog task to check for parent process
     parent_pid = os.getppid()
@@ -295,9 +317,6 @@ async def db_lifespan(server: FastMCP):
 # Initialize the FastMCP server with the lifespan manager
 mcp = FastMCP("coco-db-mcp-server", lifespan=db_lifespan)
 
-# Create a global reference for database URL
-DATABASE_URL = os.getenv("DATABASE_URL")
-
 
 @mcp.resource("coco_db://schema/{table_name}")
 async def get_table_schema(table_name: str) -> str:
@@ -329,12 +348,12 @@ async def get_table_schema(table_name: str) -> str:
             extra={
                 "event_type": "db_direct_connect_start",
                 "resource_uri": resource_uri,
-                "database_url": DATABASE_URL.split("@")[
+                "database_url": database_url.split("@")[
                     -1
                 ],  # Log target db without credentials
             },
         )
-        conn = await asyncpg.connect(DATABASE_URL)
+        conn = await asyncpg.connect(database_url)
         logger.info(
             "Successfully established direct database connection",
             extra={

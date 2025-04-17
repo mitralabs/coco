@@ -122,12 +122,6 @@ services:
       - ./_data/mcp_logs:/logs
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/coco
-      - COCO_EMBEDDING_API=ollama
-      - COCO_LLM_API=ollama
-      - COCO_OLLAMA_URL_BASE=http://host.docker.internal:11434
-      - COCO_OPENAI_URL_BASE=https://openai.inference.de-txl.ionos.com/v1
-      - COCO_EMBEDDING_MODEL=bge-m3
-      - COCO_API_KEY=test
     env_file:
       - ".env"
     restart: unless-stopped
