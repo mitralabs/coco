@@ -115,13 +115,17 @@ services:
     build:
       context: .
       dockerfile: mcp_server/Dockerfile
+    ports:
+      - "8004:8000"
     stdin_open: true  # This is equivalent to docker run's -i flag
     volumes:
       - ../python_sdk:/python_sdk
       - ./mcp_server/app:/app
       - ./_data/mcp_logs:/logs
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/coco
+      - MCP_PROTOCOL=stdio
+      - MCP_SERVER_PORT=8000
+      - MCP_SERVER_HOST=0.0.0.0
     env_file:
       - ".env"
     restart: unless-stopped

@@ -19,4 +19,4 @@ WORKDIR /app
 
 # Use the entrypoint script and then run the server directly
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-CMD ["mcp", "run", "main.py"]
+CMD ["python", "main.py"]

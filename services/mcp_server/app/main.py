@@ -20,6 +20,8 @@ from contextlib import asynccontextmanager
 from typing import Dict, List, Optional, Any
 import numpy as np
 
+import uvicorn
+
 # FastMCP for the server implementation
 from mcp.server.fastmcp import FastMCP, Context
 
@@ -91,9 +93,13 @@ logging.config.dictConfig(LOGGING_CONFIG)
 # Get the root logger
 logger = logging.getLogger(__name__)
 
+# Log startup message as early as possible
+logger.info(
+    "MCP Coco Database Server initializing", extra={"event_type": "server_init"}
+)
+
 # Global variable to track server state
 shutdown_event = asyncio.Event()
-
 
 # Read required environment variables
 postgres_db = os.getenv("POSTGRES_DB")
@@ -117,14 +123,6 @@ else:
                 "POSTGRES_HOST",
             ],
         },
-    )
-    sys.exit(1)
-
-if not database_url:
-    # logger.error("DATABASE_URL environment variable is not set") # Old logging
-    logger.critical(
-        "DATABASE_URL environment variable is not set",
-        extra={"event_type": "config_error", "variable": "DATABASE_URL"},
     )
     sys.exit(1)
 
@@ -906,8 +904,12 @@ async def execute_pgvector_query(
         )
 
 
-# Run the server when executed directly
-if __name__ == "__main__":
-    logger.error(
-        "MCP Coco Database Server starting up"
-    )  # Use error level to ensure it goes to stderr
+protocol = os.getenv("MCP_PROTOCOL", "stdio").lower()
+logger.info(f"Starting MCP server with protocol: {protocol}")
+if protocol == "sse":
+    # Start the server with HTTP protocol
+    host = os.getenv("MCP_SSE_HOST", "0.0.0.0")
+    port = int(os.getenv("MCP_SSE_PORT", 8000))
+    uvicorn.run(app=mcp.sse_app(), host=host, port=port)
+else:
+    mcp.run()
