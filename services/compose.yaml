@@ -123,7 +123,7 @@ services:
       - ./mcp_server/app:/app
       - ./_data/mcp_logs:/logs
     environment:
-      - MCP_PROTOCOL=stdio
+      - MCP_PROTOCOL=sse
       - MCP_SERVER_PORT=8000
       - MCP_SERVER_HOST=0.0.0.0
     env_file:
