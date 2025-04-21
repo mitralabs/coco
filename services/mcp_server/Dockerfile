@@ -19,7 +19,4 @@ WORKDIR /app
 
 # Use the entrypoint script and then run the server directly
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-CMD ["python", "run.py"]
-
-# Expose the SSE port
-EXPOSE 8000
+CMD ["python", "main.py"]

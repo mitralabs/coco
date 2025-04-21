@@ -6,3 +6,4 @@ ollama>=0.4.7
 openai>=1.70.0
 numpy>=1.26.4
 python-json-logger>=3.3.0
+uvicorn
