@@ -57,29 +57,29 @@ services:
       retries: 3
       start_period: 15s
 
-  frontend:
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
-    ports:
-      - "8002:7860"
-    volumes:
-      - ../python_sdk:/python_sdk
-      - ./frontend/app:/app
-      - ./_data/audio_files:/app/audio
-    env_file:
-      - ".env"
-    environment:
-      - GRADIO_SERVER_NAME=0.0.0.0
-      - COCO_CHUNK_URL_BASE=http://chunking:8000
-      - COCO_DB_API_URL_BASE=http://db-api:8000
-      - COCO_TRANSCRIPTION_URL_BASE=http://host.docker.internal:8000
-    restart: unless-stopped
-    depends_on:
-      chunking:
-        condition: service_healthy
-      db-api:
-        condition: service_healthy
+  # frontend:
+  #   build:
+  #     context: .
+  #     dockerfile: frontend/Dockerfile
+  #   ports:
+  #     - "8002:7860"
+  #   volumes:
+  #     - ../python_sdk:/python_sdk
+  #     - ./frontend/app:/app
+  #     - ./_data/audio_files:/app/audio
+  #   env_file:
+  #     - ".env"
+  #   environment:
+  #     - GRADIO_SERVER_NAME=0.0.0.0
+  #     - COCO_CHUNK_URL_BASE=http://chunking:8000
+  #     - COCO_DB_API_URL_BASE=http://db-api:8000
+  #     - COCO_TRANSCRIPTION_URL_BASE=http://host.docker.internal:8000
+  #   restart: unless-stopped
+  #   depends_on:
+  #     chunking:
+  #       condition: service_healthy
+  #     db-api:
+  #       condition: service_healthy
 
   orchestrator:
     build:
