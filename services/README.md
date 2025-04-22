@@ -35,14 +35,20 @@
 ```yaml
   coco-mcp-server:
     # type: sse # type can optionally be omitted
-    url: http://localhost:8004/sse
+    url: http://host.docker.internal:8004/sse
 ```
 4. Create an [agent](https://www.librechat.ai/docs/features/agents) and add the `pg_vector_tool`to query the database.
 
 #### Claude Desktop:
 1. [Follow this tutorial](https://modelcontextprotocol.io/quickstart/user). To add the latter to your `claude_desktop_config.json`
-```
-
+```json
+"coco-db-mcp-server": {
+    "command": "bash",
+    "args": [
+      "-c",
+      "docker attach coco_mcp_server"
+      ]
+  }
 ```
 
 
