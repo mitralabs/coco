@@ -13,13 +13,14 @@ A substantial part of the development was funded by [hessian.ai](https://hessian
 >Note: We developed on Mac OS. So you might run into troubles on different OSes. Feel free to [contact us](mailto:coco@mitra-labs.ai), and we try to help as much as possible.
 *Skip all steps not needed on your machine. Most likely the "Basic Setup"*
 
-### Basic Setup:
+### Before you begin:
+You need Git, Docker, ffmpeg, pip and cmake installed. See the later, if that is not the case:
 
-1. [Install Homebrew](https://brew.sh) -> Make sure to follow all the instructions in your commandline during the installation process.
-2. Install [Docker Desktop](https://docs.docker.com/desktop/) (Note: The Docker Engine without Desktop Client might work fine as well.) Installing means opening and running through the wizard after downloading!
-3. Install ffmpeg (audio library), git, and cmake via the commandline `brew install ffmpeg git cmake`
-4. Install pip via `python3 -m pip install --upgrade pip`
-5. Install [VS Code](https://code.visualstudio.com). It makes most easier, and is needed for the coco firmware. (For convenience, add it to path by using the `>shell command` within vs code)
+- [Install Homebrew](https://brew.sh), it makes a lot easier. -> Make sure to follow all the instructions in your commandline during the installation process.
+- Install ffmpeg (audio library), git, and cmake via the commandline `brew install ffmpeg git cmake`
+- Install [Docker Desktop](https://docs.docker.com/desktop/) (Note: The Docker Engine without Desktop Client might work fine as well.) Installing means opening and running through the wizard after downloading!
+- Install pip via `python3 -m pip install --upgrade pip`
+- Optional: Install [VS Code](https://code.visualstudio.com). It is needed for the coco firmware. (For convenience, add it to path by using the `>shell command` within vs code)
 
 ### Middleware Setup:
 #### Chat Interface
