@@ -18,13 +18,14 @@
 2. Choose a [whisper model](https://github.com/ggml-org/whisper.cpp/blob/master/models/README.md).
 3. Choose if you want to stay local with Ollama or Fallback to OpenAI or an OpenAI like service. If the latter is the case, set your OpenAI_API_KEY. *Note: This might be confusing with regard to the mentioning of Claude Desktop before, but even if you go with Anthropic, and omit Ollama, there is a need to calculate Embeddings. And this repo currently only supports OpenAI like Endpoints as alternative.**
 4. Make sure to download an embedding model (case ollama) and/or set the COCO_EMBEDDING_MODEL env.
-5. Run the `backend_start.sh`script. It will do the following:
+5. Run `./backend_start.sh` in your terminal. It will do the following:
   - Download the whisper.cpp repository, and remove it's git connection.
   - Compile whisper for your machine.
   - Download the whisper model of your choice
   - Create a virtual environment for the packages needed for the transcription service.
   - Start a FastAPI App in the Background as Transcription Service.
   - Kick off the Build/Compose Process for all other services as Docker Containers.
+6. Enjoy.*Note: run `./backend_stop.sh`to stop all services.*
 
 ### Setting up the Chatinterface / MCP Client
 #### LibreChat:
@@ -34,14 +35,20 @@
 ```yaml
   coco-mcp-server:
     # type: sse # type can optionally be omitted
-    url: http://localhost:8004/sse
+    url: http://host.docker.internal:8004/sse
 ```
 4. Create an [agent](https://www.librechat.ai/docs/features/agents) and add the `pg_vector_tool`to query the database.
 
 #### Claude Desktop:
 1. [Follow this tutorial](https://modelcontextprotocol.io/quickstart/user). To add the latter to your `claude_desktop_config.json`
-```
-
+```json
+"coco-db-mcp-server": {
+    "command": "bash",
+    "args": [
+      "-c",
+      "docker attach coco_mcp_server"
+      ]
+  }
 ```
 
 
