@@ -37,25 +37,25 @@ services:
       timeout: 10s
       retries: 3
       start_period: 20s
-    depends_on:
-      db:
-        condition: service_healthy
+    # depends_on:
+    #   db:
+    #     condition: service_healthy
 
-  db:
-    image: pgvector/pgvector:0.8.0-pg17
-    volumes:
-      - ./_data/db:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    env_file:
-      - ".env"
-    restart: unless-stopped
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
+  # db:
+  #   image: pgvector/pgvector:0.8.0-pg17
+  #   volumes:
+  #     - ./_data/db:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+  #   env_file:
+  #     - ".env"
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+  #     interval: 30s
+  #     timeout: 5s
+  #     retries: 3
+  #     start_period: 15s
 
   # frontend:
   #   build:
@@ -107,8 +107,8 @@ services:
     depends_on:
       chunking:
         condition: service_healthy
-      db-api:
-        condition: service_healthy
+      # db-api:
+      #   condition: service_healthy
 
   mcp_server:
     container_name: coco_mcp_server
@@ -128,6 +128,6 @@ services:
     env_file:
       - ".env"
     restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
+    # depends_on:
+    #   db:
+    #     condition: service_healthy
