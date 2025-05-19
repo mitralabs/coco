@@ -1,31 +1,19 @@
-## Info:
-
-- **Transcription**: A FastAPI-based service that transcribes audio files into text using the Whisper model.
-- **Chunking**: Provides text chunking functionality using LangChain.
-- **Database**: Offers vector database functionality using Postgres for storing embeddings and metadata.
-- **Orchestrator**: Is the bridge between the coco hardware device and the backend.
-- **Frontend**: A Gradio-based web interface that provides an Interactive chat interface and a view of the database **(deprecated, currently not in use. feel free to use it as a dataviewer though.)**
-
-#### Notes on the Database:
-- The service automatically pads embeddings that are smaller than the maximum dimension
-- Documents with identical text content will be skipped during insertion
-- The API uses cosine similarity for finding semantically similar documents
-- Please refer to the [migrations-doc](db_api/migrations.md) of the service for Database Migrations.
-
-
-## Usage
+# Usage
 1. Duplicate the `.env.template`file and rename it to `.env`
 2. Choose a [whisper model](https://github.com/ggml-org/whisper.cpp/blob/master/models/README.md).
 3. Choose if you want to stay local with Ollama or Fallback to OpenAI or an OpenAI like service. If the latter is the case, set your OpenAI_API_KEY. *Note: This might be confusing with regard to the mentioning of Claude Desktop before, but even if you go with Anthropic, and omit Ollama, there is a need to calculate Embeddings. And this repo currently only supports OpenAI like Endpoints as alternative.**
-4. Make sure to download an embedding model (case ollama) and/or set the COCO_EMBEDDING_MODEL env.
-5. Run `./backend_start.sh` in your terminal. It will do the following:
+4. Decide on whether to use LibreChat or Claude Desktop as Frontend. Set the `MCP_PROTOKOL` variable in the `.env` accordingly.
+5. Make sure to download an embedding model (case ollama) and/or set the COCO_EMBEDDING_MODEL env.
+6. Run `./backend_start.sh` in your terminal. It will do the following:
   - Download the whisper.cpp repository, and remove it's git connection.
   - Compile whisper for your machine.
   - Download the whisper model of your choice
   - Create a virtual environment for the packages needed for the transcription service.
   - Start a FastAPI App in the Background as Transcription Service.
   - Kick off the Build/Compose Process for all other services as Docker Containers.
-6. Enjoy.*Note: run `./backend_stop.sh`to stop all services.*
+7. Enjoy.
+
+>Note: run `./backend_stop.sh`to stop all services.
 
 ### Setting up the Chatinterface / MCP Client
 #### LibreChat:
@@ -51,6 +39,26 @@
   }
 ```
 
+## Testing
+Follow [this](../test/audio_upload/upload.ipynb) Jupyter Notebook to upload some audio snippets to test your setup.
+
+<br><br>
+
+# Additional Information
+
+## About the individual services:
+
+- **Transcription**: A FastAPI-based service that transcribes audio files into text using the Whisper model.
+- **Chunking**: Provides text chunking functionality using LangChain.
+- **Database**: Offers vector database functionality using Postgres for storing embeddings and metadata.
+- **Orchestrator**: Is the bridge between the coco hardware device and the backend.
+- **Frontend**: A Gradio-based web interface that provides an Interactive chat interface and a view of the database **(deprecated, currently not in use. feel free to use it as a dataviewer though.)**
+
+#### Notes on the Database:
+- The service automatically pads embeddings that are smaller than the maximum dimension
+- Documents with identical text content will be skipped during insertion
+- The API uses cosine similarity for finding semantically similar documents
+- Please refer to the [migrations-doc](db_api/migrations.md) of the service for Database Migrations.
 
 ## Spinning up individual Docker Containers:
 
@@ -68,7 +76,7 @@ docker compose up orchestrator
 docker compose up --build <service-name>
 ```
 
-### Service Ports:
+## Service Ports:
 - Chunking: http://localhost:8001 (FastAPI)
 - DB-API: http://localhost:8003 (FastAPI)
 - Database: localhost:5432 (PostgreSQL)
@@ -77,20 +85,8 @@ docker compose up --build <service-name>
 
 API documentation for FastAPI services is available at `http://localhost:<port>/docs` (Swagger UI).
 
-## Additional Notes:
+<br><br>
+
+# Lastly:
 - It is currently not implemented, that transcription is not done locally. But it's definitely possible to change that, since our approach follows the openai transcription standard.
 - If you want to see if the transcription process is running in the background use the command `ps aux | grep uvicorn`, which will show the uvicorn processes on your machine. If you further want to kill a process, use `kill <PID>` where <PID> is the Process ID.
-
-
-**The compose.yaml requires the following:**
-
-| Environment Variable | Description | Required | Example |
-|---------------------|-------------|----------|---------|
-| `DATABASE_URL` | PostgreSQL connection string | Yes | `postgresql://user:pass@host:5432/dbname` |
-| `COCO_EMBEDDING_API` | Which embedding API to use (`ollama` or `openai`) | Yes | `openai` |
-| `COCO_LLM_API` | Which LLM API to use (`ollama` or `openai`) | Yes | `openai` |
-| `COCO_OLLAMA_URL_BASE` | Base URL for Ollama API | Only if using Ollama | `http://host.docker.internal:11434` |
-| `COCO_OPENAI_URL_BASE` | Base URL for OpenAI API | Only if using OpenAI | `https://api.openai.com/v1` |
-| `OPENAI_API_KEY` | API key for OpenAI | Only if using OpenAI | `sk-...` |
-| `COCO_EMBEDDING_MODEL` | Model to use for embeddings | Recommended | `BAAI/bge-m3` |
-| `COCO_API_KEY` | API key for Coco services | Optional | |

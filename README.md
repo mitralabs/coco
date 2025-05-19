@@ -1,5 +1,4 @@
->**This Repo is under active refactoring. It will develop from a "full" repo, with self developed (Gradio) Frontend to a MCP Server which can be connected to different frontends. This decision was made due to the fact that the core value within this repo lies in coco, a wearable recording device and it's corresponding backend.**
-
+> This repo is no longer under active development.
 
 # coco
 
