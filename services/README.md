@@ -77,6 +77,7 @@ docker compose up --build <service-name>
 ```
 
 ## Service Ports:
+- Transkription: http://localhost:8000 (FastAPI)
 - Chunking: http://localhost:8001 (FastAPI)
 - DB-API: http://localhost:8003 (FastAPI)
 - Database: localhost:5432 (PostgreSQL)

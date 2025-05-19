@@ -39,7 +39,6 @@ OLLAMA_BASE = os.getenv("COCO_OLLAMA_URL_BASE", "http://host.docker.internal:114
 EMBEDDING_API = os.getenv("COCO_EMBEDDING_API", "ollama")
 LLM_API = os.getenv("COCO_LLM_API", "ollama")
 
-
 # Initialize CocoClient
 cc = CocoClient(
     chunking_base=CHUNKING_BASE,
@@ -102,10 +101,10 @@ def kick_off_processing(audio_path: str, store_in_db: bool = True):
             return False
 
         # Get previous transcript as context if available
-        prompt = PathManager.get_prompt(audio_path)
-        if prompt:
-            logger.info(f"Using previous transcript as context for {audio_path}")
-        # Hard coded as long as the transcription quality is too low
+        # prompt = PathManager.get_prompt(audio_path)
+        # if prompt:
+        #     logger.info(f"Using previous transcript as context for {audio_path}")
+        # # Hard coded as long as the transcription quality is too low
         prompt = None
 
         # Get date.
@@ -132,6 +131,7 @@ def kick_off_processing(audio_path: str, store_in_db: bool = True):
                     date_time=date_time,
                     session_id=session_id,
                     chunk_index=index,
+                    embedding_model=EMBEDDING_MODEL,
                 )
                 logger.info("Transcription saved successfully and stored in database.")
             else:

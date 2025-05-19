@@ -26,9 +26,11 @@ if not API_KEY:
     raise ValueError("API_KEY environment variable must be set")
 
 PATH_TO_WHISPER_DIRECTORY = BASE_DIR / "whisper.cpp"
-MODEL_NAME = os.getenv("MODEL_NAME", "base.bin")
+MODEL_NAME = os.getenv("WHISPER_MODEL", "base.bin")
 if not MODEL_NAME.startswith("ggml-"):
     MODEL_NAME = f"ggml-{MODEL_NAME}"
+if not MODEL_NAME.endswith(".bin"):
+    MODEL_NAME = f"{MODEL_NAME}.bin"
 
 PATH_TO_MODEL = PATH_TO_WHISPER_DIRECTORY / "models" / MODEL_NAME
 PATH_TO_EXECUTABLE = PATH_TO_WHISPER_DIRECTORY / "build" / "bin" / "whisper-cli"
